@@ -46,6 +46,7 @@ export default function DirectorioContactos() {
   });
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [exportError, setExportError] = useState<string | null>(null);
 
   // Autocompletado empresa
   const [empresasSugeridas, setEmpresasSugeridas] = useState<Array<{ id: string; nombre: string; cuit: string | null }>>([]);
@@ -127,30 +128,50 @@ export default function DirectorioContactos() {
   const activasLocales = contactos.filter(c => c.estado === 'funcional').length;
   const rebotadasLocales = contactos.filter(c => c.estado.includes('rebotado')).length;
 
-  const handleExportCsv = () => {
-    const header = ['Empresa', 'Email', 'CUIT', 'Rubro', 'Estado', 'Creado'];
-    const rows = contactos.map(c => [
-      c.empresa_nombre || '',
-      c.email,
-      c.cuit || '',
-      c.rubro_nombre || '',
-      c.estado,
-      new Date(c.creado_en).toLocaleDateString()
-    ]);
+  const handleExportCsv = async () => {
+    setExportError(null);
+    try {
+      const res = await obtenerContactos({
+        limit: 999999,
+        busqueda: busqueda || undefined,
+        estado: estado === 'todos' || !estado ? undefined : estado,
+        rubro_id: rubroId === 'todos' || !rubroId ? undefined : rubroId
+      });
 
-    const csvContent = [
-      header.join(','),
-      ...rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-    ].join('\n');
+      if (!res.success || !res.data) {
+        setExportError('Error al obtener datos para exportar');
+        return;
+      }
 
-    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'contactos.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const allContacts = res.data.data; // res.data es ContactosResponse
+      const header = ['Empresa', 'Email', 'CUIT', 'Rubro', 'Estado', 'Tipo', 'Creado'];
+      const rows = allContacts.map(c => [
+        c.empresa_nombre || '',
+        c.email,
+        c.cuit || '',
+        c.rubro_nombre || '',
+        c.estado,
+        c.tipo || '',
+        new Date(c.creado_en).toLocaleDateString()
+      ]);
+
+      const csvContent = [
+        header.join(','),
+        ...rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      ].join('\n');
+
+      const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'contactos.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error(e);
+      setExportError('Ocurrió un error al exportar el CSV');
+    }
   };
 
   const handleSyncSheets = async () => {
@@ -237,6 +258,29 @@ export default function DirectorioContactos() {
     e.preventDefault();
     setErrorMsg('');
     setSaving(true);
+
+    if (form.cuit) {
+      if (form.cuit.length !== 11) {
+        setErrorMsg('El CUIT debe tener exactamente 11 dígitos.');
+        setSaving(false);
+        return;
+      }
+      
+      const multipliers = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+      let total = 0;
+      for (let i = 0; i < 10; i++) total += parseInt(form.cuit[i]) * multipliers[i];
+      const mod = total % 11;
+      let checkDigit = mod === 0 ? 0 : 11 - mod;
+      if (checkDigit === 10) {
+        const prefix = form.cuit.substring(0, 2);
+        checkDigit = (prefix === '20' || prefix === '23' || prefix === '24') ? 9 : (prefix === '27' ? 4 : 9);
+      }
+      if (checkDigit !== parseInt(form.cuit[10])) {
+        setErrorMsg('El CUIT ingresado no es matemáticamente válido.');
+        setSaving(false);
+        return;
+      }
+    }
 
     try {
       const payload = { ...form };
@@ -370,6 +414,16 @@ export default function DirectorioContactos() {
             type={syncResult.success ? "success" : "error"}
             message={syncResult.message}
             onClose={() => setSyncResult(null)}
+          />
+        </div>
+      )}
+
+      {exportError && (
+        <div className="mb-6">
+          <AlertMessage
+            type="error"
+            message={exportError}
+            onClose={() => setExportError(null)}
           />
         </div>
       )}

@@ -1,9 +1,13 @@
 import { z } from 'zod';
+import { isValidCUIT } from '../utils/cuitValidator';
 
 export const crearContactoSchema = z.object({
   email: z.string({ message: 'El email es obligatorio' }).trim().email('Email inválido'),
   empresa_nombre: z.string().trim().optional(),
-  cuit: z.string().trim().regex(/^\d*$/, 'El CUIT debe contener solo números').optional(),
+  cuit: z.string().trim()
+    .optional()
+    .refine(val => !val || /^\d{11}$/.test(val), { message: 'El CUIT debe tener exactamente 11 dígitos, sin puntos ni guiones' })
+    .refine(val => !val || isValidCUIT(val), { message: 'El CUIT ingresado no es matemáticamente válido' }),
   rubro_id: z.string().optional().nullable(),
   tipo: z.string().default('empresa'),
   estado: z.enum(['funcional', 'inactivo', 'rebotado inexistente', 'rebotado bandeja llena', 'rebotado spam', 'rebotado desconocido']).default('funcional'),

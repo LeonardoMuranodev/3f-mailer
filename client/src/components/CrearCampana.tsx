@@ -306,6 +306,11 @@ export default function CrearCampana() {
                 id="fecha_limite_envio"
                 value={form.fecha_limite_envio}
                 onChange={(e) => setField('fecha_limite_envio', e.target.value)}
+                min={(() => {
+                  const tmr = new Date();
+                  tmr.setDate(tmr.getDate() + 1);
+                  return tmr.toISOString().split('T')[0];
+                })()}
                 disabled={isSubmittedSuccessfully}
                 className={`w-full px-4 py-2.5 bg-background border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
                   errors.fecha_limite_envio

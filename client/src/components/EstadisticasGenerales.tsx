@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Send, Clock, CheckCircle2, Mail, RefreshCw, Download, Calendar, FilterX, BarChart3, Plus } from 'lucide-react';
+import { Send, Clock, CheckCircle2, Mail, RefreshCw, Download, Calendar, FilterX, BarChart3, Plus, AlertTriangle, X } from 'lucide-react';
 import { obtenerEstadisticasGlobales, exportarEstadisticasCampanas } from '../services/api';
 import type { GlobalStatsResult } from '../types/stats';
 import { RUBROS_LABELS } from '../data/rubros';
@@ -27,23 +27,25 @@ export default function EstadisticasGenerales() {
     }
   };
 
+  const [errorExport, setErrorExport] = useState<string | null>(null);
+
   const handleExportCsv = async () => {
+    setErrorExport(null);
     try {
       const res = await exportarEstadisticasCampanas(startDate || undefined, endDate || undefined);
       if (!res.success || !res.data) {
-        alert('Error al obtener datos para exportar');
+        setErrorExport('Error al obtener datos para exportar');
         return;
       }
       
       const campanas = res.data;
       if (campanas.length === 0) {
-        alert('No hay campañas para exportar en este periodo');
+        setErrorExport('No hay campañas para exportar en este periodo');
         return;
       }
       
-      const header = ['ID', 'Asunto', 'Estado', 'Fecha Limite Envio', 'Creado En', 'Total Envios', 'Enviados', 'Fallidos', 'Pendientes'];
+      const header = ['Asunto', 'Estado', 'Fecha Limite Envio', 'Creado En', 'Total Envios', 'Enviados', 'Fallidos', 'Pendientes'];
       const rows = campanas.map((c: any) => [
-        c.id,
         c.asunto,
         c.estado,
         c.fecha_limite_envio ? new Date(c.fecha_limite_envio).toLocaleDateString() : '',
@@ -69,7 +71,7 @@ export default function EstadisticasGenerales() {
       document.body.removeChild(link);
     } catch (error) {
       console.error('Error exporting CSV', error);
-      alert('Ocurrió un error al exportar el CSV');
+      setErrorExport('Ocurrió un error al exportar el CSV');
     }
   };
 
@@ -148,7 +150,34 @@ export default function EstadisticasGenerales() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 animate-fade-in">
+    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 animate-fade-in relative">
+      {/* Modal de Error (Exportación) */}
+      {errorExport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface w-full max-w-sm rounded-2xl shadow-xl border border-border p-6 relative animate-slide-up">
+            <button 
+              onClick={() => setErrorExport(null)}
+              className="absolute top-4 right-4 text-muted hover:text-dark transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 bg-danger/10 text-danger rounded-full flex items-center justify-center">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-dark">Error al Exportar</h3>
+              <p className="text-muted text-sm leading-relaxed">{errorExport}</p>
+              <button
+                onClick={() => setErrorExport(null)}
+                className="mt-2 w-full py-2.5 bg-primary text-white font-medium rounded-lg hover:bg-primary-dark transition-colors"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between mb-6 gap-4">
         <div>

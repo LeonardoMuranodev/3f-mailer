@@ -60,7 +60,14 @@ export const crearCampanaSchema = z.object({
   fecha_limite_envio: z
     .string({ message: 'La fecha límite de envío es obligatoria' })
     .trim()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe tener formato YYYY-MM-DD'),
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe tener formato YYYY-MM-DD')
+    .refine((val) => {
+      const hoy = new Date();
+      // Ajustar por zona horaria de Argentina (-03:00)
+      hoy.setHours(hoy.getHours() - 3);
+      const hoyStr = hoy.toISOString().split('T')[0];
+      return val > hoyStr;
+    }, 'La fecha debe ser estrictamente posterior al día de hoy'),
 
   prioridad: z
     .enum(['alta', 'media', 'baja'], {
