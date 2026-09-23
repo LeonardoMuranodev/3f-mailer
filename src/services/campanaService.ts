@@ -22,6 +22,7 @@ export async function crearCampana(data: CrearCampanaInput): Promise<Campana> {
     cuerpo_html,
     link_inscripcion = null,
     flyer_url = null,
+    adjunto_url = null,
     fecha_limite_envio,
     prioridad = 'alta',
     para_todos_rubros = true,
@@ -30,9 +31,9 @@ export async function crearCampana(data: CrearCampanaInput): Promise<Campana> {
 
   const query = `
     INSERT INTO campanas
-      (asunto, cuerpo_html, link_inscripcion, flyer_url,
+      (asunto, cuerpo_html, link_inscripcion, flyer_url, adjunto_url,
        fecha_limite_envio, prioridad, para_todos_rubros, rubros_seleccionados)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     RETURNING *;
   `;
 
@@ -41,6 +42,7 @@ export async function crearCampana(data: CrearCampanaInput): Promise<Campana> {
     cuerpo_html,
     link_inscripcion,
     flyer_url,
+    adjunto_url,
     fecha_limite_envio,
     prioridad,
     para_todos_rubros,
@@ -76,6 +78,10 @@ export async function actualizarCampana(id: string, data: Partial<CrearCampanaIn
   if (data.flyer_url !== undefined) {
     updates.push(`flyer_url = $${paramIdx++}`);
     values.push(data.flyer_url);
+  }
+  if (data.adjunto_url !== undefined) {
+    updates.push(`adjunto_url = $${paramIdx++}`);
+    values.push(data.adjunto_url);
   }
   if (data.fecha_limite_envio !== undefined) {
     updates.push(`fecha_limite_envio = $${paramIdx++}`);

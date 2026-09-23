@@ -17,6 +17,7 @@ export interface Campana {
   cuerpo_html: string;
   link_inscripcion: string | null;
   flyer_url: string | null;
+  adjunto_url: string | null;
   fecha_limite_envio: string;          // DATE serializado como ISO string
   prioridad: PrioridadCampana;
   para_todos_rubros: boolean;
@@ -32,6 +33,7 @@ export interface CrearCampanaInput {
   cuerpo_html: string;
   link_inscripcion?: string;
   flyer_url?: string;
+  adjunto_url?: string;
   fecha_limite_envio: string;
   prioridad?: PrioridadCampana;
   para_todos_rubros?: boolean;

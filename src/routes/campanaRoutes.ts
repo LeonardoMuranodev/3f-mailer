@@ -12,7 +12,7 @@ export const campanaRouter = Router();
 campanaRouter.post(
   '/',
   requireRole(['desarrollador', 'encargada']),
-  upload.single('flyer'),
+  upload.fields([{ name: 'flyer', maxCount: 1 }, { name: 'adjunto', maxCount: 1 }]),
   validateSchema(crearCampanaSchema),
   campanaController.crear,
 );
@@ -21,7 +21,7 @@ campanaRouter.post(
 campanaRouter.put(
   '/:id',
   requireRole(['desarrollador', 'encargada']),
-  upload.single('flyer'),
+  upload.fields([{ name: 'flyer', maxCount: 1 }, { name: 'adjunto', maxCount: 1 }]),
   validateSchema(actualizarCampanaSchema),
   campanaController.actualizar,
 );
@@ -30,6 +30,7 @@ campanaRouter.put(
 campanaRouter.post(
   '/prueba',
   requireRole(['desarrollador', 'encargada']),
+  upload.fields([{ name: 'flyer', maxCount: 1 }, { name: 'adjunto', maxCount: 1 }]),
   campanaController.enviarPrueba
 );
 

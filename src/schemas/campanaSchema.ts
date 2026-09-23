@@ -52,6 +52,11 @@ export const crearCampanaSchema = z.object({
     .trim()
     .optional(),
 
+  adjunto_url: z
+    .string()
+    .trim()
+    .optional(),
+
   fecha_limite_envio: z
     .string({ message: 'La fecha límite de envío es obligatoria' })
     .trim()

@@ -4,6 +4,7 @@ export interface CampanaFormData {
   cuerpo_html: string;
   link_inscripcion: string;
   flyer_url: string;
+  adjunto_url: string;
   fecha_limite_envio: string;
   prioridad: 'alta' | 'media' | 'baja';
   para_todos_rubros: boolean;
@@ -19,6 +20,7 @@ export interface CampanaResponse {
   cuerpo_html: string;
   link_inscripcion: string | null;
   flyer_url: string | null;
+  adjunto_url: string | null;
   fecha_limite_envio: string;
   prioridad: 'alta' | 'media' | 'baja';
   para_todos_rubros: boolean;
@@ -72,6 +74,7 @@ export const CAMPANA_FORM_INITIAL: CampanaFormData = {
   cuerpo_html: '',
   link_inscripcion: '',
   flyer_url: '',
+  adjunto_url: '',
   fecha_limite_envio: '',
   prioridad: 'alta',
   para_todos_rubros: true,

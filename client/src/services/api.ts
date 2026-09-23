@@ -91,18 +91,14 @@ export async function cambiarEstadoCampana(
 }
 
 /**
- * Envia un mail de prueba con los datos de la campaña actual
+ * Envia un mail de prueba con los datos de la campaña actual (soporta archivos)
  */
 export async function enviarMailPruebaCampana(
-  asunto: string,
-  cuerpo_html: string,
-  flyer_url?: string,
-  link_inscripcion?: string
+  formData: FormData
 ): Promise<ApiResponse<{ message: string; destinatario: string }>> {
   return fetchApi<{ message: string; destinatario: string }>(`${API_BASE}/api/campanas/prueba`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ asunto, cuerpo_html, flyer_url, link_inscripcion }),
+    body: formData,
   });
 }
 

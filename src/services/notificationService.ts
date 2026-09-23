@@ -335,7 +335,7 @@ export async function notificarCuentaProblema(email: string, tipo: 'agotada' | '
   }
 }
 
-export async function enviarMailPrueba(asunto: string, cuerpoHtml: string) {
+export async function enviarMailPrueba(asunto: string, cuerpoHtml: string, adjuntoUrl?: string | null) {
   const { smtpHost, smtpPort, smtpUser, smtpPass } = config.notifier;
   const destinatario = config.modoPrueba
     ? config.imapTest[0]?.user
@@ -362,6 +362,19 @@ export async function enviarMailPrueba(asunto: string, cuerpoHtml: string) {
       subject: asunto,
       html: cuerpoHtml
     };
+
+    if (adjuntoUrl) {
+      // adjuntoUrl es como '/uploads/file-123.pdf', hay que sacar la ruta local
+      const localPath = path.join(process.cwd(), adjuntoUrl);
+      if (fs.existsSync(localPath)) {
+        mailOptions.attachments = [
+          {
+            filename: path.basename(adjuntoUrl),
+            path: localPath
+          }
+        ];
+      }
+    }
 
     await transporter.sendMail(mailOptions);
     return { destinatario };

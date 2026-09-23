@@ -11,6 +11,8 @@ interface CampanaStore {
   form: CampanaFormData;
   flyer: File | null;
   flyerPreview: string | null;
+  adjunto: File | null;
+  adjuntoName: string | null;
   htmlPreview: string;
   errors: Record<string, string>;
   isSubmitting: boolean;
@@ -19,6 +21,7 @@ interface CampanaStore {
   // ── Acciones ───────────────────────────────────
   setField: <K extends keyof CampanaFormData>(field: K, value: CampanaFormData[K]) => void;
   setFlyer: (file: File | null) => void;
+  setAdjunto: (file: File | null) => void;
   setHtmlContent: (html: string) => void;
   toggleRubro: (rubro: string) => void;
   reset: () => void;
@@ -35,6 +38,8 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
   form: { ...CAMPANA_FORM_INITIAL },
   flyer: null,
   flyerPreview: null,
+  adjunto: null,
+  adjuntoName: null,
   htmlPreview: '',
   errors: {},
   isSubmitting: false,
@@ -55,6 +60,13 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
     set({
       flyer: file,
       flyerPreview: file ? URL.createObjectURL(file) : null,
+    });
+  },
+
+  setAdjunto: (file) => {
+    set({
+      adjunto: file,
+      adjuntoName: file ? file.name : null,
     });
   },
 
@@ -96,7 +108,7 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
 
   // ── Submit ──────────────────────────────────────
   guardarBorrador: async (id?: string) => {
-    const { form, flyer } = get();
+    const { form, flyer, adjunto } = get();
 
     // Validar con Zod de forma laxa
     const validationErrors = validarBorrador(form);
@@ -108,7 +120,7 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
     set({ isSubmitting: true, errors: {}, submitResult: null });
 
     try {
-      const fd = buildFormData(form, flyer);
+      const fd = buildFormData(form, flyer, adjunto);
       let res;
       if (id) {
         res = await actualizarCampana(id, fd);
@@ -143,7 +155,7 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
   },
 
   aprobarCampana: async (id?: string) => {
-    const { form, flyer } = get();
+    const { form, flyer, adjunto } = get();
 
     // Validar con Zod
     const validationErrors = validarFormulario(form);
@@ -156,7 +168,7 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
 
     try {
       // 1. Crear o actualizar la campaña como borrador
-      const fd = buildFormData(form, flyer);
+      const fd = buildFormData(form, flyer, adjunto);
       let createRes;
       if (id) {
         createRes = await actualizarCampana(id, fd);
@@ -205,7 +217,7 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
 }));
 
 // ── Helper ────────────────────────────────────────────────
-function buildFormData(form: CampanaFormData, flyer: File | null): FormData {
+export function buildFormData(form: CampanaFormData, flyer: File | null, adjunto: File | null): FormData {
   const fd = new FormData();
   fd.append('asunto', form.asunto);
   fd.append('cuerpo_html', form.cuerpo_html);
@@ -220,6 +232,10 @@ function buildFormData(form: CampanaFormData, flyer: File | null): FormData {
 
   if (flyer) {
     fd.append('flyer', flyer);
+  }
+
+  if (adjunto) {
+    fd.append('adjunto', adjunto);
   }
 
   return fd;

@@ -92,7 +92,7 @@ export async function procesarCola(): Promise<void> {
     // 3. Obtener el lote con el objetivo calculado usando FOR UPDATE SKIP LOCKED
     const queryPendientes = `
       SELECT ce.id, ce.contacto_id, ce.campana_id, co.email as contacto_email,
-             c.asunto, c.cuerpo_html, c.link_inscripcion, c.flyer_url, c.estado as campana_estado,
+             c.asunto, c.cuerpo_html, c.link_inscripcion, c.flyer_url, c.adjunto_url, c.estado as campana_estado,
              ce.intentos
       FROM cola_envios ce
       JOIN contactos co ON ce.contacto_id = co.id
@@ -156,6 +156,7 @@ export async function procesarCola(): Promise<void> {
           cuerpo_html: item.cuerpo_html,
           link_inscripcion: item.link_inscripcion,
           flyer_url: flyerAbsUrl,
+          adjunto_url: null,
           estado: item.campana_estado,
           fecha_limite_envio: '',
           prioridad: 'media',
@@ -200,12 +201,26 @@ export async function procesarCola(): Promise<void> {
         });
 
         try {
-          const info = await transporter.sendMail({
+          const mailOptions: any = {
             from: `"Dirección de Producción - 3F" <${cuentaSmtp.email}>`,
             to: item.contacto_email,
             subject: item.asunto,
             html,
-          });
+          };
+
+          if (item.adjunto_url) {
+            const filename = item.adjunto_url.split('/').pop() || 'adjunto';
+            // The file is stored in /uploads directory relative to cwd
+            const filepath = `${process.cwd()}${item.adjunto_url}`;
+            mailOptions.attachments = [
+              {
+                filename,
+                path: filepath
+              }
+            ];
+          }
+          
+          const info = await transporter.sendMail(mailOptions);
           
           respuestaSmtp = info.response;
           estadoNuevo = 'enviado';

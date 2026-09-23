@@ -23,10 +23,18 @@ import { clearCacheByPrefix } from '../middlewares/cache.js';
 async function crear(req: Request, _res: Response, next: NextFunction): Promise<void> {
   try {
     const body = req.body as CrearCampanaBody;
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
 
-    const flyer_url = req.file
-      ? `/uploads/${req.file.filename}`
+    const flyerFile = files?.['flyer']?.[0];
+    const adjuntoFile = files?.['adjunto']?.[0];
+
+    const flyer_url = flyerFile
+      ? `/uploads/${flyerFile.filename}`
       : body.flyer_url;
+
+    const adjunto_url = adjuntoFile
+      ? `/uploads/${adjuntoFile.filename}`
+      : body.adjunto_url;
 
     if (!flyer_url) {
       sendError(_res, 'VALIDATION_ERROR', 'El flyer es obligatorio', 400, [{ field: 'flyer', message: 'El flyer es obligatorio' }]);
@@ -35,7 +43,7 @@ async function crear(req: Request, _res: Response, next: NextFunction): Promise<
 
     const cuerpo_html = body.cuerpo_html ? DOMPurify.sanitize(body.cuerpo_html) : undefined;
     
-    const campanaData = { ...body, flyer_url };
+    const campanaData = { ...body, flyer_url, adjunto_url };
     if (cuerpo_html) campanaData.cuerpo_html = cuerpo_html;
 
     const campana = await crearCampana(campanaData);
@@ -192,10 +200,23 @@ import type { Campana } from '../types/campana.js';
 
 async function enviarPrueba(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { asunto, cuerpo_html, link_inscripcion, flyer_url } = req.body;
+    const { asunto, cuerpo_html, link_inscripcion, flyer_url, adjunto_url } = req.body;
     if (!asunto || !cuerpo_html) {
       sendError(res, 'BAD_REQUEST', 'Faltan campos obligatorios para la prueba (asunto, cuerpo_html)', 400);
       return;
+    }
+
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    
+    // Obtener los URLs (ya sean nuevos subidos o existentes en body)
+    let flyerUrlFinal = flyer_url || null;
+    let adjuntoUrlFinal = adjunto_url || null;
+
+    if (files?.flyer?.[0]) {
+      flyerUrlFinal = `/uploads/${files.flyer[0].filename}`;
+    }
+    if (files?.adjunto?.[0]) {
+      adjuntoUrlFinal = `/uploads/${files.adjunto[0].filename}`;
     }
 
     const campanaMock: Campana = {
@@ -203,7 +224,8 @@ async function enviarPrueba(req: Request, res: Response, next: NextFunction): Pr
       asunto,
       cuerpo_html,
       link_inscripcion: link_inscripcion || null,
-      flyer_url: flyer_url || null,
+      flyer_url: flyerUrlFinal,
+      adjunto_url: adjuntoUrlFinal,
       estado: 'borrador',
       fecha_limite_envio: '',
       prioridad: 'media',
@@ -215,7 +237,7 @@ async function enviarPrueba(req: Request, res: Response, next: NextFunction): Pr
 
     const htmlRenderizado = generarHtmlDesdeCampana(campanaMock);
 
-    const { destinatario } = await enviarMailPrueba(asunto, htmlRenderizado);
+    const { destinatario } = await enviarMailPrueba(asunto, htmlRenderizado, adjuntoUrlFinal);
     sendSuccess(res, { message: `Email de prueba enviado exitosamente a ${destinatario}`, destinatario });
   } catch (err: any) {
     console.error('Error en enviarPrueba:', err);
@@ -231,15 +253,24 @@ async function actualizar(req: Request, res: Response, next: NextFunction): Prom
   try {
     const id = req.params.id as string;
     const body = req.body as ActualizarCampanaBody;
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
 
-    const flyer_url = req.file
-      ? `/uploads/${req.file.filename}`
+    const flyerFile = files?.['flyer']?.[0];
+    const adjuntoFile = files?.['adjunto']?.[0];
+
+    const flyer_url = flyerFile
+      ? `/uploads/${flyerFile.filename}`
       : body.flyer_url;
+
+    const adjunto_url = adjuntoFile
+      ? `/uploads/${adjuntoFile.filename}`
+      : body.adjunto_url;
 
     const cuerpo_html = body.cuerpo_html ? DOMPurify.sanitize(body.cuerpo_html) : undefined;
     
     const campanaData = { ...body };
     if (flyer_url !== undefined) campanaData.flyer_url = flyer_url;
+    if (adjunto_url !== undefined) campanaData.adjunto_url = adjunto_url;
     if (cuerpo_html) campanaData.cuerpo_html = cuerpo_html;
 
     const campana = await actualizarCampana(id, campanaData);

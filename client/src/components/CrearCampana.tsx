@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Mail, CheckCircle2, Save, Eye, ArrowLeft, Plus, List, FileText } from 'lucide-react';
-import { useCampanaStore } from '../stores/campanaStore';
+import { useCampanaStore, buildFormData } from '../stores/campanaStore';
 import TiptapEditor from './TiptapEditor';
 import FlyerUpload from './FlyerUpload';
 import { RUBROS_LIST, RUBROS_LABELS } from '../data/rubros';
@@ -12,11 +12,16 @@ export default function CrearCampana() {
   const navigate = useNavigate();
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [conAdjunto, setConAdjunto] = useState(
+    () => !!useCampanaStore.getState().adjuntoName || !!useCampanaStore.getState().form.adjunto_url
+  );
   const {
     form,
     errors,
     setField,
     setHtmlContent,
+    setAdjunto,
+    adjuntoName,
     toggleRubro,
     guardarBorrador,
     aprobarCampana,
@@ -46,6 +51,10 @@ export default function CrearCampana() {
           setField('asunto', campana.asunto);
           setHtmlContent(campana.cuerpo_html);
           if (campana.link_inscripcion) setField('link_inscripcion', campana.link_inscripcion);
+          if (campana.adjunto_url) {
+            setField('adjunto_url', campana.adjunto_url);
+            setConAdjunto(true);
+          }
           if (campana.fecha_limite_envio) setField('fecha_limite_envio', campana.fecha_limite_envio.split('T')[0]);
           setField('prioridad', campana.prioridad);
           setField('para_todos_rubros', campana.para_todos_rubros);
@@ -58,7 +67,7 @@ export default function CrearCampana() {
         try {
           const parsed = JSON.parse(savedDraft);
           Object.entries(parsed).forEach(([k, v]) => {
-            if (k !== 'flyer_url' && k !== 'flyer') { // Evitamos cargar archivos por seguridad
+            if (k !== 'flyer_url' && k !== 'flyer' && k !== 'adjunto_url' && k !== 'adjunto') { // Evitamos cargar archivos por seguridad
               if (k === 'cuerpo_html') setHtmlContent(v as string);
               else setField(k as any, v);
             }
@@ -106,7 +115,12 @@ export default function CrearCampana() {
     setIsSendingTest(true);
     setTestResult(null);
     try {
-      const res = await enviarMailPruebaCampana(form.asunto, form.cuerpo_html, form.flyer_url, form.link_inscripcion);
+      const fd = buildFormData(form, useCampanaStore.getState().flyer, useCampanaStore.getState().adjunto);
+      // Incluir flyer_url y adjunto_url si existen pero no se subió archivo nuevo
+      if (!useCampanaStore.getState().flyer && form.flyer_url) fd.append('flyer_url', form.flyer_url);
+      if (!useCampanaStore.getState().adjunto && form.adjunto_url) fd.append('adjunto_url', form.adjunto_url);
+
+      const res = await enviarMailPruebaCampana(fd);
       if (res.success) {
         setTestResult({ success: true, message: res.data?.message || 'Mail de prueba enviado con éxito' });
       } else {
@@ -309,6 +323,65 @@ export default function CrearCampana() {
               Flyer adjunto <span className="text-danger">*</span>
             </label>
             <FlyerUpload />
+          </div>
+
+          {/* Adjunto Opcional Toggle */}
+          <div className="pt-4 border-t border-border">
+            <div className="mb-4">
+              <label className="flex items-center gap-3 cursor-pointer group w-fit">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={conAdjunto}
+                    onChange={(e) => setConAdjunto(e.target.checked)}
+                    disabled={isSubmittedSuccessfully}
+                  />
+                  <div className={`block w-14 h-8 rounded-full transition-colors ${conAdjunto ? 'bg-primary' : 'bg-border'}`}></div>
+                  <div className={`absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${conAdjunto ? 'transform translate-x-6' : ''}`}></div>
+                </div>
+                <div className="text-base font-semibold text-dark group-hover:text-primary transition-colors">
+                  Añadir adjunto opcional
+                </div>
+              </label>
+              <p className="text-muted text-sm mt-1 ml-17">
+                Permite enviar un archivo extra (PDF, DOCX, CSV, Excel, Imágenes) adjunto en el correo.
+              </p>
+            </div>
+            
+            {conAdjunto && (
+              <div className="animate-fade-in mt-4">
+                <label className="block text-base font-semibold text-dark mb-1.5">
+                  Archivo Adjunto (máx 10MB)
+                </label>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="file"
+                    accept=".pdf,.docx,.xlsx,.xls,.csv,image/*"
+                    onChange={(e) => setAdjunto(e.target.files ? e.target.files[0] : null)}
+                    disabled={isSubmittedSuccessfully}
+                    className="block w-full text-sm text-muted
+                      file:mr-4 file:py-2.5 file:px-4
+                      file:rounded-lg file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-primary file:text-white
+                      hover:file:bg-primary-dark
+                      file:cursor-pointer file:transition-colors
+                      disabled:opacity-60 disabled:cursor-not-allowed"
+                  />
+                  {adjuntoName && (
+                    <span className="text-sm font-medium text-primary bg-primary/10 px-3 py-1 rounded-full whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]" title={adjuntoName}>
+                      {adjuntoName}
+                    </span>
+                  )}
+                  {!adjuntoName && form.adjunto_url && (
+                    <span className="text-sm font-medium text-muted bg-surface px-3 py-1 rounded-full whitespace-nowrap border border-border">
+                      Archivo ya subido previamente
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-border">
