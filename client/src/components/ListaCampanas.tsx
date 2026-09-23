@@ -335,7 +335,7 @@ export default function ListaCampanas() {
                   const rubrosDisplay = campana.para_todos_rubros
                     ? 'Todos los rubros'
                     : Array.isArray(campana.rubros_seleccionados)
-                      ? campana.rubros_seleccionados.map((r) => r === '__sin_rubro__' ? 'Sin Rubro' : RUBROS_LABELS[r] || r).join(', ')
+                      ? (campana.rubros_seleccionados || []).map((r) => r === '__sin_rubro__' ? 'Sin Rubro' : RUBROS_LABELS[r] || r).join(', ')
                       : 'Ninguno';
 
                   return (

@@ -32,12 +32,12 @@ export const config = {
     tls: process.env[`IMAP${i}_TLS`] !== 'false',
   })).filter(a => a.host && a.user && a.pass),
   db: {
-    host: process.env.DB_HOST || '',
-    port: parseInt(process.env.DB_PORT || '6543', 10),
-    user: process.env.DB_USER || '',
-    password: process.env.DB_PASSWORD || '',
-    name: process.env.DB_NAME || 'postgres',
-    ssl: process.env.DB_SSL !== 'false',
+    host: process.env.MODO_PRUEBA === 'true' ? (process.env.DB_TEST_HOST || process.env.DB_HOST || '') : (process.env.DB_HOST || ''),
+    port: parseInt(process.env.MODO_PRUEBA === 'true' ? (process.env.DB_TEST_PORT || process.env.DB_PORT || '6543') : (process.env.DB_PORT || '6543'), 10),
+    user: process.env.MODO_PRUEBA === 'true' ? (process.env.DB_TEST_USER || process.env.DB_USER || '') : (process.env.DB_USER || ''),
+    password: process.env.MODO_PRUEBA === 'true' ? (process.env.DB_TEST_PASSWORD || process.env.DB_PASSWORD || '') : (process.env.DB_PASSWORD || ''),
+    name: process.env.MODO_PRUEBA === 'true' ? (process.env.DB_TEST_NAME || process.env.DB_NAME || 'postgres') : (process.env.DB_NAME || 'postgres'),
+    ssl: process.env.MODO_PRUEBA === 'true' ? (process.env.DB_TEST_SSL !== 'false') : (process.env.DB_SSL !== 'false'),
   },
   encryptionKey: process.env.ENCRYPTION_KEY || '',
   jwt: {

@@ -142,7 +142,7 @@ export default function DetalleCampana() {
 
     const rubrosStr = campana.para_todos_rubros
       ? 'Todos los rubros'
-      : campana.rubros_seleccionados.map((r: string) => r === '__sin_rubro__' ? 'Sin Rubro' : RUBROS_LABELS[r as keyof typeof RUBROS_LABELS] || r).join(' - ');
+      : (campana.rubros_seleccionados || []).map((r: string) => r === '__sin_rubro__' ? 'Sin Rubro' : RUBROS_LABELS[r as keyof typeof RUBROS_LABELS] || r).join(' - ');
 
     const csvContent = [
       ['Asunto:', `"${campana.asunto}"`],
@@ -212,7 +212,7 @@ export default function DetalleCampana() {
               <span className="flex items-center gap-1"><Clock size={14} /> Límite: {formatDate(campana.fecha_limite_envio)}</span>
             </p>
             <p className="text-sm text-dark mt-2">
-              <strong>Rubros:</strong> {campana.para_todos_rubros ? 'Todos los rubros' : campana.rubros_seleccionados.map((r: string) => r === '__sin_rubro__' ? 'Sin Rubro' : RUBROS_LABELS[r as keyof typeof RUBROS_LABELS] || r).join(', ')}
+              <strong>Rubros:</strong> {campana.para_todos_rubros ? 'Todos los rubros' : (campana.rubros_seleccionados || []).map((r: string) => r === '__sin_rubro__' ? 'Sin Rubro' : RUBROS_LABELS[r as keyof typeof RUBROS_LABELS] || r).join(', ')}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
