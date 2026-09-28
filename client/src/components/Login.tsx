@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import logo3f from '../assets/logo-3f.png';
 import ThemeToggle from './ThemeToggle';
@@ -103,9 +104,14 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-muted mb-1.5">
-                Contraseña
-              </label>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="block text-sm font-semibold text-muted">
+                  Contraseña
+                </label>
+                <Link to="/forgot-password" className="text-xs font-medium text-primary hover:text-primary-dark transition-colors">
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={18} />
                 <input

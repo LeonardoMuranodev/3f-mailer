@@ -320,7 +320,7 @@ export default function HorariosSmtp() {
                 Días No Laborales / Feriados
               </h2>
 
-              <form onSubmit={handleAgregarFeriado} className="flex items-end gap-3 mb-8 bg-background p-4 rounded-lg border border-border">
+              <form onSubmit={handleAgregarFeriado} className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 mb-8 bg-background p-4 rounded-lg border border-border">
                 <div className="flex-1">
                   <label className="block text-xs font-medium text-dark mb-1">Fecha</label>
                   <input
@@ -344,7 +344,7 @@ export default function HorariosSmtp() {
                 <button
                   type="submit"
                   disabled={saving || !nuevaFecha}
-                  className="px-4 py-2 bg-secondary text-white font-medium rounded-lg hover:bg-secondary-dark transition-colors disabled:opacity-60 flex items-center gap-2 text-sm h-[38px]"
+                  className="px-4 py-2 bg-secondary text-white font-medium rounded-lg hover:bg-secondary-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-sm h-[38px] sm:w-auto"
                 >
                   <Plus size={16} />
                   Agregar

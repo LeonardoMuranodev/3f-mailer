@@ -3,6 +3,7 @@ import { dbPool } from '../config/db.js';
 import { obtenerSiguienteSmtpDisponible, incrementarCuotaSmtp } from './queueService.js';
 import { notificarCampanaTerminada, notificarCuotaGlobalAgotada } from './notificationService.js';
 import { generarHtmlDesdeCampana } from './emailTemplate.js';
+import { limpiarHistorialAntiguo } from './historialService.js';
 import { decrypt } from '../utils/encryption.js';
 import { config } from '../config/env.js';
 import type { Campana } from '../types/campana.js';
@@ -67,6 +68,9 @@ export async function procesarCola(): Promise<void> {
     // Reset diario
     cuotaAgotadaHoy = false;
     fechaAgotamiento = '';
+    
+    // Mantenimiento diario: limpiar historial más antiguo de 1 año
+    limpiarHistorialAntiguo().catch(err => console.error('Error limpiando historial:', err));
   }
 
   isWorkerRunning = true;

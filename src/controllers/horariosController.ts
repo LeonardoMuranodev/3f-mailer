@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { dbPool } from '../config/db.js';
+import { registrarAccion } from '../services/historialService.js';
 
 export const horariosController = {
   async obtenerConfiguracion(req: Request, res: Response, next: NextFunction) {
@@ -29,6 +30,7 @@ export const horariosController = {
         [hora_inicio, hora_fin, JSON.stringify(dias_permitidos)]
       );
 
+      await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'HORARIOS', '1', { hora_inicio, hora_fin, dias_permitidos });
       res.json({ success: true, data: result.rows[0] });
     } catch (error) {
       next(error);
@@ -44,6 +46,7 @@ export const horariosController = {
         [fecha, motivo || null]
       );
 
+      await registrarAccion(req.user?.userId || null, 'CREAR', 'HORARIOS', null, { fecha_excluida: fecha, motivo });
       res.status(201).json({ success: true, data: result.rows[0] });
     } catch (error: any) {
       if (error.code === '23505') { // Unique violation
@@ -55,13 +58,14 @@ export const horariosController = {
 
   async eliminarFechaExcluida(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const result = await dbPool.query('DELETE FROM fechas_excluidas WHERE id = $1 RETURNING *', [id]);
       
       if (result.rowCount === 0) {
         return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Fecha excluida no encontrada' } });
       }
 
+      await registrarAccion(req.user?.userId || null, 'ELIMINAR', 'HORARIOS', id, { fecha_eliminada: result.rows[0].fecha });
       res.json({ success: true, data: result.rows[0] });
     } catch (error) {
       next(error);

@@ -10,6 +10,7 @@ import {
   importarContactosJson,
 } from '../services/contactoService.js';
 import { sendSuccess, sendError } from '../utils/responseHandler.js';
+import { registrarAccion } from '../services/historialService.js';
 import type {
   CrearContactoBody,
   ActualizarContactoBody,
@@ -36,6 +37,7 @@ async function crear(req: Request, res: Response, next: NextFunction): Promise<v
       sendError(res, 'CONFLICT', 'El contacto ya existe', 409);
       return;
     }
+    await registrarAccion(req.user?.userId || null, 'CREAR', 'CONTACTO', contacto.id, { email: contacto.email });
     sendSuccess(res, contacto, 201);
   } catch (err) {
     next(err);
@@ -54,6 +56,7 @@ async function actualizar(req: Request, res: Response, next: NextFunction): Prom
       return;
     }
 
+    await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'CONTACTO', contacto.id, { email: contacto.email });
     sendSuccess(res, contacto);
   } catch (err) {
     next(err);
@@ -70,6 +73,7 @@ async function eliminar(req: Request, res: Response, next: NextFunction): Promis
       return;
     }
 
+    await registrarAccion(req.user?.userId || null, 'ELIMINAR', 'CONTACTO', contacto.id, { email: contacto.email });
     sendSuccess(res, contacto);
   } catch (err) {
     next(err);
@@ -103,6 +107,7 @@ async function toggleEstado(req: Request, res: Response, next: NextFunction): Pr
       return;
     }
 
+    await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'CONTACTO', contacto.id, { nuevo_estado: estado });
     sendSuccess(res, contacto);
   } catch (err) {
     next(err);

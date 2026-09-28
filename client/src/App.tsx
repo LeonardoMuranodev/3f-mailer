@@ -3,6 +3,9 @@ import { Routes, Route, useLocation, Link, Navigate } from 'react-router-dom';
 import { Mail, BarChart3, Users, Settings, LogOut, UserCircle2, AlertTriangle, LifeBuoy, Menu, X } from 'lucide-react';
 import { useAuthStore } from './stores/authStore';
 import Login from './components/Login';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import Perfil from './pages/Perfil';
 import ListaCampanas from './components/ListaCampanas';
 import DetalleCampana from './components/DetalleCampana';
 import CrearCampana from './components/CrearCampana';
@@ -15,7 +18,8 @@ import Soporte from './components/Soporte';
 import HorariosSmtp from './components/HorariosSmtp';
 import ThemeToggle from './components/ThemeToggle';
 import NotFound from './components/NotFound';
-import { Clock } from 'lucide-react';
+import Auditoria from './pages/Auditoria';
+import { Clock, ShieldAlert } from 'lucide-react';
 
 function App() {
   const location = useLocation();
@@ -28,7 +32,13 @@ function App() {
   }, [checkAuth]);
 
   if (!isAuthenticated) {
-    return <Login />;
+    return (
+      <Routes>
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="*" element={<Login />} />
+      </Routes>
+    );
   }
 
   const navLinks = [
@@ -44,6 +54,7 @@ function App() {
 
   if (user?.rol === 'desarrollador') {
     navLinks.push({ path: '/usuarios', label: 'Usuarios', icon: <UserCircle2 size={18} /> });
+    navLinks.push({ path: '/auditoria', label: 'Auditoría', icon: <ShieldAlert size={18} /> });
   }
 
   // Soporte siempre al final
@@ -57,7 +68,11 @@ function App() {
           
           <div className="flex items-center justify-between w-full lg:w-auto shrink-0">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 font-bold text-lg text-primary hover:text-primary-dark transition-colors">
+            <Link 
+              to="/" 
+              onClick={() => setIsMobileMenuOpen(false)} 
+              className="flex items-center gap-2 font-bold text-lg text-primary hover:text-primary-dark transition-colors"
+            >
               <Mail size={24} className="text-primary" />
               <span>3F Mailer</span>
             </Link>
@@ -105,13 +120,17 @@ function App() {
             
             {user && (
               <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 lg:pl-4 lg:border-l lg:border-border">
-                <div className="flex items-center gap-2 px-2 lg:px-0">
+                <Link 
+                  to="/perfil" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-2 px-2 lg:px-0 hover:opacity-80 transition-opacity"
+                >
                   <UserCircle2 size={20} className="text-muted shrink-0" />
                   <div className="flex flex-col">
                     <span className="text-sm font-semibold leading-tight">{user.nombre}</span>
                     <span className="text-[10px] uppercase font-bold text-primary tracking-wider">{user.rol}</span>
                   </div>
-                </div>
+                </Link>
                 <button 
                   onClick={() => {
                     setIsMobileMenuOpen(false);
@@ -148,7 +167,17 @@ function App() {
             path="/horarios" 
             element={user?.rol === 'desarrollador' || user?.rol === 'encargada' ? <HorariosSmtp /> : <Navigate to="/" replace />} 
           />
+          <Route 
+            path="/auditoria" 
+            element={user?.rol === 'desarrollador' ? <Auditoria /> : <Navigate to="/" replace />} 
+          />
           <Route path="/soporte" element={<Soporte />} />
+          <Route path="/perfil" element={<Perfil />} />
+          
+          {/* Prevent authenticated users from accessing login/recovery routes */}
+          <Route path="/forgot-password" element={<Navigate to="/" replace />} />
+          <Route path="/reset-password" element={<Navigate to="/" replace />} />
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

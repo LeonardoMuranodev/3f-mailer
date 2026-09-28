@@ -15,6 +15,7 @@ import { enviarMailPrueba } from '../services/notificationService.js';
 import { sendSuccess, sendError } from '../utils/responseHandler.js';
 import type { CrearCampanaBody, CambiarEstadoBody, ActualizarCampanaBody } from '../schemas/campanaSchema.js';
 import { clearCacheByPrefix } from '../middlewares/cache.js';
+import { registrarAccion } from '../services/historialService.js';
 
 /**
  * POST /api/campanas
@@ -52,6 +53,8 @@ async function crear(req: Request, _res: Response, next: NextFunction): Promise<
     await clearCacheByPrefix('/api/campanas');
     await clearCacheByPrefix('/api/stats');
     
+    await registrarAccion(req.user?.userId || null, 'CREAR', 'CAMPANA', campana.id, { asunto: campana.asunto });
+
     sendSuccess(_res, campana, 201);
   } catch (err) {
     next(err);
@@ -95,6 +98,8 @@ async function cambiarEstado(req: Request, res: Response, next: NextFunction): P
     // Invalidamos el caché de campañas y estadísticas
     await clearCacheByPrefix('/api/campanas');
     await clearCacheByPrefix('/api/stats');
+
+    await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'CAMPANA', campana.id, { estado_nuevo: estado });
 
     sendSuccess(res, campana);
   } catch (err) {
@@ -159,6 +164,8 @@ async function eliminar(req: Request, res: Response, next: NextFunction): Promis
     await clearCacheByPrefix('/api/campanas');
     await clearCacheByPrefix('/api/stats');
 
+    await registrarAccion(req.user?.userId || null, 'ELIMINAR', 'CAMPANA', id);
+
     sendSuccess(res, { message: 'Campaña eliminada correctamente' });
   } catch (err) {
     next(err);
@@ -167,12 +174,15 @@ async function eliminar(req: Request, res: Response, next: NextFunction): Promis
 
 async function archivar(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { id } = req.params;
-    const eliminado = await archivarCampana(String(id));
+    const id = req.params.id as string;
+    const eliminado = await archivarCampana(id);
     if (!eliminado) {
       sendError(res, 'NOT_FOUND', 'Campaña no encontrada o ya archivada', 404);
       return;
     }
+    
+    await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'CAMPANA', id, { estado_nuevo: 'archivada' });
+    
     sendSuccess(res, { message: 'Campaña archivada correctamente' });
   } catch (err) {
     next(err);
@@ -189,6 +199,8 @@ async function eliminarMasivo(req: Request, res: Response, next: NextFunction): 
 
     await eliminarCampanasMasivo(ids);
     
+    await registrarAccion(req.user?.userId || null, 'ELIMINAR', 'CAMPANA', null, { ids_eliminados: ids });
+
     sendSuccess(res, { message: 'Campañas eliminadas correctamente' });
   } catch (err) {
     next(err);
@@ -283,6 +295,8 @@ async function actualizar(req: Request, res: Response, next: NextFunction): Prom
     // Invalidamos el caché de campañas
     await clearCacheByPrefix('/api/campanas');
     
+    await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'CAMPANA', campana.id, { asunto: campana.asunto });
+
     sendSuccess(res, campana, 200);
   } catch (err) {
     next(err);

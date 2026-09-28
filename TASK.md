@@ -29,21 +29,21 @@
 
 #### Recuperar contraseña
 
-- [] **Implementar sistema de recuperación de contraseña**: me di cuenta de que no hay forma de recuperar la contraseña, asi que hay que implementar un sistema de recuperacion de contraseña. Si el email es valido osea tiene cuenta en el sistema, se le envia un mail con un enlace de recuperacion de contraseña. Dicho enlace tiene que ser valido por un tiempo limitado (ej: 15 minutos).
+- [x] **Implementar sistema de recuperación de contraseña**: me di cuenta de que no hay forma de recuperar la contraseña, asi que hay que implementar un sistema de recuperacion de contraseña. Si el email es valido osea tiene cuenta en el sistema, se le envia un mail con un enlace de recuperacion de contraseña. Dicho enlace tiene que ser valido por un tiempo limitado (ej: 15 minutos).
 
 Conectar a mi github hice un en el repo https://github.com/DesApp-2026c2-Grupo-6/des-app-grupo6-casa-de-comidas en la rama dev como esta implementado. Podes tomar ese ejemplo. Validando que esa ruta solo sea alguien sin haber iniciado sesion, con un buen diseño de MAILS. Usar como banner el Banner que usamos en los Mails, que es el de Direccion de Produccion
 
 #### Control de horario de envio SMTP
 
-Una vista solo para encargadas / desarrollador, no invitado para que controle de que hora a que hora se envian los mails. Esto es lo que usará el worker para enviar
+- [X] Una vista solo para encargadas / desarrollador, no invitado para que controle de que hora a que hora se envian los mails. Esto es lo que usará el worker para enviar
 
-Elijan horas dias, y dis especificos que no quieran que envien (para feriados, dias no laborales)
+- [X] Elijan horas dias, y dis especificos que no quieran que envien (para feriados, dias no laborales)
 
 #### Historial de Cambios
 
 Historial que me diga todos los cambios que se hicieron en la app en desarrollador. Que X usuario modifica campaña, o contactos, o cuenta SMTP. Reportes no hace falta ya que en si es un Historial
 
-Que haya una vista de perfil/mis datos donde me diga con que email esta logueado. Y que haya un Historial ahi de los cambios que solo hizo esa persona "Mis Cambios". No puede ver cambios de otros usuarios, sino de si mismo. En esa vista tambien podra cambiar la contraseña. Y a repo https://github.com/DesApp-2026c2-Grupo-6/des-app-grupo6-casa-de-comidas en la rama dev buscar en pages perfil/ para tomar de ejemplo.
+- [X] ue haya una vista de perfil/mis datos donde me diga con que email esta logueado. Y que haya un Historial ahi de los cambios que solo hizo esa persona "Mis Cambios". No puede ver cambios de otros usuarios, sino de si mismo. En esa vista tambien podra cambiar la contraseña. Y a repo https://github.com/DesApp-2026c2-Grupo-6/des-app-grupo6-casa-de-comidas en la rama dev buscar en pages perfil/ para tomar de ejemplo.
 
 #### Errores
 

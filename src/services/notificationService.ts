@@ -382,4 +382,29 @@ export async function enviarMailPrueba(asunto: string, cuerpoHtml: string, adjun
     throw new Error('No está configurado el notificador SMTP.');
   }
 }
+export async function enviarMailTransaccional(to: string, asunto: string, html: string) {
+  const { smtpHost, smtpPort, smtpUser, smtpPass } = config.notifier;
 
+  if (smtpHost && smtpUser) {
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: {
+        user: smtpUser,
+        pass: smtpPass,
+      }
+    });
+
+    const mailOptions: any = {
+      from: `"Soporte - 3F" <${smtpUser}>`,
+      to,
+      subject: asunto,
+      html
+    };
+
+    await transporter.sendMail(mailOptions);
+  } else {
+    throw new Error('No está configurado el notificador SMTP.');
+  }
+}
