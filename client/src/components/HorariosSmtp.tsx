@@ -184,23 +184,39 @@ export default function HorariosSmtp() {
             </button>
             <h3 className="text-lg font-bold text-dark mb-4 flex items-center gap-2">
               <Info size={20} className="text-primary" />
-              ¿Cómo funciona el Worker?
+              ¿Cómo funciona el envío automático (Worker)?
             </h3>
             
-            <div className="space-y-4 text-sm text-dark">
-              <p>
-                El sistema de envío de correos funciona mediante un proceso en segundo plano (<strong>Worker</strong>) que se ejecuta automáticamente.
+            <div className="space-y-3.5 text-sm text-dark">
+              <p className="text-muted leading-relaxed">
+                El sistema cuenta con un proceso automático inteligente que gestiona y reparte los envíos de todas las campañas sin requerir acción manual.
               </p>
+
               <div className="bg-background p-3 rounded-lg border border-border">
-                <h4 className="font-semibold text-primary mb-1">Intervalos y Envíos</h4>
+                <h4 className="font-semibold text-primary mb-1">⏱️ Activación cada 1 hora</h4>
                 <p className="text-muted leading-relaxed">
-                  El Worker procesa la cola de correos progresivamente para evitar bloqueos por SPAM, respetando las cuotas máximas y mínimas configuradas en las cuentas SMTP.
+                  Cada <strong>60 minutos</strong> el sistema se despierta, calcula cuántos correos están pendientes y distribuye una tanda segura de envíos entre las cuentas disponibles.
                 </p>
               </div>
+
               <div className="bg-background p-3 rounded-lg border border-border">
-                <h4 className="font-semibold text-primary mb-1">Rango Horario</h4>
+                <h4 className="font-semibold text-primary mb-1">🎯 Prioridad por Fecha de Finalización</h4>
                 <p className="text-muted leading-relaxed">
-                  Si un envío está programado pero la hora o fecha actual cae fuera de los días hábiles permitidos o dentro de un día excluido, el Worker <strong>pausará los envíos</strong> y retomará automáticamente en el próximo horario habilitado.
+                  Si hay varias campañas en curso, el sistema <strong>le da prioridad a la campaña que termina antes</strong> (fecha de fin más próxima), garantizando que las comunicaciones más urgentes salgan primero.
+                </p>
+              </div>
+
+              <div className="bg-background p-3 rounded-lg border border-border">
+                <h4 className="font-semibold text-primary mb-1">📅 Respeto de Horarios y Feriados</h4>
+                <p className="text-muted leading-relaxed">
+                  Los correos solo se despachan en la <strong>franja horaria y días seleccionados aquí</strong>. Si llega una hora no laboral o un día feriado/excluido, el sistema pausa los envíos y los reanuda automáticamente apenas comience el próximo horario permitido.
+                </p>
+              </div>
+
+              <div className="bg-background p-3 rounded-lg border border-border">
+                <h4 className="font-semibold text-primary mb-1">🛡️ Cuidado de Casillas (Antispam)</h4>
+                <p className="text-muted leading-relaxed">
+                  No envía todo de golpe: dosifica los correos respetando las cuotas de cada cuenta para evitar que los mensajes caigan en correo no deseado (Spam).
                 </p>
               </div>
             </div>
