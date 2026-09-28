@@ -13,6 +13,12 @@
 
 - [x] No se guarda en localstorage si eleji un archivo y el archivo si todavia no envie nada. Entre cargue todo, sali de /nueva volvi a entrar y aparece desactivado, cuando habia agregado un archivo
 
+- [] Posibilidad de poder tener dos links de inscripcion, ya que sule haber Inscripcion de provincia y de Nacion. EN ese caso, diferenciar con Nacion con colores Celeste y Blanco, y Provincia con colores Verde,Blanco
+
+- [] Mas a futuro, me gustaria que se puedan crear mails con un editor visual, donde puedas arrastrar y soltar los elementos. habria que hacer elementos prediseñados
+
+- [] Tambien varias plantillas, osea al entrar a Nueva Campaña, seleccionar plantilla, y la de este envio es una, pero podrian haber muchas mas, no solo para "rubros" o "inscripciones". Tambien que se puedan crear.
+
 #### Validacion estricta de CUIT
 
 - [x] **Validacion estrcita de CUIT**: el CUIT tiene que tener un formato estricto, que sea un numero de 11 digitos sin puntos ni guiones. Por lo que hay que agregar una validacion en la maquetacion del mail, para que no se pueda enviar un mail con un CUIT que no sea correcto. Solo la validacion matematica, niguna integracion con ARCA. TIene que ser claro el mensaje en Crear contacto para que si la persona pone un CUIT invalido se le diga claramente que esta mal y como debe ser.
@@ -45,7 +51,7 @@ Que haya una vista de perfil/mis datos donde me diga con que email esta logueado
 - [x] Las estadisticas al exportar se muestra el ID, no esta bueno que eso se vea
 
 - [x] Las estadisticas al exportar y no haber estadisticas, hay un ALERT feo HTML, ESTA PROHIBIDIMO ESO. Poner un modal que valla en linea con el estilo de la app.
-
+- [x] Que en Metricas y Rendimiento haya un incono de ayuda, igual al que hay en campañas que te explique los controles de las metricas y que ademas te explique que el exportar es segun las fechas que se tomaron del INPUT
 - [x] Los contactos al exportar no aparece el TIPO
 - [x] Los contactos al exportar: solo aparecen los filtrados, nose si es lo adecuado, o que directamente se exporten todos
 

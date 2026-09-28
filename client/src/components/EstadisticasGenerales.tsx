@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Send, Clock, CheckCircle2, Mail, RefreshCw, Download, Calendar, FilterX, BarChart3, Plus, AlertTriangle, X } from 'lucide-react';
+import { Send, Clock, CheckCircle2, Mail, RefreshCw, Download, Calendar, FilterX, BarChart3, Plus, AlertTriangle, X, HelpCircle, Info } from 'lucide-react';
 import { obtenerEstadisticasGlobales, exportarEstadisticasCampanas } from '../services/api';
 import type { GlobalStatsResult } from '../types/stats';
 import { RUBROS_LABELS } from '../data/rubros';
@@ -8,9 +8,9 @@ export default function EstadisticasGenerales() {
   const [stats, setStats] = useState<GlobalStatsResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastSync, setLastSync] = useState(new Date());
-  
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [showHelp, setShowHelp] = useState(false);
 
   const fetchStats = async () => {
     setLoading(true);
@@ -193,7 +193,7 @@ export default function EstadisticasGenerales() {
           <button
             onClick={handleExportCsv}
             disabled={loading}
-            className="flex items-center justify-center gap-2 bg-surface border border-border text-dark px-4 py-2 rounded-lg hover:bg-background transition-colors font-medium shadow-sm w-full sm:w-auto"
+            className="flex items-center justify-center gap-2 bg-surface border border-border text-dark px-4 py-2 h-[42px] rounded-lg hover:bg-background transition-colors font-medium shadow-sm w-full sm:w-auto"
           >
             <Download size={18} />
             Exportar CSV
@@ -201,13 +201,63 @@ export default function EstadisticasGenerales() {
           <button
             onClick={fetchStats}
             disabled={loading}
-            className="flex items-center justify-center gap-2 bg-surface border border-border text-dark px-4 py-2 rounded-lg hover:bg-background transition-colors font-medium shadow-sm w-full sm:w-auto"
+            className="flex items-center justify-center gap-2 bg-surface border border-border text-dark px-4 py-2 h-[42px] rounded-lg hover:bg-background transition-colors font-medium shadow-sm w-full sm:w-auto"
           >
             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
             Actualizar
           </button>
+          <button
+            onClick={() => setShowHelp(true)}
+            className="flex items-center justify-center gap-2 bg-surface text-dark border border-border px-3 py-2 h-[42px] rounded-lg hover:bg-background transition-colors font-medium shadow-sm w-full sm:w-auto"
+            title="Ayuda sobre Métricas"
+          >
+            <HelpCircle size={20} className="text-primary" />
+          </button>
         </div>
       </div>
+
+      {/* Modal de Ayuda */}
+      {showHelp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg p-6 border border-border relative animate-slide-up max-h-[90vh] overflow-y-auto">
+            <button 
+              onClick={() => setShowHelp(false)}
+              className="absolute top-4 right-4 text-muted hover:text-dark transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <h3 className="text-lg font-bold text-dark mb-4 flex items-center gap-2">
+              <Info size={20} className="text-primary" />
+              Acerca de Métricas y Rendimiento
+            </h3>
+            
+            <div className="space-y-4 text-sm text-dark">
+              <p>
+                En esta sección puedes consultar y exportar el resumen global de todas las campañas enviadas.
+              </p>
+              <div className="bg-background p-3 rounded-lg border border-border">
+                <h4 className="font-semibold text-primary mb-1">Filtros de Fecha</h4>
+                <p className="text-muted leading-relaxed">
+                  Los controles de fecha (Desde / Hasta) filtran las métricas para incluir <strong>únicamente</strong> los resultados de campañas creadas o enviadas en ese rango.
+                </p>
+              </div>
+              <div className="bg-background p-3 rounded-lg border border-border">
+                <h4 className="font-semibold text-primary mb-1">Exportar CSV</h4>
+                <p className="text-muted leading-relaxed">
+                  Al hacer clic en <strong>Exportar CSV</strong>, el archivo generado contendrá exactamente los datos calculados según las fechas seleccionadas. Si filtras por el último mes, el CSV solo contendrá métricas de ese mes.
+                </p>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => setShowHelp(false)}
+              className="mt-6 w-full px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary-dark transition-colors"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mb-8 gap-3 bg-surface p-4 rounded-xl border border-border shadow-sm flex-wrap">

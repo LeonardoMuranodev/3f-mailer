@@ -419,3 +419,30 @@ export async function marcarReporteResuelto(id: string): Promise<ApiResponse<any
   });
 }
 
+// ── HORARIOS SMTP ───────────────────────────────────────────────
+
+export async function obtenerHorariosSmtp(): Promise<ApiResponse<any>> {
+  return fetchApi(`${API_BASE}/api/horarios`);
+}
+
+export async function actualizarHorariosSmtp(data: { hora_inicio: string, hora_fin: string, dias_permitidos: number[] }): Promise<ApiResponse<any>> {
+  return fetchApi(`${API_BASE}/api/horarios`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function agregarFechaExcluida(data: { fecha: string, motivo?: string }): Promise<ApiResponse<any>> {
+  return fetchApi(`${API_BASE}/api/horarios/fechas`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function eliminarFechaExcluida(id: string): Promise<ApiResponse<any>> {
+  return fetchApi(`${API_BASE}/api/horarios/fechas/${id}`, {
+    method: 'DELETE',
+  });
+}

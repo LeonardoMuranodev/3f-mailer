@@ -12,8 +12,10 @@ import CuentasSmtp from './components/CuentasSmtp';
 import DirectorioContactos from './components/DirectorioContactos';
 import GestionUsuarios from './components/GestionUsuarios';
 import Soporte from './components/Soporte';
+import HorariosSmtp from './components/HorariosSmtp';
 import ThemeToggle from './components/ThemeToggle';
 import NotFound from './components/NotFound';
+import { Clock } from 'lucide-react';
 
 function App() {
   const location = useLocation();
@@ -34,14 +36,18 @@ function App() {
     { path: '/estadisticas', label: 'Estadísticas', icon: <BarChart3 size={18} /> },
     { path: '/contactos', label: 'Contactos', icon: <Users size={18} /> },
     { path: '/cuentas', label: 'Cuentas SMTP', icon: <Settings size={18} /> },
-    { path: '/soporte', label: 'Soporte', icon: <LifeBuoy size={18} /> },
   ];
 
-  if (user?.rol === 'desarrollador') {
-    // Reemplaza o agrega el menú de Usuarios. El usuario pidió mantener el ícono de usuarios para contactos y usar otro, o cambiar el de contactos.
-    // Lo más simple: mantener Users para contactos, y usar UserCircle2 o Cog/Users para el de Usuarios.
-    navLinks.push({ path: '/usuarios', label: 'Usuarios', icon: <Settings size={18} /> });
+  if (user?.rol === 'desarrollador' || user?.rol === 'encargada') {
+    navLinks.push({ path: '/horarios', label: 'Horarios SMTP', icon: <Clock size={18} /> });
   }
+
+  if (user?.rol === 'desarrollador') {
+    navLinks.push({ path: '/usuarios', label: 'Usuarios', icon: <UserCircle2 size={18} /> });
+  }
+
+  // Soporte siempre al final
+  navLinks.push({ path: '/soporte', label: 'Soporte', icon: <LifeBuoy size={18} /> });
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-dark transition-colors duration-300">
@@ -137,6 +143,10 @@ function App() {
           <Route 
             path="/usuarios" 
             element={user?.rol === 'desarrollador' ? <GestionUsuarios /> : <Navigate to="/" replace />} 
+          />
+          <Route 
+            path="/horarios" 
+            element={user?.rol === 'desarrollador' || user?.rol === 'encargada' ? <HorariosSmtp /> : <Navigate to="/" replace />} 
           />
           <Route path="/soporte" element={<Soporte />} />
           <Route path="*" element={<NotFound />} />

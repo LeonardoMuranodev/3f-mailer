@@ -15,8 +15,47 @@ const EJECUCIONES_DIARIAS = 9;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+async function verificarHorarioPermitido(): Promise<boolean> {
+  const { rows: config } = await dbPool.query('SELECT * FROM configuracion_horarios WHERE id = 1');
+  if (config.length === 0) return true; // Si no hay config, permite (fallback)
+  
+  const { hora_inicio, hora_fin, dias_permitidos } = config[0];
+  
+  // Date in Buenos Aires timezone
+  const now = new Date();
+  const bsasTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Argentina/Buenos_Aires' }));
+  
+  const currentDay = bsasTime.getDay() === 0 ? 7 : bsasTime.getDay(); // 1=Lunes, 7=Domingo
+  if (!dias_permitidos.includes(currentDay)) {
+    return false;
+  }
+  
+  const currentTime = bsasTime.getHours().toString().padStart(2, '0') + ':' + bsasTime.getMinutes().toString().padStart(2, '0');
+  if (currentTime < hora_inicio || currentTime > hora_fin) {
+    return false;
+  }
+
+  const hoyStr = bsasTime.getFullYear() + '-' + String(bsasTime.getMonth() + 1).padStart(2, '0') + '-' + String(bsasTime.getDate()).padStart(2, '0');
+  const { rows: feriados } = await dbPool.query('SELECT 1 FROM fechas_excluidas WHERE fecha = $1', [hoyStr]);
+  if (feriados.length > 0) {
+    return false;
+  }
+
+  return true;
+}
+
 export async function procesarCola(): Promise<void> {
   if (isWorkerRunning) return;
+
+  try {
+    const permitido = await verificarHorarioPermitido();
+    if (!permitido) {
+      console.log('Worker SMTP: Ejecución omitida. Fuera del horario permitido o día excluido.');
+      return;
+    }
+  } catch (error) {
+    console.error('Error al verificar horario permitido, procediendo con precaución:', error);
+  }
 
   // Verificar si la cuota global del día está agotada
   const hoy = new Date().toISOString().split('T')[0];

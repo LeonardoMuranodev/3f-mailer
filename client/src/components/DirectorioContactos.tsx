@@ -132,10 +132,7 @@ export default function DirectorioContactos() {
     setExportError(null);
     try {
       const res = await obtenerContactos({
-        limit: 999999,
-        busqueda: busqueda || undefined,
-        estado: estado === 'todos' || !estado ? undefined : estado,
-        rubro_id: rubroId === 'todos' || !rubroId ? undefined : rubroId
+        limit: 999999
       });
 
       if (!res.success || !res.data) {
