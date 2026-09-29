@@ -97,6 +97,19 @@ export async function crearContacto(data: CrearContactoInput): Promise<Contacto 
 }
 
 export async function actualizarContacto(id: string, data: ActualizarContactoInput): Promise<Contacto | null> {
+  // First, fetch the existing contact so we can merge its company details
+  const existingResult = await dbPool.query<Contacto>('SELECT * FROM contactos WHERE id = $1', [id]);
+  const existingContacto = existingResult.rows[0];
+  
+  if (!existingContacto) return null;
+
+  // Determinar empresa final
+  const finalEmpresaNombre = data.empresa_nombre !== undefined ? data.empresa_nombre : existingContacto.empresa_nombre;
+  const finalCuit = data.cuit !== undefined ? data.cuit : existingContacto.cuit;
+
+  // Upsert empresa (crea o reutiliza o valida)
+  const empresa_id = await upsertEmpresa(finalEmpresaNombre, finalCuit);
+
   // Whitelist explícita de campos permitidos para prevenir property injection
   const ALLOWED_FIELDS: ReadonlySet<string> = new Set([
     'email', 'empresa_nombre', 'cuit', 'rubro_id', 'tipo', 'estado',
@@ -114,7 +127,12 @@ export async function actualizarContacto(id: string, data: ActualizarContactoInp
     }
   }
 
-  if (fields.length === 0) return null;
+  // Siempre actualizamos el empresa_id si fue resuelto
+  fields.push(`empresa_id = $${paramIndex}`);
+  values.push(empresa_id);
+  paramIndex++;
+
+  if (fields.length === 0) return null; // Nunca será 0 por empresa_id
 
   fields.push(`actualizado_en = CURRENT_TIMESTAMP`);
 
@@ -169,17 +187,20 @@ export async function importarContactosCsv(buffer: Buffer): Promise<{ procesados
     const empresa = record.empresa || record.empresa_nombre || record.Empresa || null;
     const cuit = record.cuit || record.CUIT || null;
 
+    const empresa_id = await upsertEmpresa(empresa, cuit);
+
     const query = `
-      INSERT INTO contactos (email, empresa_nombre, cuit)
-      VALUES ($1, $2, $3)
+      INSERT INTO contactos (email, empresa_nombre, cuit, empresa_id)
+      VALUES ($1, $2, $3, $4)
       ON CONFLICT (email) DO UPDATE 
       SET 
         empresa_nombre = COALESCE(EXCLUDED.empresa_nombre, contactos.empresa_nombre),
         cuit = COALESCE(EXCLUDED.cuit, contactos.cuit),
+        empresa_id = COALESCE(EXCLUDED.empresa_id, contactos.empresa_id),
         actualizado_en = CURRENT_TIMESTAMP
     `;
     
-    await dbPool.query(query, [email, empresa, cuit]);
+    await dbPool.query(query, [email, empresa, cuit, empresa_id]);
     afectadas++;
   }
 

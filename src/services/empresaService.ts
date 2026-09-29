@@ -21,18 +21,17 @@ export async function upsertEmpresa(nombre: string | null | undefined, cuit: str
   // 1. Buscar por CUIT primero (más confiable)
   if (cuitLimpio) {
     const existing = await dbPool.query<Empresa>(
-      `SELECT id FROM empresas WHERE cuit = $1 LIMIT 1`,
+      `SELECT id, nombre FROM empresas WHERE cuit = $1 LIMIT 1`,
       [cuitLimpio]
     );
     if (existing.rows.length > 0) {
-      // Si encontró por CUIT, actualizar nombre si cambió
-      if (nombreLimpio) {
-        await dbPool.query(
-          `UPDATE empresas SET nombre = $1, actualizado_en = CURRENT_TIMESTAMP WHERE cuit = $2`,
-          [nombreLimpio, cuitLimpio]
-        );
+      const empresaEncontrada = existing.rows[0];
+      // Si el CUIT ya existe y el nombre ingresado difiere, no lo actualizamos silenciosamente.
+      // Arrojamos un error para advertir al usuario.
+      if (nombreLimpio && empresaEncontrada.nombre.toLowerCase().trim() !== nombreLimpio.toLowerCase().trim()) {
+        throw new Error(`El CUIT ${cuitLimpio} ya está asignado a la empresa "${empresaEncontrada.nombre}". Modifica el CUIT o usa el mismo nombre.`);
       }
-      return existing.rows[0].id;
+      return empresaEncontrada.id;
     }
   }
 

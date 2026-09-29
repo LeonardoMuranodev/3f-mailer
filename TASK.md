@@ -17,6 +17,22 @@
 
 - [] Sistema de Logs (en mi otra app use Pino y stack PLG) el tema aca es el uso del servidor, esto es en caso de que el proyecto escale.
 
+### Datos de prueba:
+
+Luego quiero que pongaas datos de pruebas para ir viendo todo lo relacionado a estadsiticas mas que nada
+
+Que estos datos si lo haces por seed solo en entorno de prueba, o nose si lo inyectas directo en La BD y lisyo
+
+Hace minimo 10 campañas, con minimo una de cada esta doferente, minimo 3 terminadas y una que salga en estadisticas al filtrar por año, otra por mes, otra por ultimos 7 dias. me referio a que estos datos tienn que cambiar cuando los voy tocando
+
+Tambien con Contactos invetados con difernte estados, funcionales y minimo 1 o 2 de cada error o por rebotado tambien iactivo.
+
+Las campañas que tengan algunas mail donde se hizo click etc
+
+SI podes usar flyer y/o adjuntos para algunas que esten en borrdor para ya verlas mejor
+
+Dame datos de pruebas de eso mas que nada. No hace falta datos de prueba de soporte, usuarios, cuentas SMTP
+
 #### DevOps y Despliegue (Go-Live)
 
 - [] **Despliegue Final:** Subir al repositorio Git corporativo (con VPN) y levantar el `docker-compose.yml` en el servidor de producción. Ya tengo el dominio disponible, tengo que configurar todo eso.

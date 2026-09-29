@@ -24,7 +24,11 @@ async function listar(req: Request, res: Response, next: NextFunction): Promise<
     const query = req.query as unknown as ListarContactosQueryType;
     const result = await listarContactos(query);
     sendSuccess(res, result);
-  } catch (err) {
+  } catch (err: any) {
+    if (err.message && err.message.includes('El CUIT')) {
+      sendError(res, 'BAD_REQUEST', err.message, 400);
+      return;
+    }
     next(err);
   }
 }
@@ -39,7 +43,11 @@ async function crear(req: Request, res: Response, next: NextFunction): Promise<v
     }
     await registrarAccion(req.user?.userId || null, 'CREAR', 'CONTACTO', contacto.id, { email: contacto.email });
     sendSuccess(res, contacto, 201);
-  } catch (err) {
+  } catch (err: any) {
+    if (err.message && err.message.includes('El CUIT')) {
+      sendError(res, 'BAD_REQUEST', err.message, 400);
+      return;
+    }
     next(err);
   }
 }
@@ -58,7 +66,11 @@ async function actualizar(req: Request, res: Response, next: NextFunction): Prom
 
     await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'CONTACTO', contacto.id, { email: contacto.email });
     sendSuccess(res, contacto);
-  } catch (err) {
+  } catch (err: any) {
+    if (err.message && err.message.includes('El CUIT')) {
+      sendError(res, 'BAD_REQUEST', err.message, 400);
+      return;
+    }
     next(err);
   }
 }
@@ -75,7 +87,11 @@ async function eliminar(req: Request, res: Response, next: NextFunction): Promis
 
     await registrarAccion(req.user?.userId || null, 'ELIMINAR', 'CONTACTO', contacto.id, { email: contacto.email });
     sendSuccess(res, contacto);
-  } catch (err) {
+  } catch (err: any) {
+    if (err.message && err.message.includes('El CUIT')) {
+      sendError(res, 'BAD_REQUEST', err.message, 400);
+      return;
+    }
     next(err);
   }
 }
@@ -85,7 +101,11 @@ async function bulkDelete(req: Request, res: Response, next: NextFunction): Prom
     const body = req.body as BulkDeleteBody;
     const eliminados = await eliminarContactosBulk(body.ids);
     sendSuccess(res, { count: eliminados });
-  } catch (err) {
+  } catch (err: any) {
+    if (err.message && err.message.includes('El CUIT')) {
+      sendError(res, 'BAD_REQUEST', err.message, 400);
+      return;
+    }
     next(err);
   }
 }
@@ -109,7 +129,11 @@ async function toggleEstado(req: Request, res: Response, next: NextFunction): Pr
 
     await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'CONTACTO', contacto.id, { nuevo_estado: estado });
     sendSuccess(res, contacto);
-  } catch (err) {
+  } catch (err: any) {
+    if (err.message && err.message.includes('El CUIT')) {
+      sendError(res, 'BAD_REQUEST', err.message, 400);
+      return;
+    }
     next(err);
   }
 }
@@ -123,7 +147,11 @@ async function importarCsv(req: Request, res: Response, next: NextFunction): Pro
 
     const resultado = await importarContactosCsv(req.file.buffer);
     sendSuccess(res, resultado);
-  } catch (err) {
+  } catch (err: any) {
+    if (err.message && err.message.includes('El CUIT')) {
+      sendError(res, 'BAD_REQUEST', err.message, 400);
+      return;
+    }
     next(err);
   }
 }
@@ -137,7 +165,11 @@ async function importarJson(req: Request, res: Response, next: NextFunction): Pr
     }
     const result = await importarContactosJson(contactos);
     sendSuccess(res, result, 200);
-  } catch (err) {
+  } catch (err: any) {
+    if (err.message && err.message.includes('El CUIT')) {
+      sendError(res, 'BAD_REQUEST', err.message, 400);
+      return;
+    }
     next(err);
   }
 }
