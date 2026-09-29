@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Routes, Route, useLocation, Link, Navigate } from 'react-router-dom';
-import { Mail, BarChart3, Users, Settings, LogOut, UserCircle2, AlertTriangle, LifeBuoy, Menu, X } from 'lucide-react';
+import { Mail, BarChart3, Users, Settings, LogOut, UserCircle2, AlertTriangle, LifeBuoy, Menu, X, ChevronDown } from 'lucide-react';
 import { useAuthStore } from './stores/authStore';
 import Login from './components/Login';
 import ForgotPassword from './pages/ForgotPassword';
@@ -123,13 +123,14 @@ function App() {
                 <Link 
                   to="/perfil" 
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-2 px-2 lg:px-0 hover:opacity-80 transition-opacity"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-transparent hover:border-border hover:bg-surface transition-all"
                 >
                   <UserCircle2 size={20} className="text-muted shrink-0" />
                   <div className="flex flex-col">
-                    <span className="text-sm font-semibold leading-tight">{user.nombre}</span>
+                    <span className="text-sm font-semibold leading-tight text-dark">{user.nombre}</span>
                     <span className="text-[10px] uppercase font-bold text-primary tracking-wider">{user.rol}</span>
                   </div>
+                  <ChevronDown size={14} className="text-muted ml-1 opacity-50 hidden sm:block" />
                 </Link>
                 <button 
                   onClick={() => {

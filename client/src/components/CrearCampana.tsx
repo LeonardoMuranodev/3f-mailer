@@ -179,10 +179,24 @@ export default function CrearCampana() {
 
       {/* Error message (solo errores, no éxito) */}
       {submitResult && !submitResult.success && (
-        <div className="mb-6">
+        <div className="mb-6" role="alert" aria-live="assertive">
           <AlertMessage
             type="error"
-            message={submitResult.message}
+            message={
+              Object.keys(errors).length > 0
+                ? `Te faltó revisar: ${Object.keys(errors).map(k => ({
+                    asunto: 'Asunto',
+                    cuerpo_html: 'Cuerpo del mensaje',
+                    link_inscripcion: 'Enlace de inscripción',
+                    link_nacion: 'Link Nación',
+                    link_provincia: 'Link Provincia',
+                    fecha_limite_envio: 'Fecha límite de envío',
+                    flyer: 'Flyer adjunto',
+                    flyer_url: 'Flyer adjunto',
+                    rubros_seleccionados: 'Rubros destinatarios',
+                  }[k] || k)).join(', ')}.`
+                : submitResult.message
+            }
             onClose={clearResult}
           />
         </div>
@@ -324,48 +338,46 @@ export default function CrearCampana() {
           {/* Fila 2: Primer Link y Fecha Límite */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Primer Link */}
-            <div>
-              {!form.usa_links_multiples ? (
-                <div>
-                  <label htmlFor="link_inscripcion" className="block text-base font-semibold text-dark mb-1.5">
-                    Link de inscripción <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="url"
-                    id="link_inscripcion"
-                    value={form.link_inscripcion}
-                    onChange={(e) => setField('link_inscripcion', e.target.value)}
-                    disabled={isSubmittedSuccessfully}
-                    className={`w-full px-4 py-2.5 bg-background border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
-                      errors.link_inscripcion
-                        ? 'border-danger focus:ring-danger/20 focus:border-danger'
-                        : 'border-border focus:ring-primary/20 focus:border-primary'
-                    } disabled:opacity-60 disabled:cursor-not-allowed`}
-                    placeholder="https://form.ejemplo.com"
-                  />
-                  {errors.link_inscripcion && <p className="text-danger text-sm mt-1.5">{errors.link_inscripcion}</p>}
-                </div>
-              ) : (
-                <div>
-                  <label htmlFor="link_nacion" className="block text-base font-semibold text-dark mb-1.5">
-                    Link Nación <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="url"
-                    id="link_nacion"
-                    value={form.link_nacion}
-                    onChange={(e) => setField('link_nacion', e.target.value)}
-                    disabled={isSubmittedSuccessfully}
-                    className={`w-full px-4 py-2.5 bg-background border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
-                      errors.link_nacion
-                        ? 'border-danger focus:ring-danger/20 focus:border-danger'
-                        : 'border-border focus:ring-primary/20 focus:border-primary'
-                    } disabled:opacity-60 disabled:cursor-not-allowed`}
-                    placeholder="https://form.nacion.com"
-                  />
-                  {errors.link_nacion && <p className="text-danger text-sm mt-1.5">{errors.link_nacion}</p>}
-                </div>
-              )}
+            <div className="relative overflow-hidden">
+              <div className={`transition-all duration-300 ease-in-out ${form.usa_links_multiples ? 'opacity-0 h-0 scale-y-95 absolute' : 'opacity-100 h-auto scale-y-100 relative'}`}>
+                <label htmlFor="link_inscripcion" className="block text-base font-semibold text-dark mb-1.5">
+                  Link de inscripción <span className="text-danger">*</span>
+                </label>
+                <input
+                  type="url"
+                  id="link_inscripcion"
+                  value={form.link_inscripcion}
+                  onChange={(e) => setField('link_inscripcion', e.target.value)}
+                  disabled={isSubmittedSuccessfully}
+                  className={`w-full px-4 py-2.5 bg-background border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
+                    errors.link_inscripcion
+                      ? 'border-danger focus:ring-danger/20 focus:border-danger'
+                      : 'border-border focus:ring-primary/20 focus:border-primary'
+                  } disabled:opacity-60 disabled:cursor-not-allowed`}
+                  placeholder="https://form.ejemplo.com"
+                />
+                {errors.link_inscripcion && <p className="text-danger text-sm mt-1.5">{errors.link_inscripcion}</p>}
+              </div>
+
+              <div className={`transition-all duration-300 ease-in-out ${!form.usa_links_multiples ? 'opacity-0 h-0 scale-y-95 absolute pointer-events-none' : 'opacity-100 h-auto scale-y-100 relative'}`}>
+                <label htmlFor="link_nacion" className="block text-base font-semibold text-dark mb-1.5">
+                  Link Nación <span className="text-danger">*</span>
+                </label>
+                <input
+                  type="url"
+                  id="link_nacion"
+                  value={form.link_nacion}
+                  onChange={(e) => setField('link_nacion', e.target.value)}
+                  disabled={isSubmittedSuccessfully}
+                  className={`w-full px-4 py-2.5 bg-background border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
+                    errors.link_nacion
+                      ? 'border-danger focus:ring-danger/20 focus:border-danger'
+                      : 'border-border focus:ring-primary/20 focus:border-primary'
+                  } disabled:opacity-60 disabled:cursor-not-allowed`}
+                  placeholder="https://form.nacion.com"
+                />
+                {errors.link_nacion && <p className="text-danger text-sm mt-1.5">{errors.link_nacion}</p>}
+              </div>
             </div>
 
             {/* Fecha límite */}
@@ -395,7 +407,7 @@ export default function CrearCampana() {
           </div>
 
           {/* Fila 3: Segundo Link (solo si múltiple) */}
-          {form.usa_links_multiples && (
+          <div className={`transition-all duration-300 ease-in-out origin-top overflow-hidden ${!form.usa_links_multiples ? 'opacity-0 max-h-0 mb-0' : 'opacity-100 max-h-[200px] mb-8'}`}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
                 <label htmlFor="link_provincia" className="block text-base font-semibold text-dark mb-1.5">
@@ -417,7 +429,7 @@ export default function CrearCampana() {
                 {errors.link_provincia && <p className="text-danger text-sm mt-1.5">{errors.link_provincia}</p>}
               </div>
             </div>
-          )}
+          </div>
 
           {/* Flyer */}
           <div>
