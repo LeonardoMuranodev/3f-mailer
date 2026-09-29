@@ -446,3 +446,14 @@ export async function eliminarFechaExcluida(id: string): Promise<ApiResponse<any
     method: 'DELETE',
   });
 }
+
+/**
+ * Restaura una campaña archivada.
+ */
+export async function desarchivarCampana(
+  id: string,
+): Promise<ApiResponse<{ message: string }>> {
+  return fetchApi<{ message: string }>(`${API_BASE}/api/campanas/${id}/desarchivar`, {
+    method: 'PATCH',
+  });
+}

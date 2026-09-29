@@ -65,6 +65,13 @@ campanaRouter.patch(
   campanaController.archivar,
 );
 
+// PATCH /api/campanas/:id/desarchivar — Restaurar campaña
+campanaRouter.patch(
+  '/:id/desarchivar',
+  requireRole(['desarrollador', 'encargada']),
+  campanaController.desarchivar,
+);
+
 // DELETE /api/campanas/:id — Eliminar campaña (hard delete)
 campanaRouter.delete(
   '/:id',

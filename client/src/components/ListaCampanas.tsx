@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, RotateCcw, CalendarIcon, Trash2, AlertTriangle, Archive, Info, HelpCircle, X, Edit3, CheckCircle2, Play, Pause } from 'lucide-react';
-import { listarCampanas, eliminarCampana, archivarCampana, eliminarCampanasMasivo, cambiarEstadoCampana } from '../services/api';
+import { Plus, Search, Filter, RotateCcw, CalendarIcon, Trash2, AlertTriangle, Archive, Info, HelpCircle, X, Edit3, CheckCircle2, Play, Pause, RefreshCcw } from 'lucide-react';
+import { listarCampanas, eliminarCampana, archivarCampana, desarchivarCampana, eliminarCampanasMasivo, cambiarEstadoCampana } from '../services/api';
 import type { CampanaResponse } from '../types/campana';
 import { usePermisos } from '../hooks/usePermisos';
 import { formatDate } from '../utils/formatDate';
@@ -15,6 +15,7 @@ const ESTADO_BADGE_CLASSES: Record<string, string> = {
   pausada: 'bg-orange-50 text-orange-700 border border-orange-200',
   completada: 'bg-green-50 text-green-700 border border-green-200',
   cancelada: 'bg-red-50 text-red-700 border border-red-200',
+  archivada: 'bg-gray-100 text-gray-700 border border-gray-300',
 };
 
 const ESTADO_LABELS: Record<string, string> = {
@@ -24,6 +25,7 @@ const ESTADO_LABELS: Record<string, string> = {
   pausada: 'Pausada',
   completada: 'Completada',
   cancelada: 'Cancelada',
+  archivada: 'Archivada',
 };
 
 export default function ListaCampanas() {
@@ -155,6 +157,17 @@ export default function ListaCampanas() {
       }
     } catch (error) {
       console.error('Error al archivar campaña:', error);
+    }
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      const res = await desarchivarCampana(id);
+      if (res.success) {
+        fetchCampanas();
+      }
+    } catch (error) {
+      console.error('Error al restaurar campaña:', error);
     }
   };
 
@@ -419,7 +432,7 @@ export default function ListaCampanas() {
                               <Play size={16} />
                             </button>
                           )}
-                          {puedeEliminar && (
+                          {puedeEliminar && estado !== 'archivada' && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -429,6 +442,18 @@ export default function ListaCampanas() {
                               title="Archivar campaña (oculta de la lista pero mantiene estadísticas)"
                             >
                               <Archive size={16} />
+                            </button>
+                          )}
+                          {puedeEditar && estado === 'archivada' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRestore(campana.id);
+                              }}
+                              className="p-1.5 text-muted hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                              title="Restaurar campaña archivada"
+                            >
+                              <RefreshCcw size={16} />
                             </button>
                           )}
                           {puedeEliminar && (

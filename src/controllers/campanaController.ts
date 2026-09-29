@@ -10,6 +10,7 @@ import {
   eliminarCampana,
   eliminarCampanasMasivo,
   archivarCampana,
+  desarchivarCampana,
 } from '../services/campanaService.js';
 import { enviarMailPrueba } from '../services/notificationService.js';
 import { sendSuccess, sendError } from '../utils/responseHandler.js';
@@ -192,6 +193,23 @@ async function archivar(req: Request, res: Response, next: NextFunction): Promis
   }
 }
 
+async function desarchivar(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const id = req.params.id as string;
+    const restaurado = await desarchivarCampana(id);
+    if (!restaurado) {
+      sendError(res, 'NOT_FOUND', 'Campaña no encontrada o no estaba archivada', 404);
+      return;
+    }
+    
+    await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'CAMPANA', id, { estado_nuevo: 'restaurada' });
+    
+    sendSuccess(res, { message: 'Campaña restaurada correctamente' });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function eliminarMasivo(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { ids } = req.body;
@@ -321,6 +339,7 @@ export const campanaController = {
   detalle,
   eliminar,
   archivar,
+  desarchivar,
   eliminarMasivo,
   enviarPrueba,
 };

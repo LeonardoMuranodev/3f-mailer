@@ -217,6 +217,15 @@ export async function archivarCampana(id: string): Promise<boolean> {
 }
 
 /**
+ * Desarchiva (restaura) una campaña, poniendo eliminado_en en NULL.
+ */
+export async function desarchivarCampana(id: string): Promise<boolean> {
+  const query = `UPDATE campanas SET eliminado_en = NULL WHERE id = $1 AND eliminado_en IS NOT NULL RETURNING id`;
+  const result = await dbPool.query(query, [id]);
+  return (result.rowCount ?? 0) > 0;
+}
+
+/**
  * Elimina una campaña y su cola de envíos asociada (Hard Delete).
  * Usar cuando se crea una campaña por error y no se quiere contabilizar.
  */
@@ -240,7 +249,7 @@ export async function obtenerCampanaPorId(
 /** Filtros opcionales para listar campañas */
 export interface ListarCampanasFiltros {
   asunto?: string;
-  estado?: EstadoCampana;
+  estado?: string;
   fecha_desde?: string;
   fecha_hasta?: string;
   page?: number;
@@ -270,12 +279,6 @@ export async function listarCampanas(
     paramIdx++;
   }
 
-  if (filtros.estado) {
-    conditions.push(`estado = $${paramIdx}`);
-    values.push(filtros.estado);
-    paramIdx++;
-  }
-
   if (filtros.fecha_desde) {
     conditions.push(`fecha_limite_envio >= $${paramIdx}`);
     values.push(filtros.fecha_desde);
@@ -288,8 +291,17 @@ export async function listarCampanas(
     paramIdx++;
   }
 
-  // Siempre excluir campañas borradas (soft delete)
-  conditions.push('eliminado_en IS NULL');
+  if (filtros.estado === 'archivada') {
+    conditions.push('eliminado_en IS NOT NULL');
+  } else {
+    if (filtros.estado) {
+      conditions.push(`estado = $${paramIdx}`);
+      values.push(filtros.estado);
+      paramIdx++;
+    }
+    // Siempre excluir campañas borradas (soft delete) a menos que se busquen explícitamente
+    conditions.push('eliminado_en IS NULL');
+  }
 
   const whereClause = conditions.length > 0
     ? `WHERE ${conditions.join(' AND ')}`

@@ -4,11 +4,21 @@
 
 - [] **Corrección CSS (Checkboxes/Selects):** Solucionar el padding de los iconos en listas desplegables y checkboxes.
 - [] **Refactor Visual Global:** Cambiar logo sin fondo, ajustar el `max-width` (ej: `max-w-6xl`) para mejor lectura en notebooks y refinar el CSS.
+- [] Y ademas, al agregar "Mi Actividad", siento que lo que dic Desarrollador en el nav, no me da la impresion de que es algo cliqueable. Habria que agregar ya sea o color o fondo o borde o lo que sea que se note que es un elemento cliqueable.
+- [] Habria que revisar toda la pagina y ver la accesibilidad
+
+#### Ayudas
+
+Ayudas en todas las vistas que faltan de como funciona el sistema con orientacion a logica de negocio para el usuario, no tecnicismos para el desarrollador
+
+nueva: que explique las funcionalidades de vista previa, mail de prueba, y como funciona el maquetado
+Contactos: que explique las manera de importar / exportar crear, editar etc
+Cuentas SMTP:que diga que esas cuentas que se pongan ahi se van a usar para el envio de los correos etc
 
 
 #### Recuperacion de archivados
 
-Agregar un Estado diferente que sea "Archivado" o "archivado" que al filtrar por eso, se muestren  los archivados que eran los que eliminamos logicamente
+Agregar un Estado diferente que sea "Archivado" o "archivado" que al filtrar por eso, se muestren  los archivados que eran los que eliminamos logicamente. O algun boton de recuperacion de archivados, la maera mas clara para el usuario
 
 #### Mejora de Crear Contacto
 
@@ -23,7 +33,7 @@ Al poner la Empresa y Cuit, me gustara que reutilice el nombre si ya exite la em
 - [] Preguntar datos de Direccion y Puestos para hacer una APP de ENVIO de mails inter-direccion (que sea para diferentes departamentos y/o direcciones). Habria que ver el tema de RLS, y ampliar roles o buscar manera de que, segun el departamento o dirección del usuario, solo pueda ver sus respectivas paginas.
     - [] Adenmas, perfeccionar DevOps para que aguante mas usuarios en simultaneo
 
-- []
+- [] Sistema de Logs (en mi otra app use Pino y stack PLG) el tema aca es el uso del servidor, esto es en caso de que el proyecto escale.
 
 #### DevOps y Despliegue (Go-Live)
 
