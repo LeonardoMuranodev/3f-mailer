@@ -3,13 +3,8 @@
 #### UX y Frontend (Pulido Visual)
 
 - [] **Corrección CSS (Checkboxes/Selects):** Solucionar el padding de los iconos en listas desplegables y checkboxes.
+- [] ** Checkbox personalizados: que no tengan el diseño por defecto, agregarle uno personalizado
 - [] **Refactor Visual Global:** Cambiar logo sin fondo, ajustar el `max-width` (ej: `max-w-6xl`) para mejor lectura en notebooks y refinar el CSS.
-- [] Y ademas, al agregar "Mi Actividad", siento que lo que dic Desarrollador en el nav, no me da la impresion de que es algo cliqueable. Habria que agregar ya sea o color o fondo o borde o lo que sea que se note que es un elemento cliqueable.
-- [] Habria que revisar toda la pagina y ver la accesibilidad
-
-#### Mejora de Crear Contacto
-
-[x] Al poner la Empresa y Cuit, me gustara que reutilice el nombre si ya exite la empresa. Lo mismo con el CUIT, que no sean diferentes en la Base de datos. Para que al filtrar sean iguales. Ademas me gustariaque te vaya sugiriendo a medida que vpy completando, las empresas que matchean con esas letras puestas y que al seleccionar se autocomplete, asi es mas facil para el usuario y ademas hace que no se equicoquen y matcheen mejor los datos
 
 #### A futuro
 

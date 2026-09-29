@@ -217,7 +217,7 @@ function App() {
 
       {/* ── Footer ────────────────────────────────────── */}
       <footer className="border-t border-border mt-auto py-6">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center text-muted text-sm font-medium">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 text-center text-muted text-sm font-medium">
           Desarrollado por el equipo de Tecno 3F
         </div>
       </footer>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Send, Clock, CheckCircle2, Mail, RefreshCw, Download, Calendar, FilterX, BarChart3, Plus, AlertTriangle, X, HelpCircle, Info } from 'lucide-react';
+import { Send, Clock, CheckCircle2, Mail, RefreshCw, Download, Calendar, FilterX, BarChart3, Plus, AlertTriangle, X, HelpCircle, Info, Eye, MousePointerClick } from 'lucide-react';
 import { obtenerEstadisticasGlobales, exportarEstadisticasCampanas } from '../services/api';
 import type { GlobalStatsResult } from '../types/stats';
 import { RUBROS_LABELS } from '../data/rubros';
@@ -326,49 +326,69 @@ export default function EstadisticasGenerales() {
       </div>
 
       {/* KPIs Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-surface p-6 rounded-xl border border-border shadow-sm flex items-center gap-4">
-          <div className="bg-secondary/10 p-3 rounded-lg text-secondary">
-            <Send size={28} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+        <div className="bg-surface p-5 rounded-xl border border-border shadow-sm flex items-center gap-3">
+          <div className="bg-dark/10 p-2.5 rounded-lg text-dark">
+            <Mail size={24} />
           </div>
           <div>
-            <p className="text-sm font-semibold text-muted">Correos Despachados</p>
-            <p className="text-2xl font-bold text-dark">{colaEnviados}</p>
+            <p className="text-xs font-semibold text-muted uppercase">Campañas</p>
+            <p className="text-xl font-bold text-dark">{totalCampanas}</p>
           </div>
         </div>
 
-        <div className="bg-surface p-6 rounded-xl border border-border shadow-sm flex items-center gap-4">
-          <div className="bg-warning/10 p-3 rounded-lg text-warning">
-            <Clock size={28} />
+        <div className="bg-surface p-5 rounded-xl border border-border shadow-sm flex items-center gap-3">
+          <div className="bg-secondary/10 p-2.5 rounded-lg text-secondary">
+            <Send size={24} />
           </div>
           <div>
-            <p className="text-sm font-semibold text-muted">Pendientes en Cola</p>
-            <p className="text-2xl font-bold text-dark">{colaPendientes}</p>
+            <p className="text-xs font-semibold text-muted uppercase">Despachados</p>
+            <p className="text-xl font-bold text-dark">{colaEnviados}</p>
           </div>
         </div>
 
-        <div className="bg-surface p-6 rounded-xl border border-border shadow-sm flex items-center gap-4">
-          <div className="bg-primary/10 p-3 rounded-lg text-primary">
-            <CheckCircle2 size={28} />
+        <div className="bg-surface p-5 rounded-xl border border-border shadow-sm flex items-center gap-3">
+          <div className="bg-warning/10 p-2.5 rounded-lg text-warning">
+            <Clock size={24} />
           </div>
           <div>
-            <p className="text-sm font-semibold text-muted">Tasa de Entrega</p>
-            <p className="text-2xl font-bold text-dark">{successRate}%</p>
+            <p className="text-xs font-semibold text-muted uppercase">Pendientes</p>
+            <p className="text-xl font-bold text-dark">{colaPendientes}</p>
           </div>
         </div>
 
-        <div className="bg-surface p-6 rounded-xl border border-border shadow-sm flex items-center gap-4">
-          <div className="bg-dark/10 p-3 rounded-lg text-dark">
-            <Mail size={28} />
+        <div className="bg-surface p-5 rounded-xl border border-border shadow-sm flex items-center gap-3">
+          <div className="bg-primary/10 p-2.5 rounded-lg text-primary">
+            <CheckCircle2 size={24} />
           </div>
           <div>
-            <p className="text-sm font-semibold text-muted">Total Campañas</p>
-            <p className="text-2xl font-bold text-dark">{totalCampanas}</p>
+            <p className="text-xs font-semibold text-muted uppercase">Tasa Entrega</p>
+            <p className="text-xl font-bold text-dark">{successRate}%</p>
+          </div>
+        </div>
+
+        <div className="bg-surface p-5 rounded-xl border border-border shadow-sm flex items-center gap-3">
+          <div className="bg-info/10 p-2.5 rounded-lg text-[#0ea5e9]">
+            <Eye size={24} />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-muted uppercase">Aperturas</p>
+            <p className="text-xl font-bold text-dark">{stats.aperturasTotales}</p>
+          </div>
+        </div>
+
+        <div className="bg-surface p-5 rounded-xl border border-border shadow-sm flex items-center gap-3">
+          <div className="bg-success/10 p-2.5 rounded-lg text-[#10b981]">
+            <MousePointerClick size={24} />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-muted uppercase">Clics</p>
+            <p className="text-xl font-bold text-dark">{stats.clicsTotales}</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Estado de Campañas */}
         <div className="bg-surface p-6 rounded-xl border border-border shadow-sm">
           <h2 className="text-lg font-bold text-dark mb-6 border-b border-border pb-2">Campañas por Estado</h2>
@@ -398,6 +418,68 @@ export default function EstadisticasGenerales() {
           </div>
         </div>
 
+
+        {/* Salud del Padrón y Distribución de Rebotes */}
+        <div className="bg-surface p-6 rounded-xl border border-border shadow-sm flex flex-col">
+          <h2 className="text-lg font-bold text-dark mb-6 border-b border-border pb-2">Salud del Padrón y Contactos</h2>
+          {stats.padron.length === 0 ? (
+            <p className="text-muted text-sm text-center py-4">No hay datos de contactos en la base de datos.</p>
+          ) : (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-8 flex-1">
+              {(() => {
+                const total = stats.padron.reduce((acc, curr) => acc + curr.count, 0);
+                const colors: Record<string, string> = {
+                  'funcional': '#3b82f6',
+                  'inactivo': '#64748b',
+                  'rebotado spam': '#ef4444',
+                  'rebotado inexistente': '#f59e0b',
+                  'rebotado desconocido': '#8b5cf6',
+                  'rebotado bandeja llena': '#10b981'
+                };
+                
+                let currentDeg = 0;
+                const conicStops = stats.padron.map(p => {
+                  const percentage = total > 0 ? (p.count / total) * 360 : 0;
+                  const color = colors[p.estado] || '#cbd5e1';
+                  const start = currentDeg;
+                  currentDeg += percentage;
+                  return `${color} ${start}deg ${currentDeg}deg`;
+                }).join(', ');
+
+                return (
+                  <>
+                    <div className="relative w-48 h-48 rounded-full flex items-center justify-center shadow-inner" style={{ background: `conic-gradient(${conicStops})` }}>
+                      <div className="w-32 h-32 bg-surface rounded-full flex flex-col items-center justify-center shadow-sm">
+                        <span className="text-2xl font-bold text-dark">{total}</span>
+                        <span className="text-xs text-muted font-medium">Contactos</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {stats.padron.map((p, i) => {
+                        const perc = total > 0 ? ((p.count / total) * 100).toFixed(1) : '0';
+                        return (
+                          <div key={i} className="flex items-center gap-2 text-sm">
+                            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: colors[p.estado] || '#cbd5e1' }}></span>
+                            <span className="font-medium text-dark capitalize">
+                              {p.estado === 'funcional' ? 'Contactos Activos' : 
+                               p.estado === 'rebotado spam' ? 'Marcados Spam' : 
+                               p.estado === 'rebotado inexistente' ? 'Mails Inexistentes' : 
+                               p.estado === 'rebotado desconocido' ? 'Rebotado Desc.' : 
+                               p.estado === 'rebotado bandeja llena' ? 'Bandeja Llena' : 
+                               p.estado}
+                            </span>
+                            <span className="text-muted ml-auto pl-4">{perc}%</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+        </div>
+
         {/* Distribución por Rubros */}
         <div className="bg-surface p-6 rounded-xl border border-border shadow-sm">
           <h2 className="text-lg font-bold text-dark mb-6 border-b border-border pb-2">Impacto por Rubro (Top 10)</h2>
@@ -405,17 +487,64 @@ export default function EstadisticasGenerales() {
             {stats.rubros.length === 0 ? (
               <p className="text-muted text-sm text-center py-4">No hay datos de rubros registrados en este periodo.</p>
             ) : (
-              stats.rubros.map((r, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-background transition-colors border border-transparent hover:border-border">
-                  <span className="text-sm font-medium text-dark flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs">{i+1}</span>
-                    {r.rubro === '__sin_rubro__' ? 'Sin Rubro' : RUBROS_LABELS[r.rubro] || r.rubro}
-                  </span>
-                  <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-md">{r.cantidad_envios} envíos</span>
-                </div>
-              ))
+              stats.rubros.map((r, i) => {
+                const totalRubros = stats.rubros.reduce((acc, curr) => acc + curr.cantidad_envios, 0);
+                const perc = totalRubros > 0 ? (r.cantidad_envios / totalRubros) * 100 : 0;
+                return (
+                  <div key={i} className="flex flex-col gap-1.5 p-3 rounded-lg hover:bg-background transition-colors border border-transparent hover:border-border">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-dark flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-md bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">{i+1}</span>
+                        {r.rubro === '__sin_rubro__' ? 'Sin Rubro' : RUBROS_LABELS[r.rubro] || r.rubro}
+                      </span>
+                      <span className="text-sm font-bold text-primary">{r.cantidad_envios} envíos</span>
+                    </div>
+                    <div className="w-full bg-background rounded-full h-1.5 overflow-hidden">
+                      <div className="bg-primary h-1.5 rounded-full" style={{ width: `${perc}%` }}></div>
+                    </div>
+                  </div>
+                )
+              })
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Ranking de Campañas */}
+      <div className="bg-surface p-6 rounded-xl border border-border shadow-sm mb-8 overflow-hidden">
+        <h2 className="text-lg font-bold text-dark mb-6 border-b border-border pb-2">Ranking de Campañas</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-primary text-white">
+                <th className="p-3 rounded-tl-lg font-medium text-sm whitespace-nowrap">Asunto del evento</th>
+                <th className="p-3 font-medium text-sm whitespace-nowrap">Efectividad</th>
+                <th className="p-3 font-medium text-sm whitespace-nowrap">Aperturas</th>
+                <th className="p-3 font-medium text-sm whitespace-nowrap">Total enviados</th>
+                <th className="p-3 rounded-tr-lg font-medium text-sm whitespace-nowrap">Total errores</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {stats.ranking.length === 0 ? (
+                <tr><td colSpan={5} className="p-8 text-center text-muted text-sm">No hay campañas registradas en este periodo</td></tr>
+              ) : (
+                stats.ranking.map((r, i) => {
+                  const efectividad = r.procesados > 0 ? ((r.exitosos / r.procesados) * 100).toFixed(1) : '0.0';
+                  return (
+                    <tr key={i} className="hover:bg-background transition-colors">
+                      <td className="p-3 text-sm text-dark font-medium max-w-[300px] truncate" title={r.asunto}>
+                        {i+1}. {r.asunto}
+                      </td>
+                      <td className="p-3 text-sm text-dark font-medium">{efectividad}%</td>
+                      <td className="p-3 text-sm text-dark">{r.aperturas} <span className="text-muted text-xs">({r.procesados > 0 ? ((r.aperturas/r.procesados)*100).toFixed(1) : '0'}%)</span></td>
+                      <td className="p-3 text-sm text-dark">{r.procesados}</td>
+                      <td className="p-3 text-sm text-danger font-medium">{r.fallidos}</td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
