@@ -372,8 +372,8 @@ export default function ListaCampanas() {
                         {rubrosDisplay}
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${ESTADO_BADGE_CLASSES[campana.estado] || 'bg-slate-100'}`}>
-                          {ESTADO_LABELS[campana.estado] || campana.estado}
+                        <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${estado === 'archivada' ? ESTADO_BADGE_CLASSES['archivada'] : (ESTADO_BADGE_CLASSES[campana.estado] || 'bg-slate-100')}`}>
+                          {estado === 'archivada' ? `Archivada (${ESTADO_LABELS[campana.estado] || campana.estado})` : (ESTADO_LABELS[campana.estado] || campana.estado)}
                         </span>
                       </td>
                       <td className="px-6 py-4">

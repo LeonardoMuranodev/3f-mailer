@@ -94,6 +94,7 @@ export async function procesarCola(): Promise<void> {
              (SELECT count(*) FROM cola_envios ce WHERE ce.campana_id = c.id AND ce.estado = 'pendiente') as pendientes
       FROM campanas c
       WHERE c.estado IN ('en_proceso', 'aprobada')
+        AND c.eliminado_en IS NULL
         AND EXISTS (SELECT 1 FROM cola_envios ce WHERE ce.campana_id = c.id AND ce.estado = 'pendiente')
       ORDER BY c.prioridad ASC, c.creado_en ASC
       LIMIT 1
