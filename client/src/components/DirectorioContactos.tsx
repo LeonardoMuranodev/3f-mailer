@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Filter, RotateCcw, Upload, Download, Plus, Edit2, Trash2, X, Building2, AlertCircle } from 'lucide-react';
+import { Search, Filter, RotateCcw, Upload, Download, Plus, Edit2, Trash2, X, Building2, AlertCircle, HelpCircle, Info } from 'lucide-react';
 import {
   obtenerContactos,
   crearContacto,
@@ -36,6 +36,7 @@ export default function DirectorioContactos() {
   // Modals state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<CrearContactoInput>({
     email: '',
@@ -360,21 +361,18 @@ export default function DirectorioContactos() {
             <Building2 className="w-7 h-7" />
             Directorio de Empresas y Contactos
           </h1>
-          <p className="text-muted mt-1 text-sm mb-4">
+          <p className="text-muted mt-1 text-sm">
             Gestioná la base de datos de empresas, filtrá por rubro y exportá contactos.
           </p>
-          <AlertMessage type="info" message={
-            <div>
-              <strong>¿Cómo organizar tu base?</strong>
-              <ul className="list-disc ml-5 mt-1 space-y-1 text-xs">
-                <li><strong>Sincronizar Sheets:</strong> Importa nuevos contactos desde el Excel en la nube de Google Sheets.</li>
-                <li><strong>Exportar/Importar CSV:</strong> Sirve para hacer respaldos masivos o migraciones.</li>
-                <li><strong>Estados:</strong> Los mails que reboten pasarán a estado "Rebotado" automáticamente, lo que evita que se les envíe en la próxima campaña.</li>
-              </ul>
-            </div>
-          } />
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto flex-wrap justify-end">
+          <button
+            onClick={() => setShowHelp(true)}
+            className="flex items-center justify-center gap-2 bg-surface text-dark border border-border px-3 py-2 rounded-lg hover:bg-background transition-colors font-medium shadow-sm w-full sm:w-auto"
+            title="Ayuda sobre el directorio"
+          >
+            <HelpCircle size={20} className="text-primary" />
+          </button>
           {puedeCrear && (
             <>
               <button
@@ -414,6 +412,53 @@ export default function DirectorioContactos() {
           </button>
         </div>
       </div>
+
+      {showHelp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg p-6 border border-border relative animate-slide-up max-h-[90vh] overflow-y-auto">
+            <button 
+              onClick={() => setShowHelp(false)}
+              className="absolute top-4 right-4 text-muted hover:text-dark transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <h3 className="text-lg font-bold text-dark mb-4 flex items-center gap-2">
+              <Info size={20} className="text-primary" />
+              ¿Cómo organizar tu base?
+            </h3>
+            
+            <div className="space-y-3.5 text-sm text-dark">
+              <div className="bg-background p-3 rounded-lg border border-border">
+                <h4 className="font-semibold text-primary mb-1">🔄 Sincronizar Sheets</h4>
+                <p className="text-muted leading-relaxed">
+                  Importa nuevos contactos desde el Excel en la nube de Google Sheets (Automático y manual).
+                </p>
+              </div>
+
+              <div className="bg-background p-3 rounded-lg border border-border">
+                <h4 className="font-semibold text-primary mb-1">📤 Exportar/Importar CSV</h4>
+                <p className="text-muted leading-relaxed">
+                  Sirve para hacer respaldos masivos o migraciones a otros sistemas de forma rápida.
+                </p>
+              </div>
+
+              <div className="bg-background p-3 rounded-lg border border-border">
+                <h4 className="font-semibold text-primary mb-1">🛡️ Estados (Rebotes)</h4>
+                <p className="text-muted leading-relaxed">
+                  Los correos que no existan o reboten pasarán a estado "Rebotado" automáticamente por el sistema, lo que evita que se les envíe en la próxima campaña cuidando la reputación de tu cuenta.
+                </p>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => setShowHelp(false)}
+              className="mt-6 w-full px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary-dark transition-colors"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
 
       {syncResult && (
         <div className="mb-6">

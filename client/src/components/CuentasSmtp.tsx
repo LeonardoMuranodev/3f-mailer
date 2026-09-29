@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Settings, Plus, Edit2, Trash2, Eye, EyeOff, Server, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Mail, Settings, Plus, Edit2, Trash2, Eye, EyeOff, Server, ToggleLeft, ToggleRight, HelpCircle, X, Info } from 'lucide-react';
 import {
   obtenerCuentasSmtp,
   crearCuentaSmtp,
@@ -18,6 +18,7 @@ export default function CuentasSmtp() {
 
   // Modal de Crear/Editar
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
     email: '',
@@ -177,18 +178,16 @@ export default function CuentasSmtp() {
               <span>correos disponibles hoy</span>
             </div>
           </div>
-          <AlertMessage type="info" message={
-            <div>
-              <strong>¿Para qué sirven estas cuentas?</strong>
-              <ul className="list-disc ml-5 mt-1 space-y-1 text-xs">
-                <li>Las cuentas configuradas aquí son las que se utilizarán "por detrás" para despachar los correos.</li>
-                <li>El sistema distribuye la carga automáticamente: usa una cuenta, luego otra, para evitar bloqueos por spam de Gmail.</li>
-                <li>Asegurate de generar una "Contraseña de aplicación" en tu cuenta de Google para poder conectarla.</li>
-              </ul>
-            </div>
-          } />
         </div>
-        {puedeCrear && (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto flex-wrap justify-end">
+          <button
+            onClick={() => setShowHelp(true)}
+            className="flex items-center justify-center gap-2 bg-surface text-dark border border-border px-3 py-2 rounded-lg hover:bg-background transition-colors font-medium shadow-sm w-full sm:w-auto"
+            title="Ayuda sobre las cuentas SMTP"
+          >
+            <HelpCircle size={20} className="text-primary" />
+          </button>
+          {puedeCrear && (
           <button
             onClick={openCrearModal}
             className="flex items-center justify-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors font-medium shadow-sm w-full md:w-auto"
@@ -196,8 +195,56 @@ export default function CuentasSmtp() {
             <Plus size={18} />
             Conectar Cuenta Gmail
           </button>
-        )}
+          )}
+        </div>
       </div>
+
+      {showHelp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg p-6 border border-border relative animate-slide-up max-h-[90vh] overflow-y-auto">
+            <button 
+              onClick={() => setShowHelp(false)}
+              className="absolute top-4 right-4 text-muted hover:text-dark transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <h3 className="text-lg font-bold text-dark mb-4 flex items-center gap-2">
+              <Info size={20} className="text-primary" />
+              ¿Para qué sirven estas cuentas?
+            </h3>
+            
+            <div className="space-y-3.5 text-sm text-dark">
+              <div className="bg-background p-3 rounded-lg border border-border">
+                <h4 className="font-semibold text-primary mb-1">🔧 Despacho de correos</h4>
+                <p className="text-muted leading-relaxed">
+                  Las cuentas configuradas aquí son las que se utilizarán "por detrás" para enviar los correos a los destinatarios.
+                </p>
+              </div>
+
+              <div className="bg-background p-3 rounded-lg border border-border">
+                <h4 className="font-semibold text-primary mb-1">⚖️ Distribución de Carga</h4>
+                <p className="text-muted leading-relaxed">
+                  El sistema distribuye la carga automáticamente: usa una cuenta, luego otra, y así sucesivamente para evitar bloqueos por spam de Gmail y cuidar la reputación.
+                </p>
+              </div>
+
+              <div className="bg-background p-3 rounded-lg border border-border">
+                <h4 className="font-semibold text-primary mb-1">🔑 Contraseña de Aplicación</h4>
+                <p className="text-muted leading-relaxed">
+                  Para conectar una cuenta de Google Workspace o Gmail gratuita, recordá generar una "Contraseña de aplicación" desde la configuración de seguridad de Google.
+                </p>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => setShowHelp(false)}
+              className="mt-6 w-full px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary-dark transition-colors"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-12 text-muted">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Mail, CheckCircle2, Save, Eye, ArrowLeft, Plus, List, FileText } from 'lucide-react';
+import { Mail, CheckCircle2, Save, Eye, ArrowLeft, Plus, List, FileText, HelpCircle, X, Info } from 'lucide-react';
 import { useCampanaStore, buildFormData } from '../stores/campanaStore';
 import TiptapEditor from './TiptapEditor';
 import FlyerUpload from './FlyerUpload';
@@ -11,6 +11,7 @@ import { enviarMailPruebaCampana, obtenerCampanaPorId } from '../services/api';
 export default function CrearCampana() {
   const navigate = useNavigate();
   const [isSendingTest, setIsSendingTest] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [conAdjunto, setConAdjunto] = useState(
     () => !!useCampanaStore.getState().adjuntoName || !!useCampanaStore.getState().form.adjunto_url
@@ -167,26 +168,72 @@ export default function CrearCampana() {
         </button>
       </div>
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-primary flex items-center gap-2">
-          <Mail className="text-primary" />
-          {id ? 'Editar Campaña' : 'Nueva Campaña de Correo'}
-        </h1>
-        <p className="text-muted mt-1 mb-4">
-          Completá los datos para armar el comunicado.
-        </p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-primary flex items-center gap-2">
+            <Mail className="text-primary" />
+            {id ? 'Editar Campaña' : 'Nueva Campaña de Correo'}
+          </h1>
+          <p className="text-muted mt-1">
+            Completá los datos para armar el comunicado.
+          </p>
+        </div>
         
-        <AlertMessage type="info" message={
-          <div>
-            <strong>¿Cómo funciona esta sección?</strong>
-            <ul className="list-disc ml-5 mt-1 space-y-1">
-              <li><strong>Maquetado:</strong> Redactá tu mensaje en el editor. Las imágenes y estilos que agregues se mantendrán tal cual en el correo final.</li>
-              <li><strong>Vista Previa:</strong> Antes de enviar o guardar, tocá en "Vista Previa" abajo de todo para ver exactamente cómo lo recibirá el destinatario en su celular o computadora.</li>
-              <li><strong>Mail de Prueba:</strong> Al enviar una prueba, te llegará un correo real a tu casilla para verificar que los links y adjuntos funcionen perfectamente.</li>
-            </ul>
-          </div>
-        } />
+        <button
+          onClick={() => setShowHelp(true)}
+          className="flex items-center justify-center gap-2 bg-surface text-dark border border-border px-3 py-2 rounded-lg hover:bg-background transition-colors font-medium shadow-sm"
+          title="Ayuda sobre la creación de campañas"
+        >
+          <HelpCircle size={20} className="text-primary" />
+        </button>
       </div>
+
+      {showHelp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg p-6 border border-border relative animate-slide-up max-h-[90vh] overflow-y-auto">
+            <button 
+              onClick={() => setShowHelp(false)}
+              className="absolute top-4 right-4 text-muted hover:text-dark transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <h3 className="text-lg font-bold text-dark mb-4 flex items-center gap-2">
+              <Info size={20} className="text-primary" />
+              ¿Cómo funciona esta sección?
+            </h3>
+            
+            <div className="space-y-3.5 text-sm text-dark">
+              <div className="bg-background p-3 rounded-lg border border-border">
+                <h4 className="font-semibold text-primary mb-1">✍️ Maquetado</h4>
+                <p className="text-muted leading-relaxed">
+                  Redactá tu mensaje en el editor. Las imágenes y estilos que agregues se mantendrán tal cual en el correo final.
+                </p>
+              </div>
+
+              <div className="bg-background p-3 rounded-lg border border-border">
+                <h4 className="font-semibold text-primary mb-1">👀 Vista Previa</h4>
+                <p className="text-muted leading-relaxed">
+                  Antes de enviar o guardar, tocá en "Vista Previa" (abajo de todo) para ver exactamente cómo lo recibirá el destinatario en su celular o computadora.
+                </p>
+              </div>
+
+              <div className="bg-background p-3 rounded-lg border border-border">
+                <h4 className="font-semibold text-primary mb-1">📩 Mail de Prueba</h4>
+                <p className="text-muted leading-relaxed">
+                  Al enviar una prueba, te llegará un correo real a tu casilla para verificar que los links y adjuntos funcionen perfectamente.
+                </p>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => setShowHelp(false)}
+              className="mt-6 w-full px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary-dark transition-colors"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Error message (solo errores, no éxito) */}
       {submitResult && !submitResult.success && (
