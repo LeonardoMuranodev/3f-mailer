@@ -7,7 +7,8 @@ import {
   eliminarContacto,
   eliminarContactosBulk,
   syncContactosSheets,
-  checkSyncStatus
+  checkSyncStatus,
+  buscarEmpresasApi
 } from '../services/api';
 import type { ContactoConRubro, CrearContactoInput } from '../types/contacto';
 import { RUBROS_LABELS, RUBROS_LIST } from '../data/rubros';
@@ -52,18 +53,24 @@ export default function DirectorioContactos() {
   // Autocompletado empresa
   const [empresasSugeridas, setEmpresasSugeridas] = useState<Array<{ id: string; nombre: string; cuit: string | null }>>([]);
   const [showEmpresaSugeridas, setShowEmpresaSugeridas] = useState(false);
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
   const buscarEmpresasSugeridas = async (q: string) => {
-    if (!q || q.length < 2) { setEmpresasSugeridas([]); setShowEmpresaSugeridas(false); return; }
+    if (!q || q.length < 2) { 
+      setEmpresasSugeridas([]); 
+      setShowEmpresaSugeridas(false); 
+      return; 
+    }
     try {
-      const token = localStorage.getItem('token');
-      const resp = await fetch(`${API_BASE}/empresas?q=${encodeURIComponent(q)}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await resp.json();
-      if (data.success) { setEmpresasSugeridas(data.data); setShowEmpresaSugeridas(data.data.length > 0); }
-    } catch { setEmpresasSugeridas([]); }
+      const res = await buscarEmpresasApi(q);
+      if (res.success && res.data) { 
+        setEmpresasSugeridas(res.data); 
+        setShowEmpresaSugeridas(res.data.length > 0); 
+      } else {
+        setEmpresasSugeridas([]);
+      }
+    } catch { 
+      setEmpresasSugeridas([]); 
+    }
   };
 
   // Confirm Delete

@@ -7,22 +7,9 @@
 - [] Y ademas, al agregar "Mi Actividad", siento que lo que dic Desarrollador en el nav, no me da la impresion de que es algo cliqueable. Habria que agregar ya sea o color o fondo o borde o lo que sea que se note que es un elemento cliqueable.
 - [] Habria que revisar toda la pagina y ver la accesibilidad
 
-#### Ayudas
-
-[x] Ayudas en todas las vistas que faltan de como funciona el sistema con orientacion a logica de negocio para el usuario, no tecnicismos para el desarrollador
-
-nueva: que explique las funcionalidades de vista previa, mail de prueba, y como funciona el maquetado
-Contactos: que explique las manera de importar / exportar crear, editar etc
-Cuentas SMTP:que diga que esas cuentas que se pongan ahi se van a usar para el envio de los correos etc
-
-
-#### Recuperacion de archivados
-
-Agregar un Estado diferente que sea "Archivado" o "archivado" que al filtrar por eso, se muestren  los archivados que eran los que eliminamos logicamente. O algun boton de recuperacion de archivados, la maera mas clara para el usuario
-
 #### Mejora de Crear Contacto
 
-Al poner la Empresa y Cuit, me gustara que reutilice el nombre si ya exite la empresa. Lo mismo con el CUIT, que no sean diferentes en la Base de datos. Para que al filtrar sean iguales. Ademas me gustariaque te vaya sugiriendo a medida que vpy completando, las empresas que matchean con esas letras puestas y que al seleccionar se autocomplete, asi es mas facil para el usuario y ademas hace que no se equicoquen y matcheen mejor los datos
+[x] Al poner la Empresa y Cuit, me gustara que reutilice el nombre si ya exite la empresa. Lo mismo con el CUIT, que no sean diferentes en la Base de datos. Para que al filtrar sean iguales. Ademas me gustariaque te vaya sugiriendo a medida que vpy completando, las empresas que matchean con esas letras puestas y que al seleccionar se autocomplete, asi es mas facil para el usuario y ademas hace que no se equicoquen y matcheen mejor los datos
 
 #### A futuro
 
