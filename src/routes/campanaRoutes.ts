@@ -35,7 +35,7 @@ campanaRouter.post(
 );
 
 // GET /api/campanas — Listar campañas
-campanaRouter.get('/', cache(15), campanaController.listar);
+campanaRouter.get('/', campanaController.listar);
 
 // GET /api/campanas/:id/detalle — Obtener campaña con estadísticas
 campanaRouter.get('/:id/detalle', cache(15), campanaController.detalle);
