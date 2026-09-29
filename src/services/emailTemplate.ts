@@ -12,8 +12,10 @@ const WHATSAPP_NUMBER = '5491140659649';
 const CONTACT_EMAIL = 'dpim3f@gmail.com';
 
 interface EmailTemplateData {
-  cuerpo_html: string;
+  cuerpo_html: string | null;
   link_inscripcion: string | null;
+  link_nacion: string | null;
+  link_provincia: string | null;
   flyer_url: string | null;
 }
 
@@ -25,17 +27,36 @@ interface EmailTemplateData {
  * (Gmail, Outlook, Yahoo, Apple Mail, etc.).
  */
 export function generarHtmlEmail(data: EmailTemplateData): string {
-  const { link_inscripcion, flyer_url } = data;
+  const { link_inscripcion, link_nacion, link_provincia, flyer_url } = data;
   // Defense in depth: sanitizar HTML incluso si ya fue sanitizado al crear la campaña
-  const cuerpo_html = DOMPurify.sanitize(data.cuerpo_html);
+  const cuerpo_html = data.cuerpo_html ? DOMPurify.sanitize(data.cuerpo_html) : '';
 
   // ── Sección botón CTA (condicional) ──
-  const botonHtml = link_inscripcion
-    ? `
+  let botonHtml = '';
+  if (link_nacion || link_provincia) {
+    // Modo botones múltiples (Nación/Provincia)
+    botonHtml = `
+    <div style="text-align:center;margin:10px 0 35px 0;background:#ffffff;">`;
+    
+    if (link_nacion) {
+      botonHtml += `
+      <a href="${escapeHtml(link_nacion)}" style="background-color:#75AADB;color:#ffffff !important;padding:16px 40px;text-decoration:none;font-weight:bold;border-radius:6px;display:inline-block;font-size:20px;box-shadow:0 3px 6px rgba(0,0,0,0.15);margin: 0 10px 10px 10px;">Inscripción Nación</a>`;
+    }
+    
+    if (link_provincia) {
+      botonHtml += `
+      <a href="${escapeHtml(link_provincia)}" style="background-color:#2E8B57;color:#ffffff !important;padding:16px 40px;text-decoration:none;font-weight:bold;border-radius:6px;display:inline-block;font-size:20px;box-shadow:0 3px 6px rgba(0,0,0,0.15);margin: 0 10px 10px 10px;">Inscripción Provincia</a>`;
+    }
+    
+    botonHtml += `
+    </div>`;
+  } else if (link_inscripcion) {
+    // Modo botón único
+    botonHtml = `
     <div style="text-align:center;margin:10px 0 35px 0;background:#ffffff;">
       <a href="${escapeHtml(link_inscripcion)}" style="background-color:#d85c37;color:#ffffff !important;padding:16px 40px;text-decoration:none;font-weight:bold;border-radius:6px;display:inline-block;font-size:20px;box-shadow:0 3px 6px rgba(0,0,0,0.15);">¡Inscribite!</a>
-    </div>`
-    : '';
+    </div>`;
+  }
 
   // ── Sección flyer (condicional) ──
   const flyerHtml = flyer_url
@@ -102,6 +123,8 @@ export function generarHtmlDesdeCampana(campana: Campana): string {
   return generarHtmlEmail({
     cuerpo_html: campana.cuerpo_html,
     link_inscripcion: campana.link_inscripcion,
+    link_nacion: campana.link_nacion,
+    link_provincia: campana.link_provincia,
     flyer_url: campana.flyer_url,
   });
 }

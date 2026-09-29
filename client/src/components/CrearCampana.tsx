@@ -49,12 +49,29 @@ export default function CrearCampana() {
         if (res.success && res.data) {
           const campana = res.data;
           setField('asunto', campana.asunto);
-          setHtmlContent(campana.cuerpo_html);
-          if (campana.link_inscripcion) setField('link_inscripcion', campana.link_inscripcion);
+          setHtmlContent(campana.cuerpo_html || '');
+          
+          if (campana.link_inscripcion) {
+            setField('link_inscripcion', campana.link_inscripcion);
+            setField('usa_links_multiples', false);
+          } else if (campana.link_nacion || campana.link_provincia) {
+            setField('usa_links_multiples', true);
+            if (campana.link_nacion) setField('link_nacion', campana.link_nacion);
+            if (campana.link_provincia) setField('link_provincia', campana.link_provincia);
+          }
+          
+          if (campana.flyer_url) {
+            setField('flyer_url', campana.flyer_url);
+            useCampanaStore.setState({ flyerPreview: campana.flyer_url });
+          }
+          
           if (campana.adjunto_url) {
             setField('adjunto_url', campana.adjunto_url);
             setConAdjunto(true);
+            const fileName = campana.adjunto_nombre_original || campana.adjunto_url.split('/').pop() || 'Archivo adjunto';
+            useCampanaStore.setState({ adjuntoName: fileName });
           }
+          
           if (campana.fecha_limite_envio) setField('fecha_limite_envio', campana.fecha_limite_envio.split('T')[0]);
           setField('prioridad', campana.prioridad);
           setField('para_todos_rubros', campana.para_todos_rubros);
@@ -79,10 +96,12 @@ export default function CrearCampana() {
     }
   }, [id, setField, setHtmlContent]);
 
-  // Guardar en localStorage cada vez que cambie 'form'
+  // Guardar en localStorage cada vez que cambie 'form' solo si no estamos editando
   useEffect(() => {
-    localStorage.setItem('draft_campana_data', JSON.stringify(form));
-  }, [form]);
+    if (!id) {
+      localStorage.setItem('draft_campana_data', JSON.stringify(form));
+    }
+  }, [form, id]);
 
   const handleCrearOtra = () => {
     reset();
@@ -140,7 +159,7 @@ export default function CrearCampana() {
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6">
       <div className="mb-6 flex items-center">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-muted hover:text-dark font-medium transition-colors bg-surface px-4 py-2 rounded-lg border border-border shadow-sm mr-4"
         >
           <ArrowLeft size={18} />
@@ -274,26 +293,79 @@ export default function CrearCampana() {
             <TiptapEditor />
           </div>
 
+          {/* Fila 1: Toggle de Inscripción Múltiple */}
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  className="sr-only"
+                  checked={form.usa_links_multiples}
+                  onChange={(e) => {
+                    setField('usa_links_multiples', e.target.checked);
+                    if (e.target.checked) {
+                      setField('link_inscripcion', '');
+                    } else {
+                      setField('link_nacion', '');
+                      setField('link_provincia', '');
+                    }
+                  }}
+                  disabled={isSubmittedSuccessfully}
+                />
+                <div className={`block w-11 h-6 rounded-full transition-colors ${form.usa_links_multiples ? 'bg-primary' : 'bg-border'}`}></div>
+                <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${form.usa_links_multiples ? 'transform translate-x-5' : ''}`}></div>
+              </div>
+              <div className="text-base font-semibold text-dark group-hover:text-primary transition-colors select-none">
+                Inscripción múltiple (Nación/Provincia)
+              </div>
+            </label>
+          </div>
+
+          {/* Fila 2: Primer Link y Fecha Límite */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Link de inscripción */}
+            {/* Primer Link */}
             <div>
-              <label htmlFor="link_inscripcion" className="block text-base font-semibold text-dark mb-1.5">
-                Link de inscripción <span className="text-danger">*</span>
-              </label>
-              <input
-                type="url"
-                id="link_inscripcion"
-                value={form.link_inscripcion}
-                onChange={(e) => setField('link_inscripcion', e.target.value)}
-                disabled={isSubmittedSuccessfully}
-                className={`w-full px-4 py-2.5 bg-background border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
-                  errors.link_inscripcion
-                    ? 'border-danger focus:ring-danger/20 focus:border-danger'
-                    : 'border-border focus:ring-primary/20 focus:border-primary'
-                } disabled:opacity-60 disabled:cursor-not-allowed`}
-                placeholder="https://form.ejemplo.com"
-              />
-              {errors.link_inscripcion && <p className="text-danger text-sm mt-1.5">{errors.link_inscripcion}</p>}
+              {!form.usa_links_multiples ? (
+                <div>
+                  <label htmlFor="link_inscripcion" className="block text-base font-semibold text-dark mb-1.5">
+                    Link de inscripción <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="url"
+                    id="link_inscripcion"
+                    value={form.link_inscripcion}
+                    onChange={(e) => setField('link_inscripcion', e.target.value)}
+                    disabled={isSubmittedSuccessfully}
+                    className={`w-full px-4 py-2.5 bg-background border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
+                      errors.link_inscripcion
+                        ? 'border-danger focus:ring-danger/20 focus:border-danger'
+                        : 'border-border focus:ring-primary/20 focus:border-primary'
+                    } disabled:opacity-60 disabled:cursor-not-allowed`}
+                    placeholder="https://form.ejemplo.com"
+                  />
+                  {errors.link_inscripcion && <p className="text-danger text-sm mt-1.5">{errors.link_inscripcion}</p>}
+                </div>
+              ) : (
+                <div>
+                  <label htmlFor="link_nacion" className="block text-base font-semibold text-dark mb-1.5">
+                    Link Nación <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="url"
+                    id="link_nacion"
+                    value={form.link_nacion}
+                    onChange={(e) => setField('link_nacion', e.target.value)}
+                    disabled={isSubmittedSuccessfully}
+                    className={`w-full px-4 py-2.5 bg-background border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
+                      errors.link_nacion
+                        ? 'border-danger focus:ring-danger/20 focus:border-danger'
+                        : 'border-border focus:ring-primary/20 focus:border-primary'
+                    } disabled:opacity-60 disabled:cursor-not-allowed`}
+                    placeholder="https://form.nacion.com"
+                  />
+                  {errors.link_nacion && <p className="text-danger text-sm mt-1.5">{errors.link_nacion}</p>}
+                </div>
+              )}
             </div>
 
             {/* Fecha límite */}
@@ -321,6 +393,31 @@ export default function CrearCampana() {
               {errors.fecha_limite_envio && <p className="text-danger text-sm mt-1.5">{errors.fecha_limite_envio}</p>}
             </div>
           </div>
+
+          {/* Fila 3: Segundo Link (solo si múltiple) */}
+          {form.usa_links_multiples && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <label htmlFor="link_provincia" className="block text-base font-semibold text-dark mb-1.5">
+                  Link Provincia <span className="text-danger">*</span>
+                </label>
+                <input
+                  type="url"
+                  id="link_provincia"
+                  value={form.link_provincia}
+                  onChange={(e) => setField('link_provincia', e.target.value)}
+                  disabled={isSubmittedSuccessfully}
+                  className={`w-full px-4 py-2.5 bg-background border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
+                    errors.link_provincia
+                      ? 'border-danger focus:ring-danger/20 focus:border-danger'
+                      : 'border-border focus:ring-primary/20 focus:border-primary'
+                  } disabled:opacity-60 disabled:cursor-not-allowed`}
+                  placeholder="https://form.provincia.com"
+                />
+                {errors.link_provincia && <p className="text-danger text-sm mt-1.5">{errors.link_provincia}</p>}
+              </div>
+            </div>
+          )}
 
           {/* Flyer */}
           <div>

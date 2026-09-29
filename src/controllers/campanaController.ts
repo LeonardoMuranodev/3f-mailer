@@ -44,8 +44,11 @@ async function crear(req: Request, _res: Response, next: NextFunction): Promise<
 
     const cuerpo_html = body.cuerpo_html ? DOMPurify.sanitize(body.cuerpo_html) : undefined;
     
-    const campanaData = { ...body, flyer_url, adjunto_url };
+    const campanaData: any = { ...body, flyer_url, adjunto_url };
     if (cuerpo_html) campanaData.cuerpo_html = cuerpo_html;
+    if (adjuntoFile) {
+      campanaData.adjunto_nombre_original = adjuntoFile.originalname;
+    }
 
     const campana = await crearCampana(campanaData);
     
@@ -212,7 +215,7 @@ import type { Campana } from '../types/campana.js';
 
 async function enviarPrueba(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { asunto, cuerpo_html, link_inscripcion, flyer_url, adjunto_url } = req.body;
+    const { asunto, cuerpo_html, link_inscripcion, link_nacion, link_provincia, flyer_url, adjunto_url } = req.body;
     if (!asunto || !cuerpo_html) {
       sendError(res, 'BAD_REQUEST', 'Faltan campos obligatorios para la prueba (asunto, cuerpo_html)', 400);
       return;
@@ -236,8 +239,11 @@ async function enviarPrueba(req: Request, res: Response, next: NextFunction): Pr
       asunto,
       cuerpo_html,
       link_inscripcion: link_inscripcion || null,
+      link_nacion: link_nacion || null,
+      link_provincia: link_provincia || null,
       flyer_url: flyerUrlFinal,
       adjunto_url: adjuntoUrlFinal,
+      adjunto_nombre_original: null,
       estado: 'borrador',
       fecha_limite_envio: '',
       prioridad: 'media',
@@ -280,9 +286,12 @@ async function actualizar(req: Request, res: Response, next: NextFunction): Prom
 
     const cuerpo_html = body.cuerpo_html ? DOMPurify.sanitize(body.cuerpo_html) : undefined;
     
-    const campanaData = { ...body };
+    const campanaData: any = { ...body };
     if (flyer_url !== undefined) campanaData.flyer_url = flyer_url;
     if (adjunto_url !== undefined) campanaData.adjunto_url = adjunto_url;
+    if (adjuntoFile) {
+      campanaData.adjunto_nombre_original = adjuntoFile.originalname;
+    }
     if (cuerpo_html) campanaData.cuerpo_html = cuerpo_html;
 
     const campana = await actualizarCampana(id, campanaData);

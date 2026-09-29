@@ -21,8 +21,11 @@ export async function crearCampana(data: CrearCampanaInput): Promise<Campana> {
     asunto,
     cuerpo_html,
     link_inscripcion = null,
+    link_nacion = null,
+    link_provincia = null,
     flyer_url = null,
     adjunto_url = null,
+    adjunto_nombre_original = null,
     fecha_limite_envio,
     prioridad = 'alta',
     para_todos_rubros = true,
@@ -31,19 +34,34 @@ export async function crearCampana(data: CrearCampanaInput): Promise<Campana> {
 
   const query = `
     INSERT INTO campanas
-      (asunto, cuerpo_html, link_inscripcion, flyer_url, adjunto_url,
+      (asunto, cuerpo_html, link_inscripcion, link_nacion, link_provincia, flyer_url, adjunto_url, adjunto_nombre_original,
        fecha_limite_envio, prioridad, para_todos_rubros, rubros_seleccionados)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
     RETURNING *;
   `;
 
+  // XOR Logic for links
+  let finalLinkInscripcion = link_inscripcion || null;
+  let finalLinkNacion = link_nacion || null;
+  let finalLinkProvincia = link_provincia || null;
+
+  if (finalLinkNacion || finalLinkProvincia) {
+    finalLinkInscripcion = null;
+  } else if (finalLinkInscripcion) {
+    finalLinkNacion = null;
+    finalLinkProvincia = null;
+  }
+
   const values = [
     asunto,
-    cuerpo_html,
-    link_inscripcion,
-    flyer_url,
-    adjunto_url,
-    fecha_limite_envio,
+    cuerpo_html || null,
+    finalLinkInscripcion,
+    finalLinkNacion,
+    finalLinkProvincia,
+    flyer_url || null,
+    adjunto_url || null,
+    adjunto_nombre_original || null,
+    fecha_limite_envio || null,
     prioridad,
     para_todos_rubros,
     JSON.stringify(rubros_seleccionados),
@@ -69,23 +87,49 @@ export async function actualizarCampana(id: string, data: Partial<CrearCampanaIn
   }
   if (data.cuerpo_html !== undefined) {
     updates.push(`cuerpo_html = $${paramIdx++}`);
-    values.push(data.cuerpo_html);
+    values.push(data.cuerpo_html || null);
   }
-  if (data.link_inscripcion !== undefined) {
-    updates.push(`link_inscripcion = $${paramIdx++}`);
-    values.push(data.link_inscripcion);
+  
+  // Si envían algún link, procesamos la exclusividad (XOR)
+  if (data.link_inscripcion !== undefined || data.link_nacion !== undefined || data.link_provincia !== undefined) {
+    const linkInscripcion = data.link_inscripcion !== undefined ? data.link_inscripcion : null;
+    const linkNacion = data.link_nacion !== undefined ? data.link_nacion : null;
+    const linkProvincia = data.link_provincia !== undefined ? data.link_provincia : null;
+
+    if (linkNacion || linkProvincia) {
+      updates.push(`link_inscripcion = $${paramIdx++}`);
+      values.push(null);
+      updates.push(`link_nacion = $${paramIdx++}`);
+      values.push(linkNacion || null);
+      updates.push(`link_provincia = $${paramIdx++}`);
+      values.push(linkProvincia || null);
+    } else {
+      updates.push(`link_inscripcion = $${paramIdx++}`);
+      values.push(linkInscripcion || null);
+      updates.push(`link_nacion = $${paramIdx++}`);
+      values.push(null);
+      updates.push(`link_provincia = $${paramIdx++}`);
+      values.push(null);
+    }
   }
+
   if (data.flyer_url !== undefined) {
     updates.push(`flyer_url = $${paramIdx++}`);
-    values.push(data.flyer_url);
+    values.push(data.flyer_url || null);
   }
   if (data.adjunto_url !== undefined) {
     updates.push(`adjunto_url = $${paramIdx++}`);
-    values.push(data.adjunto_url);
+    values.push(data.adjunto_url || null);
+  }
+  // @ts-ignore
+  if (data.adjunto_nombre_original !== undefined) {
+    updates.push(`adjunto_nombre_original = $${paramIdx++}`);
+    // @ts-ignore
+    values.push(data.adjunto_nombre_original || null);
   }
   if (data.fecha_limite_envio !== undefined) {
     updates.push(`fecha_limite_envio = $${paramIdx++}`);
-    values.push(data.fecha_limite_envio);
+    values.push(data.fecha_limite_envio || null);
   }
   if (data.prioridad !== undefined) {
     updates.push(`prioridad = $${paramIdx++}`);
@@ -126,6 +170,17 @@ export async function cambiarEstadoCampana(
   id: string,
   nuevoEstado: string,
 ): Promise<Campana | null> {
+  if (nuevoEstado === 'aprobada') {
+    const campanaActual = await obtenerCampanaPorId(id);
+    if (!campanaActual) throw new Error('Campaña no encontrada');
+    if (!campanaActual.cuerpo_html || campanaActual.cuerpo_html.trim() === '') {
+      throw new Error('No se puede aprobar una campaña sin contenido del correo.');
+    }
+    if (!campanaActual.fecha_limite_envio) {
+      throw new Error('No se puede aprobar una campaña sin fecha límite de envío.');
+    }
+  }
+
   const query = `
     UPDATE campanas
     SET estado = $1, actualizado_en = CURRENT_TIMESTAMP

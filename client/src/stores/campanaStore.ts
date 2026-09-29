@@ -113,7 +113,10 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
     // Validar con Zod de forma laxa
     const validationErrors = validarBorrador(form);
     if (validationErrors) {
-      set({ errors: validationErrors });
+      set({ 
+        errors: validationErrors,
+        submitResult: { success: false, message: 'Revisa los campos marcados en rojo.' }
+      });
       return;
     }
 
@@ -139,10 +142,17 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
           },
         });
       } else {
+        const errorMsg = res.error?.message ?? 'Error al guardar la campaña.';
+        const fieldErrors = res.error?.details?.reduce((acc: Record<string, string>, curr: any) => {
+          acc[curr.field] = curr.message;
+          return acc;
+        }, {}) || {};
+        
         set({
+          errors: fieldErrors,
           submitResult: {
             success: false,
-            message: res.error?.message ?? 'Error al guardar la campaña.',
+            message: errorMsg,
           },
         });
       }
@@ -160,7 +170,10 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
     // Validar con Zod
     const validationErrors = validarFormulario(form);
     if (validationErrors) {
-      set({ errors: validationErrors });
+      set({ 
+        errors: validationErrors,
+        submitResult: { success: false, message: 'Revisa los campos marcados en rojo.' }
+      });
       return;
     }
 
@@ -200,10 +213,17 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
           },
         });
       } else {
+        const errorMsg = approveRes.error?.message ?? 'La campaña se creó pero no se pudo aprobar.';
+        const fieldErrors = approveRes.error?.details?.reduce((acc: Record<string, string>, curr: any) => {
+          acc[curr.field] = curr.message;
+          return acc;
+        }, {}) || {};
+        
         set({
+          errors: fieldErrors,
           submitResult: {
             success: false,
-            message: approveRes.error?.message ?? 'La campaña se creó pero no se pudo aprobar.',
+            message: errorMsg,
           },
         });
       }
@@ -228,6 +248,12 @@ export function buildFormData(form: CampanaFormData, flyer: File | null, adjunto
 
   if (form.link_inscripcion) {
     fd.append('link_inscripcion', form.link_inscripcion);
+  }
+  if (form.link_nacion) {
+    fd.append('link_nacion', form.link_nacion);
+  }
+  if (form.link_provincia) {
+    fd.append('link_provincia', form.link_provincia);
   }
 
   if (flyer) {

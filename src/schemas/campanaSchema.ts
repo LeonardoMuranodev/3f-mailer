@@ -35,15 +35,30 @@ export const crearCampanaSchema = z.object({
     .max(255, 'El asunto no puede exceder 255 caracteres'),
 
   cuerpo_html: z
-    .string({ message: 'El cuerpo HTML es obligatorio' })
+    .string()
     .trim()
-    .min(1, 'El cuerpo HTML no puede estar vacío')
-    .transform((html) => DOMPurify.sanitize(html)),
+    .transform((html) => DOMPurify.sanitize(html))
+    .optional()
+    .or(z.literal('')),
 
   link_inscripcion: z
     .string()
     .trim()
     .url('El link de inscripción debe ser una URL válida')
+    .optional()
+    .or(z.literal('')),
+
+  link_nacion: z
+    .string()
+    .trim()
+    .url('El link de Nación debe ser una URL válida')
+    .optional()
+    .or(z.literal('')),
+
+  link_provincia: z
+    .string()
+    .trim()
+    .url('El link de Provincia debe ser una URL válida')
     .optional()
     .or(z.literal('')),
 
@@ -58,16 +73,19 @@ export const crearCampanaSchema = z.object({
     .optional(),
 
   fecha_limite_envio: z
-    .string({ message: 'La fecha límite de envío es obligatoria' })
+    .string()
     .trim()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe tener formato YYYY-MM-DD')
+    .optional()
+    .or(z.literal(''))
     .refine((val) => {
+      if (!val) return true;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(val)) return false;
       const hoy = new Date();
       // Ajustar por zona horaria de Argentina (-03:00)
       hoy.setHours(hoy.getHours() - 3);
       const hoyStr = hoy.toISOString().split('T')[0];
       return val > hoyStr;
-    }, 'La fecha debe ser estrictamente posterior al día de hoy'),
+    }, 'La fecha debe tener formato YYYY-MM-DD y ser posterior al día de hoy'),
 
   prioridad: z
     .enum(['alta', 'media', 'baja'], {
