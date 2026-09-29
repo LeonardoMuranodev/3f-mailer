@@ -360,9 +360,19 @@ export default function DirectorioContactos() {
             <Building2 className="w-7 h-7" />
             Directorio de Empresas y Contactos
           </h1>
-          <p className="text-muted mt-1 text-sm">
+          <p className="text-muted mt-1 text-sm mb-4">
             Gestioná la base de datos de empresas, filtrá por rubro y exportá contactos.
           </p>
+          <AlertMessage type="info" message={
+            <div>
+              <strong>¿Cómo organizar tu base?</strong>
+              <ul className="list-disc ml-5 mt-1 space-y-1 text-xs">
+                <li><strong>Sincronizar Sheets:</strong> Importa nuevos contactos desde el Excel en la nube de Google Sheets.</li>
+                <li><strong>Exportar/Importar CSV:</strong> Sirve para hacer respaldos masivos o migraciones.</li>
+                <li><strong>Estados:</strong> Los mails que reboten pasarán a estado "Rebotado" automáticamente, lo que evita que se les envíe en la próxima campaña.</li>
+              </ul>
+            </div>
+          } />
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto flex-wrap justify-end">
           {puedeCrear && (

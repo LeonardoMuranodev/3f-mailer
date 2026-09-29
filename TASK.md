@@ -9,7 +9,7 @@
 
 #### Ayudas
 
-Ayudas en todas las vistas que faltan de como funciona el sistema con orientacion a logica de negocio para el usuario, no tecnicismos para el desarrollador
+[x] Ayudas en todas las vistas que faltan de como funciona el sistema con orientacion a logica de negocio para el usuario, no tecnicismos para el desarrollador
 
 nueva: que explique las funcionalidades de vista previa, mail de prueba, y como funciona el maquetado
 Contactos: que explique las manera de importar / exportar crear, editar etc

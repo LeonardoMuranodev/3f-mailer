@@ -99,7 +99,7 @@ function App() {
                   key={link.path}
                   to={link.path}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 lg:px-2.5 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap
+                  className={`flex items-center gap-1.5 px-3 lg:px-2 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap
                     ${isActive 
                       ? 'bg-primary/10 text-primary' 
                       : 'text-muted hover:bg-background hover:text-dark'

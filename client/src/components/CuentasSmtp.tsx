@@ -167,7 +167,7 @@ export default function CuentasSmtp() {
           <h1 className="text-2xl font-bold text-primary flex items-center gap-2">
             Cuentas SMTP y Capacidad de Envío
           </h1>
-          <div className="text-muted mt-1.5 text-sm flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+          <div className="text-muted mt-1.5 text-sm flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-4">
             <div className="flex items-center gap-2">
               <Server size={16} className="text-muted shrink-0" />
               <span>Capacidad Global Diaria:</span>
@@ -177,6 +177,16 @@ export default function CuentasSmtp() {
               <span>correos disponibles hoy</span>
             </div>
           </div>
+          <AlertMessage type="info" message={
+            <div>
+              <strong>¿Para qué sirven estas cuentas?</strong>
+              <ul className="list-disc ml-5 mt-1 space-y-1 text-xs">
+                <li>Las cuentas configuradas aquí son las que se utilizarán "por detrás" para despachar los correos.</li>
+                <li>El sistema distribuye la carga automáticamente: usa una cuenta, luego otra, para evitar bloqueos por spam de Gmail.</li>
+                <li>Asegurate de generar una "Contraseña de aplicación" en tu cuenta de Google para poder conectarla.</li>
+              </ul>
+            </div>
+          } />
         </div>
         {puedeCrear && (
           <button

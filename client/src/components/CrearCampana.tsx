@@ -167,14 +167,25 @@ export default function CrearCampana() {
         </button>
       </div>
 
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-primary flex items-center gap-2">
           <Mail className="text-primary" />
           {id ? 'Editar Campaña' : 'Nueva Campaña de Correo'}
         </h1>
-        <p className="text-muted mt-1">
+        <p className="text-muted mt-1 mb-4">
           Completá los datos para armar el comunicado.
         </p>
+        
+        <AlertMessage type="info" message={
+          <div>
+            <strong>¿Cómo funciona esta sección?</strong>
+            <ul className="list-disc ml-5 mt-1 space-y-1">
+              <li><strong>Maquetado:</strong> Redactá tu mensaje en el editor. Las imágenes y estilos que agregues se mantendrán tal cual en el correo final.</li>
+              <li><strong>Vista Previa:</strong> Antes de enviar o guardar, tocá en "Vista Previa" abajo de todo para ver exactamente cómo lo recibirá el destinatario en su celular o computadora.</li>
+              <li><strong>Mail de Prueba:</strong> Al enviar una prueba, te llegará un correo real a tu casilla para verificar que los links y adjuntos funcionen perfectamente.</li>
+            </ul>
+          </div>
+        } />
       </div>
 
       {/* Error message (solo errores, no éxito) */}
