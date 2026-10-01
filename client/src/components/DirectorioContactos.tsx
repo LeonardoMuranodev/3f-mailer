@@ -607,10 +607,13 @@ export default function DirectorioContactos() {
               ) : (
                 contactos.map((c) => {
                   const estadoBadge =
-                    c.estado === 'funcional' ? 'bg-[#16A34A] text-white' :
-                      c.estado === 'inactivo' ? 'bg-gray-500 text-white' :
-                        c.estado.includes('rebotado') ? 'bg-[#DC2626] text-white' :
-                          'bg-gray-500 text-white';
+                    c.estado === 'funcional' ? 'bg-[#10b981] text-white' : // Verde (Activos)
+                    c.estado === 'rebotado inexistente' ? 'bg-[#ef4444] text-white' : // Rojo
+                    c.estado === 'rebotado bandeja llena' ? 'bg-[#f97316] text-white' : // Naranja
+                    c.estado === 'rebotado spam' ? 'bg-[#854d0e] text-white' : // Marrón
+                    c.estado === 'rebotado desconocido' ? 'bg-[#8b5cf6] text-white' : // Violeta
+                    c.estado === 'inactivo' ? 'bg-[#64748b] text-white' : // Gris
+                    'bg-gray-500 text-white';
 
                   return (
                     <tr key={c.id} className={`hover:bg-background/50 transition-colors ${selectedIds.includes(c.id) ? 'bg-primary/5' : ''}`}>

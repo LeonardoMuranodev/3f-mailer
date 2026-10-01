@@ -395,10 +395,13 @@ export default function EstadisticasGenerales() {
           <div className="space-y-5">
             {stats.campanas.map((c, i) => {
               const perc = totalCampanas > 0 ? (c.count / totalCampanas) * 100 : 0;
-              let barColor = 'bg-primary';
-              if (c.estado === 'completada') barColor = 'bg-secondary';
-              if (c.estado === 'cancelada') barColor = 'bg-danger';
-              if (c.estado === 'en_proceso') barColor = 'bg-warning';
+              let barColor = 'bg-[#3b82f6]';
+              if (c.estado === 'completada') barColor = 'bg-[#10b981]';
+              else if (c.estado === 'cancelada') barColor = 'bg-[#ef4444]';
+              else if (c.estado === 'en_proceso') barColor = 'bg-[#f59e0b]';
+              else if (c.estado === 'pausada') barColor = 'bg-[#854d0e]';
+              else if (c.estado === 'borrador') barColor = 'bg-[#64748b]';
+              else if (c.estado === 'aprobada') barColor = 'bg-[#3b82f6]';
               
               return (
                 <div key={i}>
@@ -428,17 +431,18 @@ export default function EstadisticasGenerales() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-8 flex-1">
               {(() => {
                 const total = stats.padron.reduce((acc, curr) => acc + curr.count, 0);
+                const sortedPadron = [...stats.padron].sort((a, b) => b.count - a.count || a.estado.localeCompare(b.estado));
                 const colors: Record<string, string> = {
-                  'funcional': '#3b82f6',
-                  'inactivo': '#64748b',
-                  'rebotado spam': '#ef4444',
-                  'rebotado inexistente': '#f59e0b',
-                  'rebotado desconocido': '#8b5cf6',
-                  'rebotado bandeja llena': '#10b981'
+                  'funcional': '#10b981',             // Verde (Activos)
+                  'rebotado inexistente': '#ef4444',  // Rojo
+                  'rebotado bandeja llena': '#f97316',// Naranja
+                  'rebotado spam': '#854d0e',         // Marrón
+                  'inactivo': '#64748b',              // Gris
+                  'rebotado desconocido': '#8b5cf6'   // Violeta
                 };
                 
                 let currentDeg = 0;
-                const conicStops = stats.padron.map(p => {
+                const conicStops = sortedPadron.map(p => {
                   const percentage = total > 0 ? (p.count / total) * 360 : 0;
                   const color = colors[p.estado] || '#cbd5e1';
                   const start = currentDeg;
@@ -455,7 +459,7 @@ export default function EstadisticasGenerales() {
                       </div>
                     </div>
                     <div className="flex flex-col gap-2">
-                      {stats.padron.map((p, i) => {
+                      {sortedPadron.map((p, i) => {
                         const perc = total > 0 ? ((p.count / total) * 100).toFixed(1) : '0';
                         return (
                           <div key={i} className="flex items-center gap-2 text-sm">
@@ -490,17 +494,40 @@ export default function EstadisticasGenerales() {
               stats.rubros.map((r, i) => {
                 const totalRubros = stats.rubros.reduce((acc, curr) => acc + curr.cantidad_envios, 0);
                 const perc = totalRubros > 0 ? (r.cantidad_envios / totalRubros) * 100 : 0;
+                const RANKING_COLORS = [
+                  { bar: '#3b82f6', bg: 'rgba(59, 130, 246, 0.12)', text: '#2563eb' },
+                  { bar: '#10b981', bg: 'rgba(16, 185, 129, 0.12)', text: '#059669' },
+                  { bar: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.12)', text: '#7c3aed' },
+                  { bar: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)', text: '#d97706' },
+                  { bar: '#ec4899', bg: 'rgba(236, 72, 153, 0.12)', text: '#db2777' },
+                  { bar: '#06b6d4', bg: 'rgba(6, 182, 212, 0.12)', text: '#0891b2' },
+                  { bar: '#f97316', bg: 'rgba(249, 115, 22, 0.12)', text: '#ea580c' },
+                  { bar: '#6366f1', bg: 'rgba(99, 102, 241, 0.12)', text: '#4f46e5' },
+                  { bar: '#14b8a6', bg: 'rgba(20, 184, 166, 0.12)', text: '#0d9488' },
+                  { bar: '#a855f7', bg: 'rgba(168, 85, 247, 0.12)', text: '#9333ea' }
+                ];
+                const rankColor = RANKING_COLORS[i % RANKING_COLORS.length];
                 return (
                   <div key={i} className="flex flex-col gap-1.5 p-3 rounded-lg hover:bg-background transition-colors border border-transparent hover:border-border">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-dark flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-md bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">{i+1}</span>
+                        <span 
+                          className="w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold"
+                          style={{ backgroundColor: rankColor.bg, color: rankColor.text }}
+                        >
+                          {i+1}
+                        </span>
                         {r.rubro === '__sin_rubro__' ? 'Sin Rubro' : RUBROS_LABELS[r.rubro] || r.rubro}
                       </span>
-                      <span className="text-sm font-bold text-primary">{r.cantidad_envios} envíos</span>
+                      <span className="text-sm font-bold" style={{ color: rankColor.text }}>
+                        {r.cantidad_envios} envíos
+                      </span>
                     </div>
                     <div className="w-full bg-background rounded-full h-1.5 overflow-hidden">
-                      <div className="bg-primary h-1.5 rounded-full" style={{ width: `${perc}%` }}></div>
+                      <div 
+                        className="h-1.5 rounded-full" 
+                        style={{ width: `${perc}%`, backgroundColor: rankColor.bar }}
+                      ></div>
                     </div>
                   </div>
                 )

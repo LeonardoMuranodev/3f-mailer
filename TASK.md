@@ -6,7 +6,15 @@
 - [] ** Checkbox personalizados: que no tengan el diseño por defecto, agregarle uno personalizado
 - [] **Refactor Visual Global:** Cambiar logo sin fondo, ajustar el `max-width` (ej: `max-w-6xl`) para mejor lectura en notebooks y refinar el CSS.
 
-#### A futuro
+#### Version 2 - A futuro
+
+- A las campañas donde se pone un LINK de Inscripcion, gestionar la lista de personas inscriptas.
+    - Deberia hacer un clon de google forms o asi para crear formularios y gestionar las respuestas desde aca.
+    - A quines se incriben mandarles un recordatorio que se pueda editar 1 dia 3 dias 1 semana antes (seleccionando varios o solo un recordatorio)
+    - que el mensaje se pueda hacer (la encargada lo hace) para que luego se use ese COPY (con un copy por defecto como Gracias por Inscribirte a X evento)
+    - Para mostrar quines se inscribieron y que cuenta se le envio, podemos reutilizar lo de la col de envios, con estadisticas basicas como enviado , no enviado error
+    - Habria que, hacer un link publico para que quien entre lo complete. QUe no puedan entrar a editar el form desde ahi ni nada por el estilo. SI es posible generar desde otro dominio o subdominio, no hace flta estar logueado para completarlo.
+    - Empezar con controles basicos. Ver ejemplo de backend inscripciones 
 
 - [] Mas a futuro, me gustaria que se puedan crear mails con un editor visual, donde puedas arrastrar y soltar los elementos. habria que hacer elementos prediseñados
 
@@ -17,21 +25,7 @@
 
 - [] Sistema de Logs (en mi otra app use Pino y stack PLG) el tema aca es el uso del servidor, esto es en caso de que el proyecto escale.
 
-### Datos de prueba:
 
-Luego quiero que pongaas datos de pruebas para ir viendo todo lo relacionado a estadsiticas mas que nada
-
-Que estos datos si lo haces por seed solo en entorno de prueba, o nose si lo inyectas directo en La BD y lisyo
-
-Hace minimo 10 campañas, con minimo una de cada esta doferente, minimo 3 terminadas y una que salga en estadisticas al filtrar por año, otra por mes, otra por ultimos 7 dias. me referio a que estos datos tienn que cambiar cuando los voy tocando
-
-Tambien con Contactos invetados con difernte estados, funcionales y minimo 1 o 2 de cada error o por rebotado tambien iactivo.
-
-Las campañas que tengan algunas mail donde se hizo click etc
-
-SI podes usar flyer y/o adjuntos para algunas que esten en borrdor para ya verlas mejor
-
-Dame datos de pruebas de eso mas que nada. No hace falta datos de prueba de soporte, usuarios, cuentas SMTP
 
 #### DevOps y Despliegue (Go-Live)
 

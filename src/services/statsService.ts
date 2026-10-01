@@ -132,6 +132,7 @@ export async function obtenerEstadisticasGlobales(startDate?: string, endDate?: 
     SELECT estado, COUNT(*) as count 
     FROM contactos
     GROUP BY estado
+    ORDER BY count DESC, estado ASC
   `);
 
   return {
