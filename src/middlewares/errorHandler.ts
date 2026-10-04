@@ -58,7 +58,10 @@ export function errorHandler(
     // Allow certain specific business errors to pass through even in production
     const isBusinessError = err.message.includes('Contraseña de aplicación') || 
                             err.message.includes('host SMTP') ||
-                            err.message.includes('servidor SMTP');
+                            err.message.includes('servidor SMTP') ||
+                            err.message.includes('ya está asignado') ||
+                            err.message.includes('ya tiene asignado') ||
+                            err.message.includes('ya tiene otro rubro');
                             
     const message = (isProduction && !isBusinessError) ? 'Error interno del servidor' : err.message;
     const statusCode = isBusinessError ? 400 : 500;

@@ -252,6 +252,7 @@ export interface ListarCampanasFiltros {
   estado?: string;
   fecha_desde?: string;
   fecha_hasta?: string;
+  rubro?: string;
   page?: number;
   limit?: number;
 }
@@ -288,6 +289,12 @@ export async function listarCampanas(
   if (filtros.fecha_hasta) {
     conditions.push(`fecha_limite_envio <= $${paramIdx}`);
     values.push(filtros.fecha_hasta);
+    paramIdx++;
+  }
+
+  if (filtros.rubro) {
+    conditions.push(`(para_todos_rubros = true OR rubros_seleccionados::jsonb ? $${paramIdx})`);
+    values.push(filtros.rubro);
     paramIdx++;
   }
 

@@ -122,6 +122,7 @@ async function listar(req: Request, res: Response, next: NextFunction): Promise<
       estado: req.query.estado as any,
       fecha_desde: req.query.fecha_desde as string | undefined,
       fecha_hasta: req.query.fecha_hasta as string | undefined,
+      rubro: req.query.rubro as string | undefined,
       page: req.query.page ? parseInt(req.query.page as string, 10) : 1,
       limit: req.query.limit ? parseInt(req.query.limit as string, 10) : 15,
     };
