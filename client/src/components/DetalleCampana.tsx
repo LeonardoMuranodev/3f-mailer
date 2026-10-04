@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Send, AlertTriangle, CheckCircle2, Clock, Mail, Search, RefreshCw, BarChart2, Download, MousePointerClick, Pause, Play, Trash2, Edit3 } from 'lucide-react';
 import { obtenerCampanaDetalle, obtenerColaCampana, cambiarEstadoCampana, eliminarCampana } from '../services/api';
@@ -571,7 +571,7 @@ export default function DetalleCampana() {
                 ¿Forzar Envío Ahora?
               </h3>
               <p className="text-center text-muted mb-6">
-                Esto ignorará el cronjob automático del servidor y disparará el intento de enviar mails pendientes de forma inmediata. Solo se ejecutará un intento global y se bloqueará el botón por 10 minutos.
+                Esto ignorará el cronjob automático del servidor y disparará el intento de enviar mails pendientes de forma inmediata. También ignorará las restricciones de horarios y días feriados. Solo se ejecutará un intento global y se bloqueará el botón por 10 minutos.
               </p>
 
               <div className="flex gap-3">
