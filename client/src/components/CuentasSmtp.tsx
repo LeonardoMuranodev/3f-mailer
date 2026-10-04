@@ -424,16 +424,16 @@ export default function CuentasSmtp() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-dark mb-1">Contrase�a de Aplicaci�n {editingId ? <span className="text-muted text-xs font-normal ml-1">(Dejar en blanco para no cambiar)</span> : <span className="text-danger">*</span>}</label>
+                <label className="block text-sm font-medium text-dark mb-1">Contraseña de Aplicación {editingId ? <span className="text-muted text-xs font-normal ml-1">(Dejar en blanco para no cambiar)</span> : <span className="text-danger">*</span>}</label>
                 <div className="relative">
                   <input 
                     type={showPassword ? "text" : "password"} 
                     value={form.password_encrypted}
                     onChange={e => setForm({...form, password_encrypted: e.target.value})}
                     className="w-full px-3 py-2 pr-10 bg-background border border-border rounded-lg text-dark focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    placeholder={editingId ? "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" : "Contrase�a de 16 caracteres"}
-                      required={!editingId}
-                    />
+                    placeholder={editingId ? "••••••••" : "Contraseña de 16 caracteres"}
+                    required={!editingId}
+                  />
                   <button 
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
