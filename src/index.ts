@@ -112,7 +112,7 @@ app.listen(config.port, async () => {
   // Iniciar worker SMTP con Cron (Lunes a Viernes de 9 a 17 hs, o cada 1 min en TEST)
   const cronSmtp = MODO_PRUEBA ? '* * * * *' : '0 9-17 * * 1-5';
   logger.info(`🔄 Iniciando Worker SMTP (Cron: ${cronSmtp})...`);
-  cron.schedule(cronSmtp, procesarCola, {
+  cron.schedule(cronSmtp, () => procesarCola(false), {
     timezone: 'America/Argentina/Buenos_Aires',
   });
 
