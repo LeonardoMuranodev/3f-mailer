@@ -460,8 +460,8 @@ export async function desarchivarCampana(
 
 // ── EMPRESAS ───────────────────────────────────────────────
 
-export async function buscarEmpresasApi(q: string): Promise<ApiResponse<Array<{ id: string; nombre: string; cuit: string | null }>>> {
+export async function buscarEmpresasApi(q: string): Promise<ApiResponse<Array<{ id: string; nombre: string; cuit: string | null; rubro_id?: string | null }>>> {
   const query = new URLSearchParams();
   if (q) query.append('q', q);
-  return fetchApi<Array<{ id: string; nombre: string; cuit: string | null }>>(`${API_BASE}/api/empresas?${query.toString()}`);
+  return fetchApi<Array<{ id: string; nombre: string; cuit: string | null; rubro_id?: string | null }>>(`${API_BASE}/api/empresas?${query.toString()}`);
 }

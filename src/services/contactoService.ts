@@ -74,7 +74,7 @@ export async function crearContacto(data: CrearContactoInput): Promise<Contacto 
   const { email, empresa_nombre, cuit, rubro_id, tipo = 'empresa', estado = 'funcional' } = data;
 
   // Upsert empresa (crea o reutiliza)
-  const empresa_id = await upsertEmpresa(empresa_nombre, cuit);
+  const empresa_id = await upsertEmpresa(empresa_nombre, cuit, rubro_id);
 
   const query = `
     INSERT INTO contactos (email, empresa_nombre, cuit, rubro_id, tipo, estado, empresa_id)
@@ -107,8 +107,11 @@ export async function actualizarContacto(id: string, data: ActualizarContactoInp
   const finalEmpresaNombre = data.empresa_nombre !== undefined ? data.empresa_nombre : existingContacto.empresa_nombre;
   const finalCuit = data.cuit !== undefined ? data.cuit : existingContacto.cuit;
 
+  // Determinar rubro final
+  const finalRubroId = data.rubro_id !== undefined ? data.rubro_id : existingContacto.rubro_id;
+
   // Upsert empresa (crea o reutiliza o valida)
-  const empresa_id = await upsertEmpresa(finalEmpresaNombre, finalCuit);
+  const empresa_id = await upsertEmpresa(finalEmpresaNombre, finalCuit, finalRubroId);
 
   // Whitelist explícita de campos permitidos para prevenir property injection
   const ALLOWED_FIELDS: ReadonlySet<string> = new Set([

@@ -51,7 +51,7 @@ export default function DirectorioContactos() {
   const [exportError, setExportError] = useState<string | null>(null);
 
   // Autocompletado empresa
-  const [empresasSugeridas, setEmpresasSugeridas] = useState<Array<{ id: string; nombre: string; cuit: string | null }>>([]);
+  const [empresasSugeridas, setEmpresasSugeridas] = useState<Array<{ id: string; nombre: string; cuit: string | null; rubro_id?: string | null }>>([]);
   const [showEmpresaSugeridas, setShowEmpresaSugeridas] = useState<false | 'empresa' | 'cuit'>(false);
 
   const buscarEmpresasSugeridas = async (q: string, fieldType: 'empresa' | 'cuit') => {
@@ -795,7 +795,7 @@ export default function DirectorioContactos() {
                           key={emp.id}
                           className="px-3 py-2 hover:bg-primary/10 cursor-pointer text-dark flex justify-between items-center"
                           onMouseDown={() => {
-                            setForm(f => ({ ...f, empresa_nombre: emp.nombre, cuit: emp.cuit || f.cuit }));
+                            setForm(f => ({ ...f, empresa_nombre: emp.nombre, cuit: emp.cuit || f.cuit, rubro_id: emp.rubro_id || f.rubro_id }));
                             setShowEmpresaSugeridas(false);
                           }}
                         >
@@ -832,7 +832,7 @@ export default function DirectorioContactos() {
                           key={emp.id}
                           className="px-3 py-2 hover:bg-primary/10 cursor-pointer text-dark flex justify-between items-center"
                           onMouseDown={() => {
-                            setForm(f => ({ ...f, empresa_nombre: emp.nombre, cuit: emp.cuit || f.cuit }));
+                            setForm(f => ({ ...f, empresa_nombre: emp.nombre, cuit: emp.cuit || f.cuit, rubro_id: emp.rubro_id || f.rubro_id }));
                             setShowEmpresaSugeridas(false);
                           }}
                         >
@@ -983,3 +983,4 @@ export default function DirectorioContactos() {
     </div>
   );
 }
+
