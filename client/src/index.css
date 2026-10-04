@@ -43,6 +43,7 @@
    accent-orange and secondary stay identical to preserve identity.
    ────────────────────────────────────────────────────────── */
 html.dark {
+  color-scheme: dark;
   --color-primary: #1E75C4;
   --color-primary-light: #3B8FDB;
   --color-primary-dark: #1563A8;
@@ -58,9 +59,7 @@ html.dark {
   --color-success-light: #0D3320;
 }
 
-html.dark input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
-}
+
 
 /* ── Base ──────────────────────────────────────────────── */
 *,
