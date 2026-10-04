@@ -65,7 +65,20 @@ export default function EstadisticasGenerales() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `estadisticas_campanas_${new Date().toISOString().split('T')[0]}.csv`);
+      
+      let fileName = 'estadisticas_campanas';
+      if (startDate && endDate) {
+        fileName += `_del_${startDate}_al_${endDate}`;
+      } else if (startDate) {
+        fileName += `_desde_${startDate}`;
+      } else if (endDate) {
+        fileName += `_hasta_${endDate}`;
+      } else {
+        fileName += `_historico_${new Date().toISOString().split('T')[0]}`;
+      }
+      fileName += '.csv';
+      
+      link.setAttribute('download', fileName);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
