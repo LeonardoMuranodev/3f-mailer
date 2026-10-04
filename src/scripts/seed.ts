@@ -57,40 +57,40 @@ export async function runSeed() {
     // 2. Catálogo de Contactos de Prueba (24 contactos con todos los estados requeridos)
     const contactosSeed: SeedContacto[] = [
       // 14 Funcionales en diversos rubros
-      { email: 'contacto@metalurgicacaseros.com.ar', empresa_nombre: 'Metalúrgica Caseros S.A.', cuit: '30-71234567-8', rubro_id: 'metalurgica', tipo: 'empresa', estado: 'funcional' },
-      { email: 'administracion@molinos3f.com.ar', empresa_nombre: 'Molinos Harineros Tres de Febrero', cuit: '30-68912345-1', rubro_id: 'alimenticia', tipo: 'empresa', estado: 'funcional' },
-      { email: 'info@innovasolutions.tech', empresa_nombre: 'Innova Solutions Tech', cuit: '33-71829304-9', rubro_id: 'informatica', tipo: 'empresa', estado: 'funcional' },
-      { email: 'ventas@hormigonespodesta.com.ar', empresa_nombre: 'Hormigones Pablo Podestá SRL', cuit: '30-70984512-3', rubro_id: 'construccion', tipo: 'empresa', estado: 'funcional' },
-      { email: 'compras@autopartessantosvega.com.ar', empresa_nombre: 'Autopartes Santos Vega', cuit: '30-71548962-7', rubro_id: 'autopartes', tipo: 'empresa', estado: 'funcional' },
-      { email: 'gerencia@distribuidorasur3f.com', empresa_nombre: 'Distribuidora Mayorista 3F', cuit: '30-65489712-4', rubro_id: 'comercio', tipo: 'empresa', estado: 'funcional' },
-      { email: 'contacto@plasticossanmartin.com.ar', empresa_nombre: 'Plásticos & Polímeros del Oeste', cuit: '30-71985214-6', rubro_id: 'plastico', tipo: 'empresa', estado: 'funcional' },
-      { email: 'produccion@quimicaelpalomar.com', empresa_nombre: 'Laboratorios Químicos Palomar', cuit: '30-66321458-2', rubro_id: 'quimica', tipo: 'empresa', estado: 'funcional' },
-      { email: 'info@textilsaenzpena.com.ar', empresa_nombre: 'Hilados y Tejidos Sáenz Peña', cuit: '30-71458963-0', rubro_id: 'textil', tipo: 'empresa', estado: 'funcional' },
-      { email: 'operaciones@logisticaciudadela.com', empresa_nombre: 'Logística Integral Ciudadela', cuit: '30-71698547-5', rubro_id: 'transporte', tipo: 'empresa', estado: 'funcional' },
-      { email: 'contacto@fundicioncaseros.com.ar', empresa_nombre: 'Fundición de Metales Caseros', cuit: '30-69874125-8', rubro_id: 'fundicion', tipo: 'empresa', estado: 'funcional' },
-      { email: 'soporte@sistemas3f.io', empresa_nombre: 'Sistemas & Redes 3F', cuit: '30-71778899-2', rubro_id: 'informatica', tipo: 'empresa', estado: 'funcional' },
-      { email: 'rrhh@serviciosmartincoronado.com', empresa_nombre: 'Servicios Coronados SRL', cuit: '30-71332211-5', rubro_id: 'servicios', tipo: 'empresa', estado: 'funcional' },
-      { email: 'proveedores@electrocaseros.com.ar', empresa_nombre: 'Electro Caseros Distribuciones', cuit: '30-71114455-9', rubro_id: 'electricidad', tipo: 'empresa', estado: 'funcional' },
+      { email: 'contacto@metalurgicacaseros.com.ar', empresa_nombre: 'Metalúrgica Caseros S.A.', cuit: '30712345678', rubro_id: 'metalurgica', tipo: 'empresa', estado: 'funcional' },
+      { email: 'administracion@molinos3f.com.ar', empresa_nombre: 'Molinos Harineros Tres de Febrero', cuit: '30689123451', rubro_id: 'alimenticia', tipo: 'empresa', estado: 'funcional' },
+      { email: 'info@innovasolutions.tech', empresa_nombre: 'Innova Solutions Tech', cuit: '33718293049', rubro_id: 'informatica', tipo: 'empresa', estado: 'funcional' },
+      { email: 'ventas@hormigonespodesta.com.ar', empresa_nombre: 'Hormigones Pablo Podestá SRL', cuit: '30709845123', rubro_id: 'construccion', tipo: 'empresa', estado: 'funcional' },
+      { email: 'compras@autopartessantosvega.com.ar', empresa_nombre: 'Autopartes Santos Vega', cuit: '30715489627', rubro_id: 'autopartes', tipo: 'empresa', estado: 'funcional' },
+      { email: 'gerencia@distribuidorasur3f.com', empresa_nombre: 'Distribuidora Mayorista 3F', cuit: '30654897124', rubro_id: 'comercio', tipo: 'empresa', estado: 'funcional' },
+      { email: 'contacto@plasticossanmartin.com.ar', empresa_nombre: 'Plásticos & Polímeros del Oeste', cuit: '30719852146', rubro_id: 'plastico', tipo: 'empresa', estado: 'funcional' },
+      { email: 'produccion@quimicaelpalomar.com', empresa_nombre: 'Laboratorios Químicos Palomar', cuit: '30663214582', rubro_id: 'quimica', tipo: 'empresa', estado: 'funcional' },
+      { email: 'info@textilsaenzpena.com.ar', empresa_nombre: 'Hilados y Tejidos Sáenz Peña', cuit: '30714589630', rubro_id: 'textil', tipo: 'empresa', estado: 'funcional' },
+      { email: 'operaciones@logisticaciudadela.com', empresa_nombre: 'Logística Integral Ciudadela', cuit: '30716985475', rubro_id: 'transporte', tipo: 'empresa', estado: 'funcional' },
+      { email: 'contacto@fundicioncaseros.com.ar', empresa_nombre: 'Fundición de Metales Caseros', cuit: '30698741258', rubro_id: 'fundicion', tipo: 'empresa', estado: 'funcional' },
+      { email: 'soporte@sistemas3f.io', empresa_nombre: 'Sistemas & Redes 3F', cuit: '30717788992', rubro_id: 'informatica', tipo: 'empresa', estado: 'funcional' },
+      { email: 'rrhh@serviciosmartincoronado.com', empresa_nombre: 'Servicios Coronados SRL', cuit: '30713322115', rubro_id: 'servicios', tipo: 'empresa', estado: 'funcional' },
+      { email: 'proveedores@electrocaseros.com.ar', empresa_nombre: 'Electro Caseros Distribuciones', cuit: '30711144559', rubro_id: 'electricidad', tipo: 'empresa', estado: 'funcional' },
 
       // 2 Inactivos
-      { email: 'antigua_fabrica@bajas-comerciales.com', empresa_nombre: 'Manufacturas del Oeste (Inactiva)', cuit: '30-55443322-1', rubro_id: 'manufactura', tipo: 'empresa', estado: 'inactivo' },
-      { email: 'sucursal_cerrada@revestimientos3f.com', empresa_nombre: 'Revestimientos Podestá (Cerrada)', cuit: '30-55667788-3', rubro_id: 'construccion', tipo: 'empresa', estado: 'inactivo' },
+      { email: 'antigua_fabrica@bajas-comerciales.com', empresa_nombre: 'Manufacturas del Oeste (Inactiva)', cuit: '30554433221', rubro_id: 'manufactura', tipo: 'empresa', estado: 'inactivo' },
+      { email: 'sucursal_cerrada@revestimientos3f.com', empresa_nombre: 'Revestimientos Podestá (Cerrada)', cuit: '30556677883', rubro_id: 'construccion', tipo: 'empresa', estado: 'inactivo' },
 
       // 2 Rebotados Inexistente
-      { email: 'correo_que_no_existe_123@dominiofantasma.org', empresa_nombre: 'Metalúrgica Inexistente 3F', cuit: '30-99881122-4', rubro_id: 'metalurgica', tipo: 'empresa', estado: 'rebotado inexistente' },
-      { email: 'buzon_borrado@antiguo-proveedor.com.ar', empresa_nombre: 'Logística Bajas SRL', cuit: '30-99883344-6', rubro_id: 'transporte', tipo: 'empresa', estado: 'rebotado inexistente' },
+      { email: 'correo_que_no_existe_123@dominiofantasma.org', empresa_nombre: 'Metalúrgica Inexistente 3F', cuit: '30998811224', rubro_id: 'metalurgica', tipo: 'empresa', estado: 'rebotado inexistente' },
+      { email: 'buzon_borrado@antiguo-proveedor.com.ar', empresa_nombre: 'Logística Bajas SRL', cuit: '30998833446', rubro_id: 'transporte', tipo: 'empresa', estado: 'rebotado inexistente' },
 
       // 2 Rebotados Bandeja Llena
-      { email: 'bandeja_tope_maximo@talleresunidos.com.ar', empresa_nombre: 'Talleres Unidos Caseros', cuit: '30-88771122-7', rubro_id: 'metalmecanica', tipo: 'empresa', estado: 'rebotado bandeja llena' },
-      { email: 'mailbox_full_box@comerciociudadela.com', empresa_nombre: 'Comercial Ciudadela Express', cuit: '30-88773344-9', rubro_id: 'comercio', tipo: 'empresa', estado: 'rebotado bandeja llena' },
+      { email: 'bandeja_tope_maximo@talleresunidos.com.ar', empresa_nombre: 'Talleres Unidos Caseros', cuit: '30887711227', rubro_id: 'metalmecanica', tipo: 'empresa', estado: 'rebotado bandeja llena' },
+      { email: 'mailbox_full_box@comerciociudadela.com', empresa_nombre: 'Comercial Ciudadela Express', cuit: '30887733449', rubro_id: 'comercio', tipo: 'empresa', estado: 'rebotado bandeja llena' },
 
       // 2 Rebotados Spam
-      { email: 'bloqueado_por_filtro@servicios-spam.net', empresa_nombre: 'Promociones Masivas SA', cuit: '30-77661122-0', rubro_id: 'servicios', tipo: 'empresa', estado: 'rebotado spam' },
-      { email: 'rechazado_dmarc@agroservicios-oeste.com', empresa_nombre: 'Agroservicios del Oeste', cuit: '30-77663344-2', rubro_id: 'comercio', tipo: 'empresa', estado: 'rebotado spam' },
+      { email: 'bloqueado_por_filtro@servicios-spam.net', empresa_nombre: 'Promociones Masivas SA', cuit: '30776611220', rubro_id: 'servicios', tipo: 'empresa', estado: 'rebotado spam' },
+      { email: 'rechazado_dmarc@agroservicios-oeste.com', empresa_nombre: 'Agroservicios del Oeste', cuit: '30776633442', rubro_id: 'comercio', tipo: 'empresa', estado: 'rebotado spam' },
 
       // 2 Rebotados Desconocido
-      { email: 'error_554_timeout@servidorcaido.ar', empresa_nombre: 'Distribuciones Santos Vega', cuit: '30-66551122-5', rubro_id: 'alimentos', tipo: 'empresa', estado: 'rebotado desconocido' },
-      { email: 'conexion_rechazada_smtp@redrota.com.ar', empresa_nombre: 'Industrias Gráficas Caseros', cuit: '30-66553344-7', rubro_id: 'grafica', tipo: 'empresa', estado: 'rebotado desconocido' }
+      { email: 'error_554_timeout@servidorcaido.ar', empresa_nombre: 'Distribuciones Santos Vega', cuit: '30665511225', rubro_id: 'alimentos', tipo: 'empresa', estado: 'rebotado desconocido' },
+      { email: 'conexion_rechazada_smtp@redrota.com.ar', empresa_nombre: 'Industrias Gráficas Caseros', cuit: '30665533447', rubro_id: 'grafica', tipo: 'empresa', estado: 'rebotado desconocido' }
     ];
 
     console.log(`📥 Insertando/Actualizando ${contactosSeed.length} contactos y sus empresas asociadas...`);

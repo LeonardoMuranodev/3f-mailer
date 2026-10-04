@@ -52,9 +52,9 @@ export default function DirectorioContactos() {
 
   // Autocompletado empresa
   const [empresasSugeridas, setEmpresasSugeridas] = useState<Array<{ id: string; nombre: string; cuit: string | null }>>([]);
-  const [showEmpresaSugeridas, setShowEmpresaSugeridas] = useState(false);
+  const [showEmpresaSugeridas, setShowEmpresaSugeridas] = useState<false | 'empresa' | 'cuit'>(false);
 
-  const buscarEmpresasSugeridas = async (q: string) => {
+  const buscarEmpresasSugeridas = async (q: string, fieldType: 'empresa' | 'cuit') => {
     if (!q || q.length < 2) { 
       setEmpresasSugeridas([]); 
       setShowEmpresaSugeridas(false); 
@@ -64,7 +64,7 @@ export default function DirectorioContactos() {
       const res = await buscarEmpresasApi(q);
       if (res.success && res.data) { 
         setEmpresasSugeridas(res.data); 
-        setShowEmpresaSugeridas(res.data.length > 0); 
+        setShowEmpresaSugeridas(res.data.length > 0 ? fieldType : false); 
       } else {
         setEmpresasSugeridas([]);
       }
@@ -782,13 +782,13 @@ export default function DirectorioContactos() {
                     value={form.empresa_nombre || ''}
                     onChange={e => {
                       setForm({ ...form, empresa_nombre: e.target.value });
-                      buscarEmpresasSugeridas(e.target.value);
+                      buscarEmpresasSugeridas(e.target.value, 'empresa');
                     }}
                     onBlur={() => setTimeout(() => setShowEmpresaSugeridas(false), 150)}
                     className="w-full px-3 py-2 bg-background border border-border rounded-lg text-dark focus:outline-none focus:ring-2 focus:ring-primary/50 h-[42px]"
                     placeholder="Nombre de la empresa (busca entre existentes)"
                   />
-                  {showEmpresaSugeridas && empresasSugeridas.length > 0 && (
+                  {showEmpresaSugeridas === 'empresa' && empresasSugeridas.length > 0 && (
                     <ul className="absolute z-50 w-full bg-surface border border-border rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
                       {empresasSugeridas.map(emp => (
                         <li
@@ -807,18 +807,41 @@ export default function DirectorioContactos() {
                   )}
                 </div>
 
-                {/* CUIT - full width */}
-                <div className="sm:col-span-2">
+                {/* CUIT - full width con autocompletado */}
+                <div className="sm:col-span-2" style={{ position: 'relative' }}>
                   <label className="block text-sm font-medium text-dark mb-1">CUIT</label>
                   <input
                     type="text"
+                    autoComplete="off"
                     inputMode="numeric"
                     value={form.cuit || ''}
-                    onChange={e => setForm({ ...form, cuit: e.target.value.replace(/\D/g, '') })}
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setForm({ ...form, cuit: val });
+                      buscarEmpresasSugeridas(val, 'cuit');
+                    }}
+                    onBlur={() => setTimeout(() => setShowEmpresaSugeridas(false), 150)}
                     className="w-full px-3 py-2 bg-background border border-border rounded-lg text-dark focus:outline-none focus:ring-2 focus:ring-primary/50 h-[42px]"
                     placeholder="Sin guiones (ej: 30709328995)"
                     maxLength={11}
                   />
+                  {showEmpresaSugeridas === 'cuit' && empresasSugeridas.length > 0 && (
+                    <ul className="absolute z-50 w-full bg-surface border border-border rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
+                      {empresasSugeridas.map(emp => (
+                        <li
+                          key={emp.id}
+                          className="px-3 py-2 hover:bg-primary/10 cursor-pointer text-dark flex justify-between items-center"
+                          onMouseDown={() => {
+                            setForm(f => ({ ...f, empresa_nombre: emp.nombre, cuit: emp.cuit || f.cuit }));
+                            setShowEmpresaSugeridas(false);
+                          }}
+                        >
+                          <span>{emp.nombre}</span>
+                          {emp.cuit && <span className="text-muted text-xs">{emp.cuit}</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
 
                 {/* Estado y Tipo - lado a lado */}
