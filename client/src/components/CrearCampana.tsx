@@ -22,6 +22,7 @@ export default function CrearCampana() {
     setField,
     setHtmlContent,
     setAdjunto,
+    adjunto,
     adjuntoName,
     toggleRubro,
     guardarBorrador,
@@ -80,6 +81,7 @@ export default function CrearCampana() {
         }
       }).catch(err => console.error('Error loading campaign:', err));
     } else {
+      useCampanaStore.getState().reset();
       const savedDraft = localStorage.getItem('draft_campana_data');
       if (savedDraft) {
         try {
@@ -506,7 +508,14 @@ export default function CrearCampana() {
                     type="checkbox"
                     className="sr-only"
                     checked={conAdjunto}
-                    onChange={(e) => setConAdjunto(e.target.checked)}
+                    onChange={(e) => {
+                      setConAdjunto(e.target.checked);
+                      if (!e.target.checked) {
+                        setAdjunto(null);
+                        setField('adjunto_url', null);
+                        useCampanaStore.setState({ adjuntoName: null });
+                      }
+                    }}
                     disabled={isSubmittedSuccessfully}
                   />
                   <div className={`block w-14 h-8 rounded-full transition-colors ${conAdjunto ? 'bg-primary' : 'bg-border'}`}></div>
@@ -541,7 +550,7 @@ export default function CrearCampana() {
                       file:cursor-pointer file:transition-colors
                       disabled:opacity-60 disabled:cursor-not-allowed"
                   />
-                  {adjuntoName && (
+                  {adjuntoName && !adjunto && (
                     <span className="text-sm font-medium text-primary bg-primary/10 px-3 py-1 rounded-full whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]" title={adjuntoName}>
                       {adjuntoName}
                     </span>
