@@ -17,6 +17,7 @@ export default function Perfil() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -107,7 +108,7 @@ export default function Perfil() {
     <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 animate-fade-in">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-dark tracking-tight">Mi Perfil</h1>
+          <h1 className="text-2xl font-bold text-primary tracking-tight">Mi Perfil</h1>
           <p className="text-sm text-muted mt-1">Gestiona tu cuenta y revisa tu actividad.</p>
         </div>
       </div>
@@ -190,12 +191,21 @@ export default function Perfil() {
 
               <div>
                 <label className="block text-sm font-medium text-dark mb-1">Confirmar Nueva Contraseña</label>
-                <input
-                  type={showNew ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg text-dark focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirm ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full pl-3 pr-10 py-2 text-sm bg-background border border-border rounded-lg text-dark focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-dark"
+                  >
+                    {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
 
               <button

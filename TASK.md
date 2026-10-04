@@ -25,7 +25,10 @@
 
 - [] Sistema de Logs (en mi otra app use Pino y stack PLG) el tema aca es el uso del servidor, esto es en caso de que el proyecto escale.
 
+### Prueba y video
 
+- [] Probar que todo funcione correctamente
+- [] Mostrar todas las funcionalidades del sistema con videos 
 
 #### DevOps y Despliegue (Go-Live)
 

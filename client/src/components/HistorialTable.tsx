@@ -74,6 +74,28 @@ export default function HistorialTable({ historial, showActor = false }: Props) 
     );
   };
 
+  const formatEntidad = (entidad: string) => {
+    const e = entidad.toLowerCase();
+    if (e === 'campana') return 'Campaña';
+    return e;
+  };
+
+  const getActionDescription = (item: HistorialItem) => {
+    const entidadStr = formatEntidad(item.entidad);
+    
+    if (item.entidad.toLowerCase() === 'campana' && item.detalles?.asunto) {
+      return `${item.accion} en ${entidadStr}: "${item.detalles.asunto}"`;
+    }
+    if (item.entidad.toLowerCase() === 'smtp' && item.detalles?.email) {
+      return `${item.accion} en ${entidadStr}: ${item.detalles.email}`;
+    }
+    if (item.entidad.toLowerCase() === 'contacto' && item.detalles?.email) {
+      return `${item.accion} en ${entidadStr}: ${item.detalles.email}`;
+    }
+
+    return `${item.accion} en ${entidadStr}`;
+  };
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left border-collapse">
@@ -111,14 +133,13 @@ export default function HistorialTable({ historial, showActor = false }: Props) 
                     {formatAccion(item.accion)}
                   </td>
                   <td className="px-4 py-3 align-top">
-                    <div className="font-semibold text-dark text-sm capitalize">{item.entidad.toLowerCase()}</div>
-                    {item.entidad_id && <div className="text-xs text-muted">ID: {item.entidad_id}</div>}
+                    <div className="font-semibold text-dark text-sm capitalize">{formatEntidad(item.entidad)}</div>
                   </td>
                   <td className="px-4 py-3 align-top">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="text-sm font-medium text-dark flex items-center">
-                          {item.accion} en {item.entidad}
+                          {getActionDescription(item)}
                           {!isExpanded && formatDetallesEnLinea(item.detalles)}
                         </div>
                         {hasDetails && (

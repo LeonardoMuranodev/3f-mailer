@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import DOMPurify from 'isomorphic-dompurify';
+import { dbPool } from '../config/db.js';
 import {
   crearCampana,
   actualizarCampana,
@@ -103,7 +104,7 @@ async function cambiarEstado(req: Request, res: Response, next: NextFunction): P
     await clearCacheByPrefix('/api/campanas');
     await clearCacheByPrefix('/api/stats');
 
-    await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'CAMPANA', campana.id, { estado_nuevo: estado });
+    await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'CAMPANA', campana.id, { asunto: campana.asunto, estado_nuevo: estado });
 
     sendSuccess(res, campana);
   } catch (err) {
@@ -185,7 +186,10 @@ async function archivar(req: Request, res: Response, next: NextFunction): Promis
       return;
     }
     
-    await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'CAMPANA', id, { estado_nuevo: 'archivada' });
+    // Fetch campana para obtener el asunto
+    const campanaResult = await dbPool.query('SELECT asunto FROM campanas WHERE id = $1', [id]);
+    const asunto = campanaResult.rows[0]?.asunto || 'Desconocida';
+    await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'CAMPANA', id, { asunto, estado_nuevo: 'archivada' });
     
     sendSuccess(res, { message: 'Campaña archivada correctamente' });
   } catch (err) {
@@ -202,7 +206,10 @@ async function desarchivar(req: Request, res: Response, next: NextFunction): Pro
       return;
     }
     
-    await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'CAMPANA', id, { estado_nuevo: 'restaurada' });
+    // Fetch campana para obtener el asunto
+    const campanaResult = await dbPool.query('SELECT asunto FROM campanas WHERE id = $1', [id]);
+    const asunto = campanaResult.rows[0]?.asunto || 'Desconocida';
+    await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'CAMPANA', id, { asunto, estado_nuevo: 'restaurada' });
     
     sendSuccess(res, { message: 'Campaña restaurada correctamente' });
   } catch (err) {

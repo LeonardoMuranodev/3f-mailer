@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Mail, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import logo3f from '../assets/logo-3f.png';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -35,10 +37,22 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Decorative background blobs */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-40 -left-40 w-96 h-96 bg-secondary/10 rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center text-primary">
-          <Mail size={48} />
+        <div className="flex justify-center">
+          <div className="w-20 h-20 overflow-hidden rounded-[20px] shadow-sm bg-white p-2">
+            <img src={logo3f} alt="Logo 3F" className="w-full h-full object-contain" />
+          </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-dark">
           Recuperar Contraseña

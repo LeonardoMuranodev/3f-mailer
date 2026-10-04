@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Mail, Loader2, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import logo3f from '../assets/logo-3f.png';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -61,10 +63,22 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Decorative background blobs */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-40 -left-40 w-96 h-96 bg-secondary/10 rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center text-primary">
-          <Mail size={48} />
+        <div className="flex justify-center">
+          <div className="w-20 h-20 overflow-hidden rounded-[20px] shadow-sm bg-white p-2">
+            <img src={logo3f} alt="Logo 3F" className="w-full h-full object-contain" />
+          </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-dark">
           Nueva Contraseña
@@ -134,6 +148,13 @@ export default function ResetPassword() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="block w-full appearance-none rounded-md border border-border bg-background px-3 py-2 text-dark placeholder-muted shadow-sm focus:border-primary focus:outline-none focus:ring-primary sm:text-sm pr-10"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 px-3 flex items-center text-muted hover:text-dark focus:outline-none"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
               </div>
 

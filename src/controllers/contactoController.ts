@@ -127,7 +127,7 @@ async function toggleEstado(req: Request, res: Response, next: NextFunction): Pr
       return;
     }
 
-    await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'CONTACTO', contacto.id, { nuevo_estado: estado });
+    await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'CONTACTO', contacto.id, { email: contacto.email, nuevo_estado: estado });
     sendSuccess(res, contacto);
   } catch (err: any) {
     if (err.message && err.message.includes('El CUIT')) {

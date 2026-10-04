@@ -45,6 +45,10 @@ export async function runSeed() {
   try {
     await client.query('BEGIN');
 
+    console.log('🧹 Limpiando guiones residuales en CUITs de base de datos...');
+    await client.query(`UPDATE contactos SET cuit = REPLACE(cuit, '-', '') WHERE cuit LIKE '%-%'`);
+    await client.query(`UPDATE empresas SET cuit = REPLACE(cuit, '-', '') WHERE cuit LIKE '%-%'`);
+
     // 0. Obtener cuenta SMTP si existe
     const smtpRes = await client.query('SELECT id FROM cuentas_smtp LIMIT 1');
     const smtpId = smtpRes.rows[0]?.id || null;
@@ -57,40 +61,40 @@ export async function runSeed() {
     // 2. Catálogo de Contactos de Prueba (24 contactos con todos los estados requeridos)
     const contactosSeed: SeedContacto[] = [
       // 14 Funcionales en diversos rubros
-      { email: 'contacto@metalurgicacaseros.com.ar', empresa_nombre: 'Metalúrgica Caseros S.A.', cuit: '30712345678', rubro_id: 'metalurgica', tipo: 'empresa', estado: 'funcional' },
-      { email: 'administracion@molinos3f.com.ar', empresa_nombre: 'Molinos Harineros Tres de Febrero', cuit: '30689123451', rubro_id: 'alimenticia', tipo: 'empresa', estado: 'funcional' },
-      { email: 'info@innovasolutions.tech', empresa_nombre: 'Innova Solutions Tech', cuit: '33718293049', rubro_id: 'informatica', tipo: 'empresa', estado: 'funcional' },
-      { email: 'ventas@hormigonespodesta.com.ar', empresa_nombre: 'Hormigones Pablo Podestá SRL', cuit: '30709845123', rubro_id: 'construccion', tipo: 'empresa', estado: 'funcional' },
-      { email: 'compras@autopartessantosvega.com.ar', empresa_nombre: 'Autopartes Santos Vega', cuit: '30715489627', rubro_id: 'autopartes', tipo: 'empresa', estado: 'funcional' },
-      { email: 'gerencia@distribuidorasur3f.com', empresa_nombre: 'Distribuidora Mayorista 3F', cuit: '30654897124', rubro_id: 'comercio', tipo: 'empresa', estado: 'funcional' },
-      { email: 'contacto@plasticossanmartin.com.ar', empresa_nombre: 'Plásticos & Polímeros del Oeste', cuit: '30719852146', rubro_id: 'plastico', tipo: 'empresa', estado: 'funcional' },
-      { email: 'produccion@quimicaelpalomar.com', empresa_nombre: 'Laboratorios Químicos Palomar', cuit: '30663214582', rubro_id: 'quimica', tipo: 'empresa', estado: 'funcional' },
-      { email: 'info@textilsaenzpena.com.ar', empresa_nombre: 'Hilados y Tejidos Sáenz Peña', cuit: '30714589630', rubro_id: 'textil', tipo: 'empresa', estado: 'funcional' },
-      { email: 'operaciones@logisticaciudadela.com', empresa_nombre: 'Logística Integral Ciudadela', cuit: '30716985475', rubro_id: 'transporte', tipo: 'empresa', estado: 'funcional' },
-      { email: 'contacto@fundicioncaseros.com.ar', empresa_nombre: 'Fundición de Metales Caseros', cuit: '30698741258', rubro_id: 'fundicion', tipo: 'empresa', estado: 'funcional' },
-      { email: 'soporte@sistemas3f.io', empresa_nombre: 'Sistemas & Redes 3F', cuit: '30717788992', rubro_id: 'informatica', tipo: 'empresa', estado: 'funcional' },
-      { email: 'rrhh@serviciosmartincoronado.com', empresa_nombre: 'Servicios Coronados SRL', cuit: '30713322115', rubro_id: 'servicios', tipo: 'empresa', estado: 'funcional' },
-      { email: 'proveedores@electrocaseros.com.ar', empresa_nombre: 'Electro Caseros Distribuciones', cuit: '30711144559', rubro_id: 'electricidad', tipo: 'empresa', estado: 'funcional' },
+      { email: 'contacto@metalurgicacaseros.com.ar', empresa_nombre: 'Metalúrgica Caseros S.A.', cuit: '30000000015', rubro_id: 'metalurgica', tipo: 'empresa', estado: 'funcional' },
+      { email: 'administracion@molinos3f.com.ar', empresa_nombre: 'Molinos Harineros Tres de Febrero', cuit: '30000000023', rubro_id: 'alimenticia', tipo: 'empresa', estado: 'funcional' },
+      { email: 'info@innovasolutions.tech', empresa_nombre: 'Innova Solutions Tech', cuit: '30000000031', rubro_id: 'informatica', tipo: 'empresa', estado: 'funcional' },
+      { email: 'ventas@hormigonespodesta.com.ar', empresa_nombre: 'Hormigones Pablo Podestá SRL', cuit: '30000000049', rubro_id: 'construccion', tipo: 'empresa', estado: 'funcional' },
+      { email: 'compras@autopartessantosvega.com.ar', empresa_nombre: 'Autopartes Santos Vega', cuit: '30000000058', rubro_id: 'autopartes', tipo: 'empresa', estado: 'funcional' },
+      { email: 'gerencia@distribuidorasur3f.com', empresa_nombre: 'Distribuidora Mayorista 3F', cuit: '30000000066', rubro_id: 'comercio', tipo: 'empresa', estado: 'funcional' },
+      { email: 'contacto@plasticossanmartin.com.ar', empresa_nombre: 'Plásticos & Polímeros del Oeste', cuit: '30000000074', rubro_id: 'plastico', tipo: 'empresa', estado: 'funcional' },
+      { email: 'produccion@quimicaelpalomar.com', empresa_nombre: 'Laboratorios Químicos Palomar', cuit: '30000000082', rubro_id: 'quimica', tipo: 'empresa', estado: 'funcional' },
+      { email: 'info@textilsaenzpena.com.ar', empresa_nombre: 'Hilados y Tejidos Sáenz Peña', cuit: '30000000090', rubro_id: 'textil', tipo: 'empresa', estado: 'funcional' },
+      { email: 'operaciones@logisticaciudadela.com', empresa_nombre: 'Logística Integral Ciudadela', cuit: '30000000104', rubro_id: 'transporte', tipo: 'empresa', estado: 'funcional' },
+      { email: 'contacto@fundicioncaseros.com.ar', empresa_nombre: 'Fundición de Metales Caseros', cuit: '30000000112', rubro_id: 'fundicion', tipo: 'empresa', estado: 'funcional' },
+      { email: 'soporte@sistemas3f.io', empresa_nombre: 'Sistemas & Redes 3F', cuit: '30000000120', rubro_id: 'informatica', tipo: 'empresa', estado: 'funcional' },
+      { email: 'rrhh@serviciosmartincoronado.com', empresa_nombre: 'Servicios Coronados SRL', cuit: '30000000139', rubro_id: 'servicios', tipo: 'empresa', estado: 'funcional' },
+      { email: 'proveedores@electrocaseros.com.ar', empresa_nombre: 'Electro Caseros Distribuciones', cuit: '30000000147', rubro_id: 'electricidad', tipo: 'empresa', estado: 'funcional' },
 
       // 2 Inactivos
-      { email: 'antigua_fabrica@bajas-comerciales.com', empresa_nombre: 'Manufacturas del Oeste (Inactiva)', cuit: '30554433221', rubro_id: 'manufactura', tipo: 'empresa', estado: 'inactivo' },
-      { email: 'sucursal_cerrada@revestimientos3f.com', empresa_nombre: 'Revestimientos Podestá (Cerrada)', cuit: '30556677883', rubro_id: 'construccion', tipo: 'empresa', estado: 'inactivo' },
+      { email: 'antigua_fabrica@bajas-comerciales.com', empresa_nombre: 'Manufacturas del Oeste (Inactiva)', cuit: '30000000155', rubro_id: 'manufactura', tipo: 'empresa', estado: 'inactivo' },
+      { email: 'sucursal_cerrada@revestimientos3f.com', empresa_nombre: 'Revestimientos Podestá (Cerrada)', cuit: '30000000163', rubro_id: 'construccion', tipo: 'empresa', estado: 'inactivo' },
 
       // 2 Rebotados Inexistente
-      { email: 'correo_que_no_existe_123@dominiofantasma.org', empresa_nombre: 'Metalúrgica Inexistente 3F', cuit: '30998811224', rubro_id: 'metalurgica', tipo: 'empresa', estado: 'rebotado inexistente' },
-      { email: 'buzon_borrado@antiguo-proveedor.com.ar', empresa_nombre: 'Logística Bajas SRL', cuit: '30998833446', rubro_id: 'transporte', tipo: 'empresa', estado: 'rebotado inexistente' },
+      { email: 'correo_que_no_existe_123@dominiofantasma.org', empresa_nombre: 'Metalúrgica Inexistente 3F', cuit: '30000000171', rubro_id: 'metalurgica', tipo: 'empresa', estado: 'rebotado inexistente' },
+      { email: 'buzon_borrado@antiguo-proveedor.com.ar', empresa_nombre: 'Logística Bajas SRL', cuit: '30000000189', rubro_id: 'transporte', tipo: 'empresa', estado: 'rebotado inexistente' },
 
       // 2 Rebotados Bandeja Llena
-      { email: 'bandeja_tope_maximo@talleresunidos.com.ar', empresa_nombre: 'Talleres Unidos Caseros', cuit: '30887711227', rubro_id: 'metalmecanica', tipo: 'empresa', estado: 'rebotado bandeja llena' },
-      { email: 'mailbox_full_box@comerciociudadela.com', empresa_nombre: 'Comercial Ciudadela Express', cuit: '30887733449', rubro_id: 'comercio', tipo: 'empresa', estado: 'rebotado bandeja llena' },
+      { email: 'bandeja_tope_maximo@talleresunidos.com.ar', empresa_nombre: 'Talleres Unidos Caseros', cuit: '30000000198', rubro_id: 'metalmecanica', tipo: 'empresa', estado: 'rebotado bandeja llena' },
+      { email: 'mailbox_full_box@comerciociudadela.com', empresa_nombre: 'Comercial Ciudadela Express', cuit: '30000000201', rubro_id: 'comercio', tipo: 'empresa', estado: 'rebotado bandeja llena' },
 
       // 2 Rebotados Spam
-      { email: 'bloqueado_por_filtro@servicios-spam.net', empresa_nombre: 'Promociones Masivas SA', cuit: '30776611220', rubro_id: 'servicios', tipo: 'empresa', estado: 'rebotado spam' },
-      { email: 'rechazado_dmarc@agroservicios-oeste.com', empresa_nombre: 'Agroservicios del Oeste', cuit: '30776633442', rubro_id: 'comercio', tipo: 'empresa', estado: 'rebotado spam' },
+      { email: 'bloqueado_por_filtro@servicios-spam.net', empresa_nombre: 'Promociones Masivas SA', cuit: '30000000219', rubro_id: 'servicios', tipo: 'empresa', estado: 'rebotado spam' },
+      { email: 'rechazado_dmarc@agroservicios-oeste.com', empresa_nombre: 'Agroservicios del Oeste', cuit: '30000000228', rubro_id: 'comercio', tipo: 'empresa', estado: 'rebotado spam' },
 
       // 2 Rebotados Desconocido
-      { email: 'error_554_timeout@servidorcaido.ar', empresa_nombre: 'Distribuciones Santos Vega', cuit: '30665511225', rubro_id: 'alimentos', tipo: 'empresa', estado: 'rebotado desconocido' },
-      { email: 'conexion_rechazada_smtp@redrota.com.ar', empresa_nombre: 'Industrias Gráficas Caseros', cuit: '30665533447', rubro_id: 'grafica', tipo: 'empresa', estado: 'rebotado desconocido' }
+      { email: 'error_554_timeout@servidorcaido.ar', empresa_nombre: 'Distribuciones Santos Vega', cuit: '30000000236', rubro_id: 'alimentos', tipo: 'empresa', estado: 'rebotado desconocido' },
+      { email: 'conexion_rechazada_smtp@redrota.com.ar', empresa_nombre: 'Industrias Gráficas Caseros', cuit: '30000000244', rubro_id: 'grafica', tipo: 'empresa', estado: 'rebotado desconocido' }
     ];
 
     console.log(`📥 Insertando/Actualizando ${contactosSeed.length} contactos y sus empresas asociadas...`);
@@ -579,5 +583,6 @@ export async function runSeed() {
 if (process.argv[1]?.includes('seed')) {
   runSeed()
     .then(() => process.exit(0))
-    .catch(() => process.exit(1));
+    .catch((err) => { console.error(err); process.exit(1); });
 }
+

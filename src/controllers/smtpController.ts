@@ -106,7 +106,7 @@ async function toggleEstado(req: Request, res: Response, next: NextFunction): Pr
     }
 
     await clearCacheByPrefix('/api/smtp');
-    await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'SMTP', cuenta.id, { nuevo_estado: estado });
+    await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'SMTP', cuenta.id, { email: cuenta.email, nuevo_estado: estado });
     sendSuccess(res, cuenta);
   } catch (err) {
     next(err);
