@@ -45,14 +45,18 @@ async function verificarHorarioPermitido(): Promise<boolean> {
   return true;
 }
 
-export async function procesarCola(): Promise<void> {
+export async function procesarCola(esForzado: boolean = false): Promise<void> {
   if (isWorkerRunning) return;
 
   try {
-    const permitido = await verificarHorarioPermitido();
-    if (!permitido) {
-      console.log('Worker SMTP: Ejecución omitida. Fuera del horario permitido o día excluido.');
-      return;
+    if (!esForzado) {
+      const permitido = await verificarHorarioPermitido();
+      if (!permitido) {
+        console.log('Worker SMTP: Ejecución omitida. Fuera del horario permitido o día excluido.');
+        return;
+      }
+    } else {
+      console.log('Worker SMTP: Ejecución forzada manual. Ignorando restricciones de horario.');
     }
   } catch (error) {
     console.error('Error al verificar horario permitido, procediendo con precaución:', error);
