@@ -33,13 +33,16 @@ export async function upsertEmpresa(nombre: string | null | undefined, cuit: str
       }
 
       // Validar rubro
-      if (rubro_id) {
+      if (rubro_id !== undefined) {
         const rubroRes = await dbPool.query(
           `SELECT rubro_id FROM contactos WHERE empresa_id = $1 AND rubro_id IS NOT NULL LIMIT 1`,
           [empresaEncontrada.id]
         );
-        if (rubroRes.rows.length > 0 && rubroRes.rows[0].rubro_id !== rubro_id) {
-          throw new Error(`La empresa "${empresaEncontrada.nombre}" ya tiene otro rubro asignado. No puedes cambiar el rubro a una empresa existente.`);
+        if (rubroRes.rows.length > 0) {
+          const rubroActual = rubroRes.rows[0].rubro_id;
+          if (rubroActual !== rubro_id) {
+            throw new Error(`La empresa "${empresaEncontrada.nombre}" ya tiene otro rubro asignado. No puedes cambiar o quitar el rubro a una empresa existente.`);
+          }
         }
       }
 
@@ -57,13 +60,16 @@ export async function upsertEmpresa(nombre: string | null | undefined, cuit: str
       const empresaEncontrada = existing.rows[0];
 
       // Validar rubro
-      if (rubro_id) {
+      if (rubro_id !== undefined) {
         const rubroRes = await dbPool.query(
           `SELECT rubro_id FROM contactos WHERE empresa_id = $1 AND rubro_id IS NOT NULL LIMIT 1`,
           [empresaEncontrada.id]
         );
-        if (rubroRes.rows.length > 0 && rubroRes.rows[0].rubro_id !== rubro_id) {
-          throw new Error(`La empresa ya tiene otro rubro asignado. No puedes cambiar el rubro a una empresa existente.`);
+        if (rubroRes.rows.length > 0) {
+          const rubroActual = rubroRes.rows[0].rubro_id;
+          if (rubroActual !== rubro_id) {
+            throw new Error(`La empresa ya tiene otro rubro asignado. No puedes cambiar o quitar el rubro a una empresa existente.`);
+          }
         }
       }
 

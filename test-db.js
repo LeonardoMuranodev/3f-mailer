@@ -10,7 +10,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-pool.query("SELECT e.id, e.nombre, e.cuit, (SELECT c.rubro_id FROM contactos c WHERE c.empresa_id = e.id AND c.rubro_id IS NOT NULL LIMIT 1) as rubro_id FROM empresas e LIMIT 5").then(res => {
+pool.query("SELECT e.id, e.nombre, e.cuit, (SELECT c.rubro_id FROM contactos c WHERE c.empresa_id = e.id AND c.rubro_id IS NOT NULL LIMIT 1) as rubro_id FROM empresas e WHERE e.nombre ILIKE '%autopartes%' LIMIT 5").then(res => {
   console.log('Empresas test:', res.rows);
   process.exit(0);
 }).catch(err => {
