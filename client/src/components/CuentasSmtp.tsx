@@ -448,7 +448,7 @@ export default function CuentasSmtp() {
               <div>
                 <label className="block text-sm font-medium text-dark mb-1">Límite Diario de Envíos</label>
                 <input 
-                  type="text" 
+                  type="number" max={500} min={1} 
                   value={form.limite_diario}
                   onChange={e => setForm({...form, limite_diario: parseInt(e.target.value) || 0})}
                   className="w-full px-3 py-2 bg-background border border-border rounded-lg text-dark focus:outline-none focus:ring-2 focus:ring-primary/50"

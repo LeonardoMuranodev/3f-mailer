@@ -42,8 +42,8 @@ async function verificarConexionSmtp(host: string, puerto: number, usuario: stri
     });
     await transporter.verify();
   } catch (error: any) {
-    if (error.responseCode === 535 || (error.message && error.message.includes('Auth')) || (error.message && error.message.includes('Username and Password'))) {
-      throw new Error('Contraseña de aplicación inválida o el usuario no existe.');
+    if (error.responseCode === 535 || error.responseCode === 534 || (error.message && (error.message.includes('Auth') || error.message.includes('Username and Password') || error.message.includes('Application-specific')))) {
+      throw new Error('Contraseña de aplicación inválida o requerida. Recuerda generar la clave de 16 caracteres de Google.');
     } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
       throw new Error('El host SMTP es inválido o no se pudo alcanzar.');
     } else {
