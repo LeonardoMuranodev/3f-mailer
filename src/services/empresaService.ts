@@ -18,66 +18,64 @@ export async function upsertEmpresa(nombre: string | null | undefined, cuit: str
   const nombreLimpio = nombre?.trim() || null;
   const cuitLimpio = cuit?.trim() || null;
 
+  let empresaEncontrada: Empresa | null = null;
+
   // 1. Buscar por CUIT primero (más confiable)
   if (cuitLimpio) {
     const existing = await dbPool.query<Empresa>(
-      `SELECT id, nombre FROM empresas WHERE cuit = $1 LIMIT 1`,
+      `SELECT id, nombre, cuit FROM empresas WHERE cuit = $1 LIMIT 1`,
       [cuitLimpio]
     );
     if (existing.rows.length > 0) {
-      const empresaEncontrada = existing.rows[0];
+      empresaEncontrada = existing.rows[0];
       // Si el CUIT ya existe y el nombre ingresado difiere, no lo actualizamos silenciosamente.
       // Arrojamos un error para advertir al usuario.
       if (nombreLimpio && empresaEncontrada.nombre.toLowerCase().trim() !== nombreLimpio.toLowerCase().trim()) {
         throw new Error(`El CUIT ${cuitLimpio} ya está asignado a la empresa "${empresaEncontrada.nombre}". Modifica el CUIT o usa el mismo nombre.`);
       }
-
-      // Validar rubro
-      if (rubro_id !== undefined) {
-        const rubroRes = await dbPool.query(
-          `SELECT rubro_id FROM contactos WHERE empresa_id = $1 AND rubro_id IS NOT NULL LIMIT 1`,
-          [empresaEncontrada.id]
-        );
-        if (rubroRes.rows.length > 0) {
-          const rubroActual = rubroRes.rows[0].rubro_id;
-          if (rubroActual !== rubro_id) {
-            throw new Error(`La empresa "${empresaEncontrada.nombre}" ya tiene otro rubro asignado. No puedes cambiar o quitar el rubro a una empresa existente.`);
-          }
-        }
-      }
-
-      return empresaEncontrada.id;
     }
   }
 
-  // 2. Buscar por nombre exacto (case-insensitive) si no hay CUIT
-  if (nombreLimpio && !cuitLimpio) {
+  // 2. Si no se encontró por CUIT, buscar por nombre exacto (case-insensitive)
+  if (!empresaEncontrada && nombreLimpio) {
     const existing = await dbPool.query<Empresa>(
-      `SELECT id FROM empresas WHERE LOWER(nombre) = LOWER($1) AND cuit IS NULL LIMIT 1`,
+      `SELECT id, nombre, cuit FROM empresas WHERE LOWER(nombre) = LOWER($1) LIMIT 1`,
       [nombreLimpio]
     );
     if (existing.rows.length > 0) {
-      const empresaEncontrada = existing.rows[0];
-
-      // Validar rubro
-      if (rubro_id !== undefined) {
-        const rubroRes = await dbPool.query(
-          `SELECT rubro_id FROM contactos WHERE empresa_id = $1 AND rubro_id IS NOT NULL LIMIT 1`,
-          [empresaEncontrada.id]
-        );
-        if (rubroRes.rows.length > 0) {
-          const rubroActual = rubroRes.rows[0].rubro_id;
-          if (rubroActual !== rubro_id) {
-            throw new Error(`La empresa ya tiene otro rubro asignado. No puedes cambiar o quitar el rubro a una empresa existente.`);
-          }
-        }
+      empresaEncontrada = existing.rows[0];
+      
+      // Si se encontró la empresa por nombre, pero se intenta poner un CUIT distinto al que ya tiene
+      if (cuitLimpio && empresaEncontrada.cuit && empresaEncontrada.cuit !== cuitLimpio) {
+        throw new Error(`La empresa "${empresaEncontrada.nombre}" ya tiene asignado el CUIT ${empresaEncontrada.cuit}. No puedes asignarle otro CUIT distinto.`);
       }
-
-      return empresaEncontrada.id;
+      
+      // Si la empresa NO tenía CUIT y ahora le pasamos uno, lo actualizamos.
+      if (cuitLimpio && !empresaEncontrada.cuit) {
+        await dbPool.query(`UPDATE empresas SET cuit = $1, actualizado_en = CURRENT_TIMESTAMP WHERE id = $2`, [cuitLimpio, empresaEncontrada.id]);
+        empresaEncontrada.cuit = cuitLimpio;
+      }
     }
   }
 
-  // 3. Crear nueva empresa
+  // 3. Validar rubro y retornar si se encontró
+  if (empresaEncontrada) {
+    if (rubro_id !== undefined) {
+      const rubroRes = await dbPool.query(
+        `SELECT rubro_id FROM contactos WHERE empresa_id = $1 AND rubro_id IS NOT NULL LIMIT 1`,
+        [empresaEncontrada.id]
+      );
+      if (rubroRes.rows.length > 0) {
+        const rubroActual = rubroRes.rows[0].rubro_id;
+        if (rubroActual !== rubro_id) {
+          throw new Error(`La empresa "${empresaEncontrada.nombre}" ya tiene otro rubro asignado. No puedes cambiar o quitar el rubro a una empresa existente.`);
+        }
+      }
+    }
+    return empresaEncontrada.id;
+  }
+
+  // 4. Crear nueva empresa si no se encontró ni por nombre ni por CUIT
   const result = await dbPool.query<Empresa>(
     `INSERT INTO empresas (nombre, cuit) VALUES ($1, $2) RETURNING id`,
     [nombreLimpio ?? 'Sin nombre', cuitLimpio]
