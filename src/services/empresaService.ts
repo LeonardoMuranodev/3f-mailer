@@ -1,4 +1,4 @@
-import { dbPool } from '../config/db.js';
+﻿import { dbPool } from '../config/db.js';
 
 export interface Empresa {
   id: string;
@@ -9,8 +9,8 @@ export interface Empresa {
 }
 
 /**
- * Busca o crea una empresa basándose en CUIT o nombre.
- * Retorna el ID de la empresa encontrada o recién creada.
+ * Busca o crea una empresa basÃ¡ndose en CUIT o nombre.
+ * Retorna el ID de la empresa encontrada o reciÃ©n creada.
  */
 export async function upsertEmpresa(nombre: string | null | undefined, cuit: string | null | undefined, rubro_id?: string | null): Promise<string | null> {
   if (!nombre && !cuit) return null;
@@ -20,8 +20,11 @@ export async function upsertEmpresa(nombre: string | null | undefined, cuit: str
 
   let empresaEncontrada: Empresa | null = null;
 
+    // Determinamos si el CUIT es un placeholder (no debe disparar reglas de unicidad)
+  const isGenericCuit = cuitLimpio ? ['sin cuit', 'averiguar', '0', '-'].includes(cuitLimpio.toLowerCase()) : false;
+
   // 1. Buscar por CUIT primero (más confiable)
-  if (cuitLimpio) {
+  if (cuitLimpio && !isGenericCuit) {
     const existing = await dbPool.query<Empresa>(
       `SELECT id, nombre, cuit FROM empresas WHERE cuit = $1 LIMIT 1`,
       [cuitLimpio]
@@ -44,21 +47,23 @@ export async function upsertEmpresa(nombre: string | null | undefined, cuit: str
     );
     if (existing.rows.length > 0) {
       empresaEncontrada = existing.rows[0];
+      const empresaCuitGenerico = empresaEncontrada.cuit ? ['sin cuit', 'averiguar', '0', '-'].includes(empresaEncontrada.cuit.toLowerCase()) : false;
       
       // Si se encontró la empresa por nombre, pero se intenta poner un CUIT distinto al que ya tiene
-      if (cuitLimpio && empresaEncontrada.cuit && empresaEncontrada.cuit !== cuitLimpio) {
+      // Ignoramos la validación si el CUIT que ingresamos es genérico, o si el que tiene la empresa es genérico
+      if (cuitLimpio && !isGenericCuit && empresaEncontrada.cuit && !empresaCuitGenerico && empresaEncontrada.cuit !== cuitLimpio) {
         throw new Error(`La empresa "${empresaEncontrada.nombre}" ya tiene asignado el CUIT ${empresaEncontrada.cuit}. No puedes asignarle otro CUIT distinto.`);
       }
       
-      // Si la empresa NO tenía CUIT y ahora le pasamos uno, lo actualizamos.
-      if (cuitLimpio && !empresaEncontrada.cuit) {
+      // Si la empresa NO tenía CUIT o tenía uno genérico, y ahora le pasamos uno REAL, lo actualizamos.
+      if (cuitLimpio && (!empresaEncontrada.cuit || (empresaCuitGenerico && !isGenericCuit))) {
         await dbPool.query(`UPDATE empresas SET cuit = $1, actualizado_en = CURRENT_TIMESTAMP WHERE id = $2`, [cuitLimpio, empresaEncontrada.id]);
         empresaEncontrada.cuit = cuitLimpio;
       }
     }
   }
 
-  // 3. Validar rubro y retornar si se encontró
+  // 3. Validar rubro y retornar si se encontrÃ³
   if (empresaEncontrada) {
     if (rubro_id !== undefined) {
       const rubroRes = await dbPool.query(
@@ -75,7 +80,7 @@ export async function upsertEmpresa(nombre: string | null | undefined, cuit: str
     return empresaEncontrada.id;
   }
 
-  // 4. Crear nueva empresa si no se encontró ni por nombre ni por CUIT
+  // 4. Crear nueva empresa si no se encontrÃ³ ni por nombre ni por CUIT
   const result = await dbPool.query<Empresa>(
     `INSERT INTO empresas (nombre, cuit) VALUES ($1, $2) RETURNING id`,
     [nombreLimpio ?? 'Sin nombre', cuitLimpio]
@@ -84,7 +89,7 @@ export async function upsertEmpresa(nombre: string | null | undefined, cuit: str
 }
 
 /**
- * Lista empresas con búsqueda opcional (para autocompletado en frontend).
+ * Lista empresas con bÃºsqueda opcional (para autocompletado en frontend).
  */
 export async function buscarEmpresas(q?: string): Promise<Array<Empresa & { rubro_id?: string | null }>> {
   if (q) {
@@ -114,3 +119,4 @@ export async function actualizarEmpresa(id: string, nombre: string, cuit?: strin
   );
   return result.rows[0] ?? null;
 }
+
