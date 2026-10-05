@@ -8,7 +8,7 @@ function normalizeString(str: string | null | undefined): string {
 }
 
 let isSyncingStatus = false;
-let lastSyncResult: { success: boolean; message: string; procesados?: number; insertados_o_actualizados?: number } | null = null;
+let lastSyncResult: { success: boolean; message: string; procesados?: number; insertados_o_actualizados?: number; omitidos?: number } | null = null;
 
 export function getSyncStatus() {
   return {
@@ -117,9 +117,10 @@ export async function syncContactosFromSheets(): Promise<void> {
     // Reutilizamos la función de importación por lote (Upsert)
     const resultados = await importarContactosJson(contactosParaImportar);
 
+    const omitidosText = resultados.omitidos > 0 ? ` Se omitieron ${resultados.omitidos} filas por errores.` : '';
     lastSyncResult = { 
       success: true, 
-      message: `Sincronización completa. Se procesaron ${resultados.procesados} contactos.`, 
+      message: `Sincronización completa. Se procesaron ${resultados.procesados} contactos.${omitidosText}`, 
       procesados: resultados.procesados, 
       insertados_o_actualizados: resultados.insertados_o_actualizados 
     };

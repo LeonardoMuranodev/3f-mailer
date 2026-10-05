@@ -219,13 +219,15 @@ export async function importarContactosCsv(buffer: Buffer): Promise<{ procesados
  */
 export async function importarContactosJson(
   contactos: ContactoImportRow[]
-): Promise<{ procesados: number; insertados_o_actualizados: number }> {
+): Promise<{ procesados: number; insertados_o_actualizados: number; omitidos: number }> {
   let afectadas = 0;
+  let omitidos = 0;
 
   for (const row of contactos) {
     if (!row.email || !row.email.trim()) continue;
 
-    // Upsert empresa
+    try {
+      // Upsert empresa
     const empresa_id = await upsertEmpresa(row.empresa_nombre, row.cuit);
 
     const query = `
@@ -242,17 +244,21 @@ export async function importarContactosJson(
         actualizado_en = CURRENT_TIMESTAMP
     `;
 
-    await dbPool.query(query, [
-      row.email.trim().toLowerCase(),
-      row.empresa_nombre || null,
-      row.cuit || null,
-      row.rubro_id || null,
-      row.tipo || null,
-      row.estado || 'funcional',
-      empresa_id,
-    ]);
-    afectadas++;
+      await dbPool.query(query, [
+        row.email.trim().toLowerCase(),
+        row.empresa_nombre || null,
+        row.cuit || null,
+        row.rubro_id || null,
+        row.tipo || null,
+        row.estado || 'funcional',
+        empresa_id,
+      ]);
+      afectadas++;
+    } catch (err: any) {
+      console.warn(`Omitiendo importación de contacto ${row.email}:`, err.message);
+      omitidos++;
+    }
   }
 
-  return { procesados: contactos.length, insertados_o_actualizados: afectadas };
+  return { procesados: contactos.length, insertados_o_actualizados: afectadas, omitidos };
 }
