@@ -255,8 +255,35 @@ export async function importarContactosJson(
       ]);
       afectadas++;
     } catch (err: any) {
-      console.warn(`Omitiendo importación de contacto ${row.email}:`, err.message);
-      omitidos++;
+      console.warn(`Error de empresa para ${row.email}. Guardando contacto sin vincular empresa (fallback):`, err.message);
+      
+      const fallbackQuery = `
+        INSERT INTO contactos (email, empresa_nombre, cuit, rubro_id, tipo, estado, empresa_id)
+        VALUES ($1, $2, $3, $4, $5, $6, NULL)
+        ON CONFLICT (email) DO UPDATE
+        SET
+          empresa_nombre = COALESCE(EXCLUDED.empresa_nombre, contactos.empresa_nombre),
+          cuit           = COALESCE(EXCLUDED.cuit, contactos.cuit),
+          rubro_id       = COALESCE(EXCLUDED.rubro_id, contactos.rubro_id),
+          tipo           = COALESCE(EXCLUDED.tipo, contactos.tipo),
+          estado         = COALESCE(EXCLUDED.estado, contactos.estado),
+          actualizado_en = CURRENT_TIMESTAMP
+      `;
+      try {
+        await dbPool.query(fallbackQuery, [
+          row.email.trim().toLowerCase(),
+          row.empresa_nombre || null,
+          row.cuit || null,
+          row.rubro_id || null,
+          row.tipo || null,
+          row.estado || 'funcional'
+        ]);
+        afectadas++;
+        // Se pudo guardar el mail, así que técnicamente no está omitido del todo
+      } catch (fallbackErr: any) {
+        console.error(`Fallo total al importar ${row.email}:`, fallbackErr.message);
+        omitidos++;
+      }
     }
   }
 
