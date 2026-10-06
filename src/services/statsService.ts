@@ -81,7 +81,7 @@ export async function obtenerEstadisticasGlobales(startDate?: string, endDate?: 
     SELECT COALESCE(r.nombre, 'Sin rubro') as rubro, COUNT(ce.id) as cantidad_envios
     FROM cola_envios ce
     JOIN contactos co ON ce.contacto_id = co.id
-    LEFT JOIN rubros r ON co.rubro_id = r.id
+    LEFT JOIN rubros r ON co.rubro_id = r.id::text
     JOIN campanas c ON ce.campana_id = c.id
     ${whereClause}
     GROUP BY COALESCE(r.nombre, 'Sin rubro')
