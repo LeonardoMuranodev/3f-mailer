@@ -291,6 +291,13 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
                                   lowerMsg.includes('rate limit') || 
                                   lowerMsg.includes('daily sending limit');
                                   
+          const malEscritoMsg = lowerMsg.includes('555 5.5.2') || lowerMsg.includes('555-5.5.2') || lowerMsg.includes('syntax error');
+          
+          if (malEscritoMsg) {
+             respuestaSmtp = `[MAIL_MAL_ESCRITO] ${respuestaSmtp}`;
+             await dbPool.query(`UPDATE contactos SET estado = 'mal_escrito' WHERE id = $1`, [item.contacto_id]);
+          }
+
           if (cuotaAgotadaMsg) {
             // Forzar actualización de estado a agotado para esta cuenta para que obtenerSiguienteSmtpDisponible no la devuelva
             await dbPool.query(`UPDATE cuentas_smtp SET estado = 'agotado', actualizado_en = CURRENT_TIMESTAMP WHERE id = $1`, [cuentaSmtp.id]);

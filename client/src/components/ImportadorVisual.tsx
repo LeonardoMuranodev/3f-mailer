@@ -103,6 +103,7 @@ const ESTADOS_VALIDOS = [
   'rebotado bandeja llena',
   'rebotado spam',
   'rebotado desconocido',
+  'mal_escrito'
 ] as const;
 type EstadoValido = typeof ESTADOS_VALIDOS[number];
 
@@ -124,7 +125,9 @@ function normalizarEstado(raw: string): EstadoValido {
   }
 
   // error_formato y otros estados de error desconocidos → rebotado desconocido
-  if (c.includes('error') || c.includes('formato') || c.includes('invalid')) return 'rebotado desconocido';
+  if (c.includes('error') || c.includes('formato') || c.includes('invalid') || c.includes('mal_escrito')) {
+    return c.includes('mal') || c.includes('escrito') || c.includes('invalid') ? 'mal_escrito' : 'rebotado desconocido';
+  }
 
   return 'funcional'; // fallback seguro
 }

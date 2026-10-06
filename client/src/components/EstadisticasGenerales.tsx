@@ -451,7 +451,8 @@ export default function EstadisticasGenerales() {
                   'rebotado bandeja llena': '#f97316',// Naranja
                   'rebotado spam': '#854d0e',         // Marrón
                   'inactivo': '#64748b',              // Gris
-                  'rebotado desconocido': '#8b5cf6'   // Violeta
+                  'rebotado desconocido': '#8b5cf6',   // Violeta
+                  'mal_escrito': '#db2777'            // Rosa
                 };
                 
                 let currentDeg = 0;
@@ -483,6 +484,7 @@ export default function EstadisticasGenerales() {
                                p.estado === 'rebotado inexistente' ? 'Mails Inexistentes' : 
                                p.estado === 'rebotado desconocido' ? 'Rebotado Desc.' : 
                                p.estado === 'rebotado bandeja llena' ? 'Bandeja Llena' : 
+                               p.estado === 'mal_escrito' ? 'Mal Escrito' : 
                                p.estado}
                             </span>
                             <span className="text-muted ml-auto pl-4">{perc}%</span>

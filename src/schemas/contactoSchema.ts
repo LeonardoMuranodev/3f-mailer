@@ -2,7 +2,12 @@ import { z } from 'zod';
 import { isValidCUIT } from '../utils/cuitValidator';
 
 export const crearContactoSchema = z.object({
-  email: z.string({ message: 'El email es obligatorio' }).trim().email('Email inválido'),
+  email: z.preprocess((val) => {
+    if (typeof val === 'string') {
+      return val.trim().replace(/^\.+|\.+$/g, '');
+    }
+    return val;
+  }, z.string({ message: 'El email es obligatorio' }).email('Email inválido')),
   empresa_nombre: z.string().trim().optional(),
   cuit: z.string().trim()
     .optional()
@@ -10,7 +15,7 @@ export const crearContactoSchema = z.object({
     .refine(val => !val || isValidCUIT(val), { message: 'El CUIT ingresado no es matemáticamente válido' }),
   rubro_id: z.string().optional().nullable(),
   tipo: z.string().default('empresa'),
-  estado: z.enum(['funcional', 'inactivo', 'rebotado inexistente', 'rebotado bandeja llena', 'rebotado spam', 'rebotado desconocido']).default('funcional'),
+  estado: z.enum(['funcional', 'inactivo', 'rebotado inexistente', 'rebotado bandeja llena', 'rebotado spam', 'rebotado desconocido', 'mal_escrito']).default('funcional'),
 });
 
 export const actualizarContactoSchema = crearContactoSchema.partial();
@@ -20,7 +25,7 @@ export const listarContactosQuerySchema = z.object({
   limit: z.coerce.number().int().positive().default(10),
   busqueda: z.string().trim().optional(),
   rubro_id: z.string().optional(),
-  estado: z.enum(['funcional', 'inactivo', 'rebotado inexistente', 'rebotado bandeja llena', 'rebotado spam', 'rebotado desconocido']).optional(),
+  estado: z.enum(['funcional', 'inactivo', 'rebotado inexistente', 'rebotado bandeja llena', 'rebotado spam', 'rebotado desconocido', 'mal_escrito']).optional(),
 });
 
 export const bulkDeleteSchema = z.object({

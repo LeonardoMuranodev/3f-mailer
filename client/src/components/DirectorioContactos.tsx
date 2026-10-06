@@ -559,6 +559,7 @@ export default function DirectorioContactos() {
               <option value="rebotado bandeja llena">Rebotado Bandeja Llena</option>
               <option value="rebotado spam">Rebotado SPAM</option>
               <option value="rebotado desconocido">Rebotado Desconocido</option>
+              <option value="mal_escrito">Mail Mal Escrito</option>
             </select>
           </div>
           <div className="flex flex-row gap-3 w-full lg:w-auto">
@@ -612,6 +613,7 @@ export default function DirectorioContactos() {
                     c.estado === 'rebotado bandeja llena' ? 'bg-[#f97316] text-white' : // Naranja
                     c.estado === 'rebotado spam' ? 'bg-[#854d0e] text-white' : // Marrón
                     c.estado === 'rebotado desconocido' ? 'bg-[#8b5cf6] text-white' : // Violeta
+                    c.estado === 'mal_escrito' ? 'bg-pink-600 text-white' : // Rosa fuerte
                     c.estado === 'inactivo' ? 'bg-[#64748b] text-white' : // Gris
                     'bg-gray-500 text-white';
 
@@ -858,6 +860,7 @@ export default function DirectorioContactos() {
                     <option value="rebotado bandeja llena">Rebotado Bandeja Llena</option>
                     <option value="rebotado spam">Rebotado SPAM</option>
                     <option value="rebotado desconocido">Rebotado Desconocido</option>
+                    <option value="mal_escrito">Mail Mal Escrito</option>
                   </select>
                 </div>
 
