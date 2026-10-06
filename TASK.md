@@ -28,7 +28,7 @@
 ### Prueba y video
 
 - [] Probar que todo funcione correctamente
-- [] Mostrar todas las funcionalidades del sistema con videos 
+- [X ] Mostrar todas las funcionalidades del sistema con videos 
 
 #### DevOps y Despliegue (Go-Live)
 
@@ -36,3 +36,24 @@
 - [] **Importar los contactos de la base de datos de Google Sheets:** al sistema
 - [] **Migrar los datos de las campañas del antiguo sistema**: el sistema de n8n se hicieron dos campañas, migrar los datos para ya ver esas estadisticas en el nuevo sistema
 - [] **Agregar MAIL de soporte**: Cuando los de sistema me den el mail, que ese mail envie avisos, recuperacion de contraseñas, notificaciones etc.
+
+
+Hay que subir los cambios al servidor
+Este tiene una version bastante anterior
+Primero me gustaria hacer pruebas en modo TEST, luego pasar a PROD.
+La BD es la misma, ya sea si estoy en mi PC o server
+El tema nose como se vera ya que la de produccion se quedo con una version bastante atras
+De la de produccion solo me interesa conservar los usuarios
+Luego tenemos que pasardatos del sistema viejo al nuevo, la de PROD
+Osea tenemos 3 BDS: sistema viejo que sighue funcionando (con 3 campañas, datos si bien similares bastantes distintos), TEST (la ams actualizada) y PROD (bastante atrasada, es la ultima la uqe hay que dejar con los usuarios que tiene actualmente e inyectar lo del sistema viejo, pero el tema es que nose si tiene algunas tablas nuevbas como la de los horarios)
+Decime bien que hacer
+COn el MCP de supabase que tenes, en mi cuenta tenes:
+n8n-muni-mails-bd --> BD de sistema viejo
+n8n-muni-mails-app-db --> BD de prod (nose pq le puse n8n si no tiene nada que ver)
+
+La de TEST actual esta en otra cuenta, asi que el MCP no te dejaria acceder aunque lo podes hacer con las credenciales del .env
+
+Osea para el final tenemos que en BD PROD:
+limpiarla (salvo lo usuarios)
+Ponerle los datos de la BD del sistema viejo
+Poner todas la scuentas SMTP, en la app
