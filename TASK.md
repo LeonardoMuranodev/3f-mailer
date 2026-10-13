@@ -72,8 +72,10 @@ Poner todas la scuentas SMTP, en la app
     4. *Primera Ronda de Negocios RIGI- Minería -Rosario*: Límite `2026-10-12`, 2.221 envíos.
   - *Métricas finales consolidadas en DB:* 7.325 envíos históricos totales (7.225 enviados, 100 fallidos). Omitidas todas las vistas previas rechazadas.
 
-[] Problema con el CUIT:
-Si un contaco esta sin CUIT, al querer actualizarlo esta la validacion del CUIT, lo cual no deja dejarle SIN CUIT.
-Habria que buscar la manera de salterse eso si el usuario quiere, como o que si se deja vacio es sin cuit y que no te tome con CUIT NO VALIDO por la matematica,  o un btoon que diga DEJAR SIN CUIT O ALGO ASI
+- [x] **Problema con el CUIT (Contacto sin CUIT / Dejar sin CUIT):**
+  - Validación flexibilizada en Frontend (`DirectorioContactos.tsx`): El CUIT es opcional. Si se deja vacío no valida longitud ni algoritmo matemático módulo 11. Se añadió un botón `"Dejar sin CUIT"` en el modal de edición.
+  - Validación flexibilizada en Backend (`contactoSchema.ts`, `contactoService.ts`, `contacto.ts`): Soporta `null`, `undefined` y string vacío `""` preprocesando a `null` sin fallar validación de 11 dígitos ni algoritmo matemático. Al actualizar o crear, persiste `cuit = NULL` en la BD.
 
-Boton de que cuando estoy en la cola de envios, al ser varias filas, para volver astra arriba de todo cuando baje y no se vean las estadisticas de la campaña
+- [x] **Botón "Volver arriba" en Cola de Envíos (`DetalleCampana.tsx`):**
+  - Botón flotante animado en la esquina inferior derecha que aparece cuando el usuario scrollea hacia abajo (`scrollY > 300px`).
+  - Permite retornar suavemente arriba de la vista para consultar las tarjetas de métricas y estadísticas de la campaña.

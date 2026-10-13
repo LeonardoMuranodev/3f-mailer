@@ -1,6 +1,6 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Send, AlertTriangle, CheckCircle2, Clock, Mail, Search, RefreshCw, BarChart2, Download, MousePointerClick, Pause, Play, Trash2, Edit3 } from 'lucide-react';
+import { ArrowLeft, Send, AlertTriangle, CheckCircle2, Clock, Mail, Search, RefreshCw, BarChart2, Download, MousePointerClick, Pause, Play, Trash2, Edit3, ArrowUp } from 'lucide-react';
 import { obtenerCampanaDetalle, obtenerColaCampana, cambiarEstadoCampana, eliminarCampana } from '../services/api';
 import type { CampanaConStats, ColaEnvioItem } from '../types/campana';
 import { formatDate } from '../utils/formatDate';
@@ -44,10 +44,31 @@ export default function DetalleCampana() {
   const [cola, setCola] = useState<ColaEnvioItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'cola' | 'stats'>('cola');
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   // Filtros para la cola
   const [emailFiltro, setEmailFiltro] = useState('');
   const [estadoFiltro, setEstadoFiltro] = useState('');
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
 
   const fetchData = async (overrideEmail?: string, overrideEstado?: string) => {
     if (!id) return;
@@ -591,6 +612,22 @@ export default function DetalleCampana() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Botón flotante para volver arriba (a las estadísticas) */}
+      {showScrollTop && (
+        <button
+          type="button"
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-40 p-3 bg-primary text-white rounded-full shadow-lg hover:bg-primary-dark transition-all duration-300 transform hover:scale-110 flex items-center justify-center gap-2 group"
+          title="Volver a las estadísticas de la campaña"
+          aria-label="Volver arriba"
+        >
+          <ArrowUp size={20} className="group-hover:-translate-y-0.5 transition-transform" />
+          <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 text-xs font-semibold pr-0 group-hover:pr-1">
+            Volver arriba
+          </span>
+        </button>
       )}
     </div>
   );

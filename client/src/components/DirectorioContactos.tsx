@@ -267,23 +267,25 @@ export default function DirectorioContactos() {
     setErrorMsg('');
     setSaving(true);
 
-    if (form.cuit) {
-      if (form.cuit.length !== 11) {
-        setErrorMsg('El CUIT debe tener exactamente 11 dígitos.');
+    const cuitLimpio = form.cuit ? form.cuit.trim() : '';
+
+    if (cuitLimpio) {
+      if (cuitLimpio.length !== 11) {
+        setErrorMsg('El CUIT debe tener exactamente 11 dígitos, o déjalo vacío si no posee CUIT.');
         setSaving(false);
         return;
       }
       
       const multipliers = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
       let total = 0;
-      for (let i = 0; i < 10; i++) total += parseInt(form.cuit[i]) * multipliers[i];
+      for (let i = 0; i < 10; i++) total += parseInt(cuitLimpio[i]) * multipliers[i];
       const mod = total % 11;
       let checkDigit = mod === 0 ? 0 : 11 - mod;
       if (checkDigit === 10) {
-        const prefix = form.cuit.substring(0, 2);
+        const prefix = cuitLimpio.substring(0, 2);
         checkDigit = (prefix === '20' || prefix === '23' || prefix === '24') ? 9 : (prefix === '27' ? 4 : 9);
       }
-      if (checkDigit !== parseInt(form.cuit[10])) {
+      if (checkDigit !== parseInt(cuitLimpio[10])) {
         setErrorMsg('El CUIT ingresado no es matemáticamente válido.');
         setSaving(false);
         return;
@@ -291,7 +293,8 @@ export default function DirectorioContactos() {
     }
 
     try {
-      const payload = { ...form };
+      const payload: any = { ...form };
+      payload.cuit = cuitLimpio || null;
       if (!payload.rubro_id) payload.rubro_id = null;
 
       if (editingId) {
@@ -812,9 +815,22 @@ export default function DirectorioContactos() {
                   )}
                 </div>
 
-                {/* CUIT - full width con autocompletado */}
+                {/* CUIT - full width con autocompletado y opción Sin CUIT */}
                 <div className="sm:col-span-2" style={{ position: 'relative' }}>
-                  <label className="block text-sm font-medium text-dark mb-1">CUIT</label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-sm font-medium text-dark">
+                      CUIT <span className="text-muted font-normal text-xs">(Opcional)</span>
+                    </label>
+                    {form.cuit && form.cuit.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, cuit: '' }))}
+                        className="text-xs text-primary hover:text-primary-dark font-medium hover:underline transition-colors"
+                      >
+                        Dejar sin CUIT
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
                     autoComplete="off"
@@ -827,7 +843,7 @@ export default function DirectorioContactos() {
                     }}
                     onBlur={() => setTimeout(() => setShowEmpresaSugeridas(false), 150)}
                     className="w-full px-3 py-2 bg-background border border-border rounded-lg text-dark focus:outline-none focus:ring-2 focus:ring-primary/50 h-[42px]"
-                    placeholder="Sin guiones (ej: 30709328995)"
+                    placeholder="Sin guiones (ej: 30709328995) o dejar vacío"
                     maxLength={11}
                   />
                   {showEmpresaSugeridas === 'cuit' && empresasSugeridas.length > 0 && (

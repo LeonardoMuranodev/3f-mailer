@@ -127,7 +127,12 @@ export async function actualizarContacto(id: string, data: ActualizarContactoInp
 
   // Determinar empresa final
   const finalEmpresaNombre = data.empresa_nombre !== undefined ? data.empresa_nombre : existingContacto.empresa_nombre;
-  const finalCuit = data.cuit !== undefined ? data.cuit : existingContacto.cuit;
+
+  // Determinar CUIT final (si se pasa vacío o null, se limpia explícitamente a null)
+  const finalCuit = data.cuit !== undefined ? (data.cuit && data.cuit.trim() ? data.cuit.trim() : null) : existingContacto.cuit;
+  if (data.cuit !== undefined) {
+    data.cuit = finalCuit;
+  }
 
   // Determinar rubro final
   let finalRubroId = data.rubro_id !== undefined ? data.rubro_id : existingContacto.rubro_id;
