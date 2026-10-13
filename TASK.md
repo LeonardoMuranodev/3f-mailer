@@ -81,4 +81,7 @@ Poner todas la scuentas SMTP, en la app
   - En Detalle de Campaña: Permite retornar suavemente arriba de la vista para consultar las tarjetas de métricas y estadísticas de la campaña.
   - En Crear / Editar Campaña: Permite retornar suavemente arriba de la vista tras scrollear al final (destinatarios y barra de acciones) para volver al encabezado, flyer y cuerpo del mensaje.
 
-Al buscar contactos por rubro no me sale la opcion Sin Rubro, tambien deberia salir en campañas ese mismo filtro.
+- [x] **Filtro "Sin Rubro" en Contactos y Campañas:**
+  - En Directorio de Contactos (`DirectorioContactos.tsx` y `contactoService.ts`): Agregada la opción `"Sin Rubro"` (`__sin_rubro__`) en el selector de búsqueda. Filtra en BD los contactos donde `rubro_id IS NULL OR TRIM(rubro_id) = ''`.
+  - En Listado de Campañas (`ListaCampanas.tsx` y `campanaService.ts`): Agregada la opción `"Sin Rubro"` (`__sin_rubro__`) en el filtro de campañas. Filtra en BD campañas donde `para_todos_rubros = true` o que tienen `__sin_rubro__` seleccionado.
+  - Actualizado diccionario de etiquetas `RUBROS_LABELS` en `client/src/data/rubros.ts` y documentado en directiva `directivas/filtro_sin_rubro.md`.

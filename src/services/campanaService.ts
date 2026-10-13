@@ -293,9 +293,14 @@ export async function listarCampanas(
   }
 
   if (filtros.rubro) {
-    conditions.push(`(para_todos_rubros = true OR rubros_seleccionados::jsonb ? $${paramIdx})`);
-    values.push(filtros.rubro);
-    paramIdx++;
+    const rubroLower = filtros.rubro.toLowerCase().trim();
+    if (filtros.rubro === '__sin_rubro__' || rubroLower === 'sin rubro' || rubroLower === 'sin_rubro') {
+      conditions.push(`(para_todos_rubros = true OR rubros_seleccionados::jsonb ? '__sin_rubro__')`);
+    } else {
+      conditions.push(`(para_todos_rubros = true OR rubros_seleccionados::jsonb ? $${paramIdx})`);
+      values.push(filtros.rubro);
+      paramIdx++;
+    }
   }
 
   if (filtros.estado === 'archivada') {

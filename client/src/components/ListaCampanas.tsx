@@ -270,6 +270,7 @@ export default function ListaCampanas() {
               className="w-full pl-3.5 pr-8 py-2.5 text-sm bg-background border border-border rounded-lg text-dark focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors h-[42px]"
             >
               <option value="">Todos los rubros</option>
+              <option value="__sin_rubro__">Sin Rubro</option>
               {RUBROS_LIST.map((r) => (
                 <option key={r} value={r}>{RUBROS_LABELS[r] || r}</option>
               ))}

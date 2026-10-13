@@ -47,9 +47,14 @@ export async function listarContactos(filtros: ListarContactosQuery): Promise<Co
   }
 
   if (rubro_id) {
-    conditions.push(`(c.rubro_id = $${paramCount} OR LOWER(TRIM(r.nombre)) = LOWER(TRIM($${paramCount})) OR r.id::text = $${paramCount})`);
-    values.push(rubro_id);
-    paramCount++;
+    const rubroLower = rubro_id.toLowerCase().trim();
+    if (rubro_id === '__sin_rubro__' || rubroLower === 'sin rubro' || rubroLower === 'sin_rubro') {
+      conditions.push(`(c.rubro_id IS NULL OR TRIM(c.rubro_id) = '' OR c.rubro_id = 'null')`);
+    } else {
+      conditions.push(`(c.rubro_id = $${paramCount} OR LOWER(TRIM(r.nombre)) = LOWER(TRIM($${paramCount})) OR r.id::text = $${paramCount})`);
+      values.push(rubro_id);
+      paramCount++;
+    }
   }
 
   if (estado) {
