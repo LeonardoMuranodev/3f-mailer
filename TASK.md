@@ -62,25 +62,16 @@ Poner todas la scuentas SMTP, en la app
 - [x] **Limitar backups en Google Drive a 7:** Configurada la retención automática en `scripts/backup-db.sh` y `Dockerfile.backup` (con `jq`) para conservar los últimos 7 días y purgar los excedentes en Google Drive. Se ejecutó la purga inicial liberando 19 backups antiguos acumulados.
 - [x] **Visualización legible de Rubros en Contactos:** Actualizado `listarContactos` con `LEFT JOIN rubros` para resolver `rubro_nombre` amigable, y actualizado `DirectorioContactos.tsx` para mostrar etiquetas formateadas (ej. "Metalúrgica", "Comercio") en la tabla, modal de edición y exportación CSV en vez de IDs/UUIDs ilegibles.
 
-Tarea de pasaje de datos
+- [x] **Tarea de pasaje de datos (Campañas Históricas y Cola de Envíos):**
+  - **Taller para Pymes:** Fecha límite actualizada a `2026-08-10` con su cola de envíos preservada (193 registros).
+  - **Conectá con China – Parte II:** Metadatos actualizados (fecha límite `2026-09-28`, flyer, link de inscripción) y migrados sus 2.233 envíos.
+  - **4 Campañas finalizadas adicionales:** Migradas exitosamente con fecha límite, flyers, links de inscripción, rubros y sus respectivas colas de envío:
+    1. *Lanzamiento de las Rondas de Negocios RIGI (Parte 1)*: Límite `2026-10-03`, 868 envíos.
+    2. *Lanzamiento de las Rondas de Negocios RIGI (Parte 2)*: Límite `2026-10-03`, 944 envíos.
+    3. *Planos mecánicos con solidworks avanzado*: Límite `2026-10-09`, 866 envíos.
+    4. *Primera Ronda de Negocios RIGI- Minería -Rosario*: Límite `2026-10-12`, 2.221 envíos.
+  - *Métricas finales consolidadas en DB:* 7.325 envíos históricos totales (7.225 enviados, 100 fallidos). Omitidas todas las vistas previas rechazadas.
 
-
-    Tenes que actualizar lo que seria el pasaje del viejo sistema sobre los datos. Primero no pusiste bien la fecha de finalizacion, ademas de que en la campaña Conecta con China no habias puestos la cola de ENVIOS
-
-    Te voy a pasar el archvio completo googl sheets, el cual se fueron enviado otras campañas. La unica que no esta es la de Taller para Pymes, de esa solo tenes que agregarle esta fecha de limite --> 2026-08-10 ajustada a nuestro formato
-ta
-    A la de Conecta con China tenes que agregarle su fecha limite y la cola de envios que te falto
-
-    Ademas de esa tenes 4 campañas mas que se enviaron que ya finalizaron es por eso que solo hay que migrar sus datos. Las que fueron rexhazadas ni las toques fueron vistas previas rechazadas
-
-    En la primer hoja llamada eventos_config_prod tendrias lo que es la data del evento en si, y en la hoja cola de envios, los mail y envios por separado, unidos por el id de cada evento.
-
-    Tu tarea es ir pasando una a una las 4 campañas que finalizaron con su cola de envio, ajustando a la informacion que tenemos en nuestra BD actual, ya que es diferente.
-
-    1 er paso, agregar a Taller para pymes su fecha limite
-    Corregir Conecta con China
-    Agregar los otros 4 eventos finalizados correctamente
-
-Problema con el CUIT:
+[] Problema con el CUIT:
 Si un contaco esta sin CUIT, al querer actualizarlo esta la validacion del CUIT, lo cual no deja dejarle SIN CUIT.
 Habria que buscar la manera de salterse eso si el usuario quiere, como o que si se deja vacio es sin cuit y que no te tome con CUIT NO VALIDO por la matematica,  o un btoon que diga DEJAR SIN CUIT O ALGO ASI
