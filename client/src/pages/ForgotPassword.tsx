@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import logo3f from '../assets/logo-3f.png';
 import ThemeToggle from '../components/ThemeToggle';

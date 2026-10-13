@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Mail, CheckCircle2, Save, Eye, ArrowLeft, Plus, List, FileText, HelpCircle, X, Info } from 'lucide-react';
+import { Mail, CheckCircle2, Save, Eye, ArrowLeft, Plus, List, FileText, HelpCircle, X, Info, ArrowUp } from 'lucide-react';
 import { useCampanaStore, buildFormData } from '../stores/campanaStore';
 import TiptapEditor from './TiptapEditor';
 import FlyerUpload from './FlyerUpload';
@@ -16,6 +16,27 @@ export default function CrearCampana() {
   const [conAdjunto, setConAdjunto] = useState(
     () => !!useCampanaStore.getState().adjuntoName || !!useCampanaStore.getState().form.adjunto_url
   );
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
   const {
     form,
     errors,
@@ -512,7 +533,7 @@ export default function CrearCampana() {
                       setConAdjunto(e.target.checked);
                       if (!e.target.checked) {
                         setAdjunto(null);
-                        setField('adjunto_url', null);
+                        setField('adjunto_url', '');
                         useCampanaStore.setState({ adjuntoName: null });
                       }
                     }}
@@ -711,6 +732,22 @@ export default function CrearCampana() {
           </div>
         </div>
       </div>
+
+      {/* Botón flotante para volver arriba */}
+      {showScrollTop && (
+        <button
+          type="button"
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-40 p-3 bg-primary text-white rounded-full shadow-lg hover:bg-primary-dark transition-all duration-300 transform hover:scale-110 flex items-center justify-center gap-2 group"
+          title="Volver arriba"
+          aria-label="Volver arriba"
+        >
+          <ArrowUp size={20} className="group-hover:-translate-y-0.5 transition-transform" />
+          <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 text-xs font-semibold pr-0 group-hover:pr-1">
+            Volver arriba
+          </span>
+        </button>
+      )}
     </div>
   );
 }

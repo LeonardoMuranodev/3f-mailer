@@ -76,6 +76,9 @@ Poner todas la scuentas SMTP, en la app
   - Validación flexibilizada en Frontend (`DirectorioContactos.tsx`): El CUIT es opcional. Si se deja vacío no valida longitud ni algoritmo matemático módulo 11. Se añadió un botón `"Dejar sin CUIT"` en el modal de edición.
   - Validación flexibilizada en Backend (`contactoSchema.ts`, `contactoService.ts`, `contacto.ts`): Soporta `null`, `undefined` y string vacío `""` preprocesando a `null` sin fallar validación de 11 dígitos ni algoritmo matemático. Al actualizar o crear, persiste `cuit = NULL` en la BD.
 
-- [x] **Botón "Volver arriba" en Cola de Envíos (`DetalleCampana.tsx`):**
+- [x] **Botón "Volver arriba" en Cola de Envíos y Nueva Campaña (`DetalleCampana.tsx` y `CrearCampana.tsx`):**
   - Botón flotante animado en la esquina inferior derecha que aparece cuando el usuario scrollea hacia abajo (`scrollY > 300px`).
-  - Permite retornar suavemente arriba de la vista para consultar las tarjetas de métricas y estadísticas de la campaña.
+  - En Detalle de Campaña: Permite retornar suavemente arriba de la vista para consultar las tarjetas de métricas y estadísticas de la campaña.
+  - En Crear / Editar Campaña: Permite retornar suavemente arriba de la vista tras scrollear al final (destinatarios y barra de acciones) para volver al encabezado, flyer y cuerpo del mensaje.
+
+Al buscar contactos por rubro no me sale la opcion Sin Rubro, tambien deberia salir en campañas ese mismo filtro.

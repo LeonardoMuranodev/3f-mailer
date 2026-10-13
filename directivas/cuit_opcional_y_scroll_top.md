@@ -32,11 +32,16 @@
 
 ## 2. Botón "Volver Arriba" (Scroll to Top)
 
-### Componente de Cola de Envíos (`DetalleCampana.tsx`)
-- Detectar el scroll de la ventana o contenedor (`scrollY > 300` px).
-- Renderizar un botón flotante accesible (esquina inferior derecha) con ícono `ArrowUp` de Lucide.
-- Estilo: Botón circular con `bg-primary`, sombra flotante `shadow-lg`, transición suave, hover effect, y tooltip `"Volver arriba"`.
-- Al hacer clic: `window.scrollTo({ top: 0, behavior: 'smooth' })`.
+### Componentes con soporte Scroll to Top:
+1. **Detalle de Campaña / Cola de Envíos (`DetalleCampana.tsx`)**:
+   - Detectar el scroll de la ventana (`scrollY > 300` px).
+   - Botón flotante accesible (`fixed bottom-6 right-6 z-40`) con ícono `ArrowUp` de Lucide.
+   - Al hacer clic: `window.scrollTo({ top: 0, behavior: 'smooth' })`.
+
+2. **Crear / Editar Campaña (`CrearCampana.tsx`)**:
+   - Detectar el scroll de la ventana (`scrollY > 300` px) mediante listener pasivo de scroll.
+   - Renderizar botón flotante idéntico (`fixed bottom-6 right-6 z-40`), con tooltip explicativo `"Volver arriba"`.
+   - Permite que al estar abajo (en la selección de destinatarios o barra de acciones finales de guardado/envío), el usuario pueda volver instantáneamente al inicio del formulario para revisar asunto, flyer, o contenido.
 
 ---
 
@@ -44,3 +49,4 @@
 - Un usuario puede editar un contacto existente que tenía CUIT y vaciarlo o tocar "Dejar sin CUIT", guardándolo exitosamente sin errores de validación.
 - Un usuario puede crear un nuevo contacto sin ingresar CUIT.
 - En la vista de Detalle de Campaña / Cola de Envíos, al bajar en la tabla, aparece el botón flotante y al tocarlo scrollea fluidamente arriba donde están las tarjetas de estadísticas.
+- En la vista de Crear/Editar Campaña (`/nueva-campana` o `/editar/:id`), al bajar por el formulario, aparece el botón flotante y al tocarlo scrollea fluidamente arriba de todo.
