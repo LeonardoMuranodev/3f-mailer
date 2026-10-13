@@ -19,6 +19,19 @@ export interface ContactoImportRow {
   estado?: string | null;
 }
 
+export async function resolverRubroId(rubroInput?: string | null): Promise<string | null> {
+  if (!rubroInput || !rubroInput.trim()) return null;
+  const limpio = rubroInput.trim();
+  const res = await dbPool.query(
+    'SELECT id FROM rubros WHERE id::text = $1 OR LOWER(TRIM(nombre)) = LOWER(TRIM($1)) LIMIT 1',
+    [limpio]
+  );
+  if (res.rows.length > 0) {
+    return res.rows[0].id;
+  }
+  return limpio;
+}
+
 export async function listarContactos(filtros: ListarContactosQuery): Promise<ContactosResponse> {
   const { page = 1, limit = 10, busqueda, rubro_id, estado } = filtros;
   const offset = (page - 1) * limit;
@@ -34,7 +47,7 @@ export async function listarContactos(filtros: ListarContactosQuery): Promise<Co
   }
 
   if (rubro_id) {
-    conditions.push(`c.rubro_id = $${paramCount}`);
+    conditions.push(`(c.rubro_id = $${paramCount} OR LOWER(TRIM(r.nombre)) = LOWER(TRIM($${paramCount})) OR r.id::text = $${paramCount})`);
     values.push(rubro_id);
     paramCount++;
   }
@@ -47,13 +60,21 @@ export async function listarContactos(filtros: ListarContactosQuery): Promise<Co
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-  const countQuery = `SELECT COUNT(*) FROM contactos c ${whereClause}`;
+  const countQuery = `
+    SELECT COUNT(*) 
+    FROM contactos c
+    LEFT JOIN rubros r ON (c.rubro_id = r.id::text OR LOWER(TRIM(c.rubro_id)) = LOWER(TRIM(r.nombre)))
+    ${whereClause}
+  `;
   const countResult = await dbPool.query(countQuery, values);
   const total = parseInt(countResult.rows[0].count, 10);
 
   const query = `
-    SELECT c.*, c.rubro_id AS rubro_nombre
+    SELECT 
+      c.*, 
+      COALESCE(TRIM(r.nombre), c.rubro_id) AS rubro_nombre
     FROM contactos c
+    LEFT JOIN rubros r ON (c.rubro_id = r.id::text OR LOWER(TRIM(c.rubro_id)) = LOWER(TRIM(r.nombre)))
     ${whereClause}
     ORDER BY c.creado_en DESC
     LIMIT $${paramCount} OFFSET $${paramCount + 1}
@@ -72,9 +93,10 @@ export async function listarContactos(filtros: ListarContactosQuery): Promise<Co
 
 export async function crearContacto(data: CrearContactoInput): Promise<Contacto | null> {
   const { email, empresa_nombre, cuit, rubro_id, tipo = 'empresa', estado = 'funcional' } = data;
+  const rubroFinalId = await resolverRubroId(rubro_id);
 
   // Upsert empresa (crea o reutiliza)
-  const empresa_id = await upsertEmpresa(empresa_nombre, cuit, rubro_id);
+  const empresa_id = await upsertEmpresa(empresa_nombre, cuit, rubroFinalId);
 
   const query = `
     INSERT INTO contactos (email, empresa_nombre, cuit, rubro_id, tipo, estado, empresa_id)
@@ -87,7 +109,7 @@ export async function crearContacto(data: CrearContactoInput): Promise<Contacto 
     email,
     empresa_nombre ?? null,
     cuit ?? null,
-    rubro_id ?? null,
+    rubroFinalId ?? null,
     tipo,
     estado,
     empresa_id,
@@ -108,7 +130,11 @@ export async function actualizarContacto(id: string, data: ActualizarContactoInp
   const finalCuit = data.cuit !== undefined ? data.cuit : existingContacto.cuit;
 
   // Determinar rubro final
-  const finalRubroId = data.rubro_id !== undefined ? data.rubro_id : existingContacto.rubro_id;
+  let finalRubroId = data.rubro_id !== undefined ? data.rubro_id : existingContacto.rubro_id;
+  if (data.rubro_id !== undefined) {
+    finalRubroId = await resolverRubroId(data.rubro_id);
+    data.rubro_id = finalRubroId;
+  }
 
   // Upsert empresa (crea o reutiliza o valida)
   const empresa_id = await upsertEmpresa(finalEmpresaNombre, finalCuit, finalRubroId);
@@ -223,32 +249,43 @@ export async function importarContactosJson(
   let afectadas = 0;
   let omitidos = 0;
 
+  // Pre-cargar mapa de rubros para resolución eficiente O(1)
+  const rubrosDb = await dbPool.query('SELECT id, nombre FROM rubros');
+  const rubroSlugToId = new Map<string, string>();
+  for (const r of rubrosDb.rows) {
+    if (r.nombre) rubroSlugToId.set(r.nombre.trim().toLowerCase(), r.id);
+    rubroSlugToId.set(r.id, r.id);
+  }
+
   for (const row of contactos) {
     if (!row.email || !row.email.trim()) continue;
 
+    const rubroLimpio = row.rubro_id?.trim().toLowerCase() || null;
+    const rubroFinalId = rubroLimpio ? (rubroSlugToId.get(rubroLimpio) || row.rubro_id) : null;
+
     try {
       // Upsert empresa
-    const empresa_id = await upsertEmpresa(row.empresa_nombre, row.cuit);
+      const empresa_id = await upsertEmpresa(row.empresa_nombre, row.cuit, rubroFinalId);
 
-    const query = `
-      INSERT INTO contactos (email, empresa_nombre, cuit, rubro_id, tipo, estado, empresa_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      ON CONFLICT (email) DO UPDATE
-      SET
-        empresa_nombre = COALESCE(EXCLUDED.empresa_nombre, contactos.empresa_nombre),
-        cuit           = COALESCE(EXCLUDED.cuit, contactos.cuit),
-        rubro_id       = COALESCE(EXCLUDED.rubro_id, contactos.rubro_id),
-        tipo           = COALESCE(EXCLUDED.tipo, contactos.tipo),
-        estado         = COALESCE(EXCLUDED.estado, contactos.estado),
-        empresa_id     = COALESCE(EXCLUDED.empresa_id, contactos.empresa_id),
-        actualizado_en = CURRENT_TIMESTAMP
-    `;
+      const query = `
+        INSERT INTO contactos (email, empresa_nombre, cuit, rubro_id, tipo, estado, empresa_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ON CONFLICT (email) DO UPDATE
+        SET
+          empresa_nombre = COALESCE(EXCLUDED.empresa_nombre, contactos.empresa_nombre),
+          cuit           = COALESCE(EXCLUDED.cuit, contactos.cuit),
+          rubro_id       = COALESCE(EXCLUDED.rubro_id, contactos.rubro_id),
+          tipo           = COALESCE(EXCLUDED.tipo, contactos.tipo),
+          estado         = COALESCE(EXCLUDED.estado, contactos.estado),
+          empresa_id     = COALESCE(EXCLUDED.empresa_id, contactos.empresa_id),
+          actualizado_en = CURRENT_TIMESTAMP
+      `;
 
       await dbPool.query(query, [
         row.email.trim().toLowerCase(),
         row.empresa_nombre || null,
         row.cuit || null,
-        row.rubro_id || null,
+        rubroFinalId || null,
         row.tipo || null,
         row.estado || 'funcional',
         empresa_id,
@@ -274,12 +311,11 @@ export async function importarContactosJson(
           row.email.trim().toLowerCase(),
           row.empresa_nombre || null,
           row.cuit || null,
-          row.rubro_id || null,
+          rubroFinalId || null,
           row.tipo || null,
           row.estado || 'funcional'
         ]);
         afectadas++;
-        // Se pudo guardar el mail, así que técnicamente no está omitido del todo
       } catch (fallbackErr: any) {
         console.error(`Fallo total al importar ${row.email}:`, fallbackErr.message);
         omitidos++;

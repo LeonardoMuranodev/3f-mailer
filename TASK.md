@@ -57,3 +57,30 @@ Osea para el final tenemos que en BD PROD:
 limpiarla (salvo lo usuarios)
 Ponerle los datos de la BD del sistema viejo
 Poner todas la scuentas SMTP, en la app
+
+
+- [x] **Limitar backups en Google Drive a 7:** Configurada la retención automática en `scripts/backup-db.sh` y `Dockerfile.backup` (con `jq`) para conservar los últimos 7 días y purgar los excedentes en Google Drive. Se ejecutó la purga inicial liberando 19 backups antiguos acumulados.
+- [x] **Visualización legible de Rubros en Contactos:** Actualizado `listarContactos` con `LEFT JOIN rubros` para resolver `rubro_nombre` amigable, y actualizado `DirectorioContactos.tsx` para mostrar etiquetas formateadas (ej. "Metalúrgica", "Comercio") en la tabla, modal de edición y exportación CSV en vez de IDs/UUIDs ilegibles.
+
+Tarea de pasaje de datos
+
+
+    Tenes que actualizar lo que seria el pasaje del viejo sistema sobre los datos. Primero no pusiste bien la fecha de finalizacion, ademas de que en la campaña Conecta con China no habias puestos la cola de ENVIOS
+
+    Te voy a pasar el archvio completo googl sheets, el cual se fueron enviado otras campañas. La unica que no esta es la de Taller para Pymes, de esa solo tenes que agregarle esta fecha de limite --> 2026-08-10 ajustada a nuestro formato
+ta
+    A la de Conecta con China tenes que agregarle su fecha limite y la cola de envios que te falto
+
+    Ademas de esa tenes 4 campañas mas que se enviaron que ya finalizaron es por eso que solo hay que migrar sus datos. Las que fueron rexhazadas ni las toques fueron vistas previas rechazadas
+
+    En la primer hoja llamada eventos_config_prod tendrias lo que es la data del evento en si, y en la hoja cola de envios, los mail y envios por separado, unidos por el id de cada evento.
+
+    Tu tarea es ir pasando una a una las 4 campañas que finalizaron con su cola de envio, ajustando a la informacion que tenemos en nuestra BD actual, ya que es diferente.
+
+    1 er paso, agregar a Taller para pymes su fecha limite
+    Corregir Conecta con China
+    Agregar los otros 4 eventos finalizados correctamente
+
+Problema con el CUIT:
+Si un contaco esta sin CUIT, al querer actualizarlo esta la validacion del CUIT, lo cual no deja dejarle SIN CUIT.
+Habria que buscar la manera de salterse eso si el usuario quiere, como o que si se deja vacio es sin cuit y que no te tome con CUIT NO VALIDO por la matematica,  o un btoon que diga DEJAR SIN CUIT O ALGO ASI

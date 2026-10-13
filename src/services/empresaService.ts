@@ -1,4 +1,4 @@
-﻿import { dbPool } from '../config/db.js';
+import { dbPool } from '../config/db.js';
 
 export interface Empresa {
   id: string;
@@ -95,7 +95,13 @@ export async function buscarEmpresas(q?: string): Promise<Array<Empresa & { rubr
   if (q) {
     const result = await dbPool.query<Empresa & { rubro_id: string | null }>(
       `SELECT e.id, e.nombre, e.cuit, 
-              (SELECT c.rubro_id FROM contactos c WHERE c.empresa_id = e.id AND c.rubro_id IS NOT NULL LIMIT 1) as rubro_id 
+              (
+                SELECT COALESCE(TRIM(r.nombre), c.rubro_id)
+                FROM contactos c
+                LEFT JOIN rubros r ON (c.rubro_id = r.id::text OR LOWER(TRIM(c.rubro_id)) = LOWER(TRIM(r.nombre)))
+                WHERE c.empresa_id = e.id AND c.rubro_id IS NOT NULL
+                LIMIT 1
+              ) as rubro_id
        FROM empresas e
        WHERE e.nombre ILIKE $1 OR e.cuit ILIKE $1
        ORDER BY e.nombre ASC LIMIT 20`,

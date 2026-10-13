@@ -154,7 +154,7 @@ export default function DirectorioContactos() {
         c.empresa_nombre || '',
         c.email,
         c.cuit || '',
-        c.rubro_nombre || '',
+        c.rubro_nombre ? (RUBROS_LABELS[c.rubro_nombre.trim().toLowerCase()] || c.rubro_nombre) : '',
         c.estado,
         c.tipo || '',
         new Date(c.creado_en).toLocaleDateString()
@@ -247,11 +247,14 @@ export default function DirectorioContactos() {
 
   const openEditarModal = (c: ContactoConRubro) => {
     setEditingId(c.id);
+    const rubroKey = c.rubro_nombre?.trim().toLowerCase() || c.rubro_id?.trim().toLowerCase() || '';
+    const rubroSeleccionado = RUBROS_LIST.includes(rubroKey) ? rubroKey : (c.rubro_id || '');
+
     setForm({
       email: c.email,
       empresa_nombre: c.empresa_nombre || '',
       cuit: c.cuit || '',
-      rubro_id: c.rubro_id || '',
+      rubro_id: rubroSeleccionado,
       estado: c.estado,
       tipo: c.tipo || '',
     });
@@ -638,9 +641,9 @@ export default function DirectorioContactos() {
                       <td className="px-6 py-4">
                         {c.cuit || '-'}
                       </td>
-                      <td className="px-6 py-4 max-w-[150px] truncate" title={c.rubro_nombre || '-'}>
-                        <span className="bg-background border border-border px-2 py-1 rounded text-xs">
-                          {c.rubro_nombre || '-'}
+                      <td className="px-6 py-4 max-w-[170px] truncate" title={(c.rubro_nombre && (RUBROS_LABELS[c.rubro_nombre.trim().toLowerCase()] || c.rubro_nombre)) || 'Sin rubro'}>
+                        <span className={`px-2.5 py-1 rounded-md text-xs inline-block ${c.rubro_nombre ? 'bg-background border border-border text-dark font-medium shadow-xs' : 'text-muted italic'}`}>
+                          {c.rubro_nombre ? (RUBROS_LABELS[c.rubro_nombre.trim().toLowerCase()] || c.rubro_nombre) : 'Sin rubro'}
                         </span>
                       </td>
                       <td className="px-6 py-4">
