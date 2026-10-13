@@ -354,6 +354,7 @@ export interface CampanaConStats extends Campana {
     fallidos: number;
     abiertos: number;
     clicks: number;
+    desglose_fallos?: Array<{ categoria: string; cantidad: number; porcentaje: number }>;
   };
 }
 
@@ -396,7 +397,66 @@ export async function obtenerCampanaConEstadisticas(
     clicks: 0,
   };
 
-  return { ...campana, stats };
+  let desglose_fallos: Array<{ categoria: string; cantidad: number; porcentaje: number }> = [];
+
+  if (stats.fallidos > 0) {
+    const fallosQuery = `
+      SELECT respuesta_smtp, COUNT(*)::int AS cantidad
+      FROM cola_envios
+      WHERE campana_id = $1 AND (estado = 'fallido' OR (estado = 'pendiente' AND respuesta_smtp IS NOT NULL))
+      GROUP BY respuesta_smtp;
+    `;
+    const fallosResult = await dbPool.query<{ respuesta_smtp: string | null; cantidad: number }>(fallosQuery, [id]);
+
+    const catMap: Record<string, number> = {
+      'Cancelado': 0,
+      'Dominio Inexistente': 0,
+      'Credenciales/Login SMTP': 0,
+      'Cuota Excedida (Remitente)': 0,
+      'Casilla Llena (Destinatario)': 0,
+      'Rechazado por Spam': 0,
+      'Email Mal Escrito': 0,
+      'Otros': 0,
+    };
+
+    let totalAnalizados = 0;
+
+    for (const row of fallosResult.rows) {
+      const msg = (row.respuesta_smtp || '').toLowerCase();
+      const count = row.cantidad;
+      totalAnalizados += count;
+
+      if (msg.includes('cancelad')) {
+        catMap['Cancelado'] += count;
+      } else if (msg.includes('domain not found') || msg.includes('nxdomain') || msg.includes('no such domain') || msg.includes('el correo o dominio no existe')) {
+        catMap['Dominio Inexistente'] += count;
+      } else if (msg.includes('mail_mal_escrito') || msg.includes('syntax error') || msg.includes('mal escrito')) {
+        catMap['Email Mal Escrito'] += count;
+      } else if (msg.includes('login') || msg.includes('auth') || msg.includes('password') || msg.includes('webloginrequired')) {
+        catMap['Credenciales/Login SMTP'] += count;
+      } else if ((msg.includes('daily sending limit') || msg.includes('quota exceeded')) && !msg.includes('mailbox') && !msg.includes('bandeja')) {
+        catMap['Cuota Excedida (Remitente)'] += count;
+      } else if (msg.includes('mailbox full') || msg.includes('storage full') || msg.includes('bandeja de entrada llena') || (msg.includes('quota') && (msg.includes('mailbox') || msg.includes('bandeja')))) {
+        catMap['Casilla Llena (Destinatario)'] += count;
+      } else if (msg.includes('spam') || msg.includes('blocked') || msg.includes('blacklisted') || msg.includes('bloqueado') || msg.includes('política del servidor')) {
+        catMap['Rechazado por Spam'] += count;
+      } else {
+        catMap['Otros'] += count;
+      }
+    }
+
+    if (totalAnalizados > 0) {
+      desglose_fallos = Object.entries(catMap)
+        .filter(([_, count]) => count > 0)
+        .map(([categoria, cantidad]) => ({
+          categoria,
+          cantidad,
+          porcentaje: Math.round((cantidad / totalAnalizados) * 100),
+        }));
+    }
+  }
+
+  return { ...campana, stats: { ...stats, desglose_fallos } };
 }
 
 export async function eliminarCampanasMasivo(ids: string[]): Promise<boolean> {

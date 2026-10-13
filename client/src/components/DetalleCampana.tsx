@@ -497,41 +497,59 @@ export default function DetalleCampana() {
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {(() => {
-                        const fallidos = cola.filter(c => c.estado === 'fallido' || (c.estado === 'pendiente' && c.respuesta_smtp));
-                        if (fallidos.length === 0) return <p className="text-sm text-muted">Buscando datos...</p>;
+                        const fallosLista = campana.stats.desglose_fallos && campana.stats.desglose_fallos.length > 0
+                          ? campana.stats.desglose_fallos
+                          : (() => {
+                            const fallidos = cola.filter(c => c.estado === 'fallido' || (c.estado === 'pendiente' && c.respuesta_smtp));
+                            if (fallidos.length === 0) return [];
 
-                        const categorias = {
-                          'Dominio Inexistente': 0,
-                          'Credenciales/Login SMTP': 0,
-                          'Cuota Excedida (Remitente)': 0,
-                          'Casilla Llena (Destinatario)': 0,
-                          'Rechazado por Spam': 0,
-                          'Otros': 0
-                        };
+                            const categorias: Record<string, number> = {
+                              'Cancelado': 0,
+                              'Dominio Inexistente': 0,
+                              'Credenciales/Login SMTP': 0,
+                              'Cuota Excedida (Remitente)': 0,
+                              'Casilla Llena (Destinatario)': 0,
+                              'Rechazado por Spam': 0,
+                              'Email Mal Escrito': 0,
+                              'Otros': 0
+                            };
 
-                        fallidos.forEach(f => {
-                          const msg = (f.respuesta_smtp || '').toLowerCase();
-                          if (msg.includes('domain not found') || msg.includes('nxdomain') || msg.includes('no such domain') || msg.includes('el correo o dominio no existe')) categorias['Dominio Inexistente']++;
-                          else if (msg.includes('login') || msg.includes('auth') || msg.includes('password') || msg.includes('webloginrequired')) categorias['Credenciales/Login SMTP']++;
-                          else if (msg.includes('daily sending limit') || msg.includes('quota exceeded') && !msg.includes('mailbox')) categorias['Cuota Excedida (Remitente)']++;
-                          else if (msg.includes('mailbox full') || msg.includes('storage full') || msg.includes('bandeja de entrada llena') || (msg.includes('quota') && msg.includes('mailbox'))) categorias['Casilla Llena (Destinatario)']++;
-                          else if (msg.includes('spam') || msg.includes('blocked') || msg.includes('blacklisted') || msg.includes('política del servidor')) categorias['Rechazado por Spam']++;
-                          else categorias['Otros']++;
-                        });
+                            fallidos.forEach(f => {
+                              const msg = (f.respuesta_smtp || '').toLowerCase();
+                              if (msg.includes('cancelad')) categorias['Cancelado']++;
+                              else if (msg.includes('domain not found') || msg.includes('nxdomain') || msg.includes('no such domain') || msg.includes('el correo o dominio no existe')) categorias['Dominio Inexistente']++;
+                              else if (msg.includes('mail_mal_escrito') || msg.includes('syntax error') || msg.includes('mal escrito')) categorias['Email Mal Escrito']++;
+                              else if (msg.includes('login') || msg.includes('auth') || msg.includes('password') || msg.includes('webloginrequired')) categorias['Credenciales/Login SMTP']++;
+                              else if ((msg.includes('daily sending limit') || msg.includes('quota exceeded')) && !msg.includes('mailbox') && !msg.includes('bandeja')) categorias['Cuota Excedida (Remitente)']++;
+                              else if (msg.includes('mailbox full') || msg.includes('storage full') || msg.includes('bandeja de entrada llena') || (msg.includes('quota') && (msg.includes('mailbox') || msg.includes('bandeja')))) categorias['Casilla Llena (Destinatario)']++;
+                              else if (msg.includes('spam') || msg.includes('blocked') || msg.includes('blacklisted') || msg.includes('bloqueado') || msg.includes('política del servidor')) categorias['Rechazado por Spam']++;
+                              else categorias['Otros']++;
+                            });
 
-                        return Object.entries(categorias)
-                          .filter(([_, count]) => count > 0)
-                          .map(([label, count]) => (
-                            <div key={label} className="bg-background border border-border p-3 rounded-lg flex justify-between items-center">
-                              <span className="text-sm font-medium text-dark">{label}</span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm text-muted">{count}</span>
-                                <span className="text-xs px-2 py-1 bg-surface rounded-md font-bold text-slate-600">
-                                  {((count / fallidos.length) * 100).toFixed(0)}%
-                                </span>
-                              </div>
+                            return Object.entries(categorias)
+                              .filter(([_, count]) => count > 0)
+                              .map(([categoria, cantidad]) => ({
+                                categoria,
+                                cantidad,
+                                porcentaje: Math.round((cantidad / fallidos.length) * 100)
+                              }));
+                          })();
+
+                        if (fallosLista.length === 0) {
+                          return <p className="text-sm text-muted col-span-2">No se registran detalles específicos para los fallos.</p>;
+                        }
+
+                        return fallosLista.map((item) => (
+                          <div key={item.categoria} className="bg-background border border-border p-3 rounded-lg flex justify-between items-center shadow-xs">
+                            <span className="text-sm font-medium text-dark">{item.categoria}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted font-medium">{item.cantidad}</span>
+                              <span className="text-xs px-2 py-1 bg-surface border border-border/50 rounded-md font-bold text-dark">
+                                {item.porcentaje}%
+                              </span>
                             </div>
-                          ));
+                          </div>
+                        ));
                       })()}
                     </div>
                   </div>

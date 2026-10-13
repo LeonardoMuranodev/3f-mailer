@@ -46,6 +46,7 @@ export interface CampanaConStats extends CampanaResponse {
     fallidos: number;
     abiertos: number;
     clicks: number;
+    desglose_fallos?: Array<{ categoria: string; cantidad: number; porcentaje: number }>;
   };
 }
 

@@ -85,3 +85,9 @@ Poner todas la scuentas SMTP, en la app
   - En Directorio de Contactos (`DirectorioContactos.tsx` y `contactoService.ts`): Agregada la opción `"Sin Rubro"` (`__sin_rubro__`) en el selector de búsqueda. Filtra en BD los contactos donde `rubro_id IS NULL OR TRIM(rubro_id) = ''`.
   - En Listado de Campañas (`ListaCampanas.tsx` y `campanaService.ts`): Agregada la opción `"Sin Rubro"` (`__sin_rubro__`) en el filtro de campañas. Filtra en BD campañas donde `para_todos_rubros = true` o que tienen `__sin_rubro__` seleccionado.
   - Actualizado diccionario de etiquetas `RUBROS_LABELS` en `client/src/data/rubros.ts` y documentado en directiva `directivas/filtro_sin_rubro.md`.
+
+- [x] **Análisis de Fallos (Categoría "Cancelado" y resolución en backend):**
+  - Incorporada la categoría `"Cancelado"` para clasificar los envíos cancelados por el usuario/sistema (`respuesta_smtp = 'cancelado'`).
+  - Agregación computada directamente en el backend (`obtenerCampanaConEstadisticas` en `campanaService.ts`), retornando `stats.desglose_fallos`.
+  - Resuelto el estado "Buscando datos..." en `DetalleCampana.tsx`: ahora el análisis no depende de los filtros de la tabla de envíos y muestra los datos inmediatamente.
+  - Verificado todo el entorno de producción (Dockerfiles, Docker Compose de producción, compilación de Frontend/Backend y migraciones).
