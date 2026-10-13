@@ -75,3 +75,5 @@ Poner todas la scuentas SMTP, en la app
 [] Problema con el CUIT:
 Si un contaco esta sin CUIT, al querer actualizarlo esta la validacion del CUIT, lo cual no deja dejarle SIN CUIT.
 Habria que buscar la manera de salterse eso si el usuario quiere, como o que si se deja vacio es sin cuit y que no te tome con CUIT NO VALIDO por la matematica,  o un btoon que diga DEJAR SIN CUIT O ALGO ASI
+
+Boton de que cuando estoy en la cola de envios, al ser varias filas, para volver astra arriba de todo cuando baje y no se vean las estadisticas de la campaña
