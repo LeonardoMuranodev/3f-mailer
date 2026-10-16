@@ -335,7 +335,12 @@ export async function notificarCuentaProblema(email: string, tipo: 'agotada' | '
   }
 }
 
-export async function enviarMailPrueba(asunto: string, cuerpoHtml: string, adjuntoUrl?: string | null) {
+export async function enviarMailPrueba(
+  asunto: string,
+  cuerpoHtml: string,
+  adjuntoUrl?: string | null,
+  flyerUrl?: string | null
+) {
   const { smtpHost, smtpPort, smtpUser, smtpPass } = config.notifier;
   const destinatario = config.modoPrueba
     ? config.imapTest[0]?.user
@@ -356,25 +361,42 @@ export async function enviarMailPrueba(asunto: string, cuerpoHtml: string, adjun
       }
     });
 
+    let finalHtml = cuerpoHtml;
+    const attachments: any[] = [];
+
+    // Incrustar Flyer como CID inline para que se visualice siempre en Gmail/Outlook
+    if (flyerUrl) {
+      const cleanFlyerPath = flyerUrl.startsWith('/') ? flyerUrl.slice(1) : flyerUrl;
+      const localFlyerPath = path.resolve(process.cwd(), cleanFlyerPath);
+      if (fs.existsSync(localFlyerPath)) {
+        attachments.push({
+          filename: path.basename(flyerUrl),
+          path: localFlyerPath,
+          cid: 'flyer_campana'
+        });
+        // Reemplazar la referencia relativa por el CID
+        finalHtml = finalHtml.replace(flyerUrl, 'cid:flyer_campana');
+      }
+    }
+
+    if (adjuntoUrl) {
+      const cleanAdjuntoPath = adjuntoUrl.startsWith('/') ? adjuntoUrl.slice(1) : adjuntoUrl;
+      const localAdjuntoPath = path.resolve(process.cwd(), cleanAdjuntoPath);
+      if (fs.existsSync(localAdjuntoPath)) {
+        attachments.push({
+          filename: path.basename(adjuntoUrl),
+          path: localAdjuntoPath
+        });
+      }
+    }
+
     const mailOptions: any = {
       from: `"Dirección de Producción - 3F" <${smtpUser}>`,
       to: destinatario,
       subject: asunto,
-      html: cuerpoHtml
+      html: finalHtml,
+      attachments
     };
-
-    if (adjuntoUrl) {
-      // adjuntoUrl es como '/uploads/file-123.pdf', hay que sacar la ruta local
-      const localPath = path.join(process.cwd(), adjuntoUrl);
-      if (fs.existsSync(localPath)) {
-        mailOptions.attachments = [
-          {
-            filename: path.basename(adjuntoUrl),
-            path: localPath
-          }
-        ];
-      }
-    }
 
     await transporter.sendMail(mailOptions);
     return { destinatario };
@@ -382,6 +404,7 @@ export async function enviarMailPrueba(asunto: string, cuerpoHtml: string, adjun
     throw new Error('No está configurado el notificador SMTP.');
   }
 }
+
 export async function enviarMailTransaccional(to: string, asunto: string, html: string) {
   const { smtpHost, smtpPort, smtpUser, smtpPass } = config.notifier;
 

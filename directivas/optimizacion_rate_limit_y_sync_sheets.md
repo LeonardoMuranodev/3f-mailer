@@ -43,3 +43,10 @@ Resolver el error HTTP 429 (`TOO_MANY_REQUESTS` / "Demasiadas peticiones, intent
 - Mantener protegida la ruta de autenticación (`/api/auth/login`) con su propio `authLimiter` estricto (10 intentos / 15 min).
 - No romper la ejecución en segundo plano (`syncContactosFromSheets().catch(...)`).
 - Si faltan variables de Google Sheets en el `.env`, el cron automático no debe crashear el servidor, solo registrar un warning informativo en logger.
+- **Nota de Memoria (ERR_ERL_PERMISSIVE_TRUST_PROXY):**
+  - No usar `app.set('trust proxy', true)` con `express-rate-limit`, ya que la biblioteca lanza `ValidationError: ERR_ERL_PERMISSIVE_TRUST_PROXY`.
+  - Usar `app.set('trust proxy', 1)` y añadir `validate: { trustProxy: false }` en las opciones de los limiters para que la cadena de Nginx funcione sin advertencias ni interrupciones.
+- **Nota de Memoria (Flyer en Emails - CID Inline):**
+  - Los clientes de correo (Gmail, Outlook) no resuelven URLs relativas (`/uploads/...`) y rechazan o no pueden acceder a URLs con `localhost` o IPs de redes privadas locales (`172.16.x.x`).
+  - La única forma 100% confiable y universal de mostrar imágenes subidas localmente en un correo es mediante attachments inline con Content-ID (`cid:flyer_campana`).
+  - Debe incrustarse tanto en `enviarMailPrueba` (`notificationService.ts`) como en el worker de envíos masivos (`emailWorker.ts`).

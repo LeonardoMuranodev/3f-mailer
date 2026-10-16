@@ -281,7 +281,7 @@ async function enviarPrueba(req: Request, res: Response, next: NextFunction): Pr
 
     const htmlRenderizado = generarHtmlDesdeCampana(campanaMock);
 
-    const { destinatario } = await enviarMailPrueba(asunto, htmlRenderizado, adjuntoUrlFinal);
+    const { destinatario } = await enviarMailPrueba(asunto, htmlRenderizado, adjuntoUrlFinal, flyerUrlFinal);
     sendSuccess(res, { message: `Email de prueba enviado exitosamente a ${destinatario}`, destinatario });
   } catch (err: any) {
     console.error('Error en enviarPrueba:', err);

@@ -1,4 +1,6 @@
 import nodemailer from 'nodemailer';
+import fs from 'node:fs';
+import path from 'node:path';
 import { dbPool } from '../config/db.js';
 import { obtenerSiguienteSmtpDisponible, incrementarCuotaSmtp } from './queueService.js';
 import { notificarCampanaTerminada, notificarCuotaGlobalAgotada } from './notificationService.js';
@@ -252,25 +254,48 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
         });
 
         try {
+          const attachments: any[] = [];
+          let mailHtml = html;
+
+          // Si la campaña tiene flyer y el archivo existe localmente, adjuntarlo como CID inline
+          // Esto garantiza que se vea en Gmail, Outlook y cualquier cliente sin depender de IPs privadas
+          if (item.flyer_url) {
+            const cleanFlyerPath = item.flyer_url.startsWith('/') ? item.flyer_url.slice(1) : item.flyer_url;
+            const localFlyerPath = path.resolve(process.cwd(), cleanFlyerPath);
+            if (fs.existsSync(localFlyerPath)) {
+              attachments.push({
+                filename: path.basename(item.flyer_url),
+                path: localFlyerPath,
+                cid: 'flyer_campana'
+              });
+              // Reemplazar la URL del flyer por el CID
+              mailHtml = mailHtml.replace(item.flyer_url, 'cid:flyer_campana');
+              if (flyerAbsUrl) {
+                mailHtml = mailHtml.replace(flyerAbsUrl, 'cid:flyer_campana');
+              }
+            }
+          }
+
+          if (item.adjunto_url) {
+            const filename = item.adjunto_url.split('/').pop() || 'adjunto';
+            const cleanAdjuntoPath = item.adjunto_url.startsWith('/') ? item.adjunto_url.slice(1) : item.adjunto_url;
+            const filepath = path.resolve(process.cwd(), cleanAdjuntoPath);
+            if (fs.existsSync(filepath)) {
+              attachments.push({
+                filename,
+                path: filepath
+              });
+            }
+          }
+
           const mailOptions: any = {
             from: `"Dirección de Producción - 3F" <${cuentaSmtp.email}>`,
             to: item.contacto_email,
             subject: item.asunto,
-            html,
+            html: mailHtml,
+            attachments
           };
 
-          if (item.adjunto_url) {
-            const filename = item.adjunto_url.split('/').pop() || 'adjunto';
-            // The file is stored in /uploads directory relative to cwd
-            const filepath = `${process.cwd()}${item.adjunto_url}`;
-            mailOptions.attachments = [
-              {
-                filename,
-                path: filepath
-              }
-            ];
-          }
-          
           const info = await transporter.sendMail(mailOptions);
           
           respuestaSmtp = info.response;

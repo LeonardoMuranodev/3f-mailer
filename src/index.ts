@@ -21,8 +21,8 @@ import cron from 'node-cron';
 import rateLimit from 'express-rate-limit';
 const app = express();
 
-// Confiar en Nginx y cadena de proxies para Rate Limiting
-app.set('trust proxy', true);
+// Confiar en Nginx (1 salto de proxy) para Rate Limiting
+app.set('trust proxy', 1);
 
 // ── Security Middlewares ─────────────────────────────────
 app.use(securityHeaders);
@@ -34,6 +34,7 @@ const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
   max: 5000,
   keyGenerator: getClientIdentifier,
+  validate: { trustProxy: false },
   skip: (req) => {
     // Excluir endpoints de polling recurrente, healthcheck y archivos estáticos
     return req.path.endsWith('/sync-status') || req.path.endsWith('/health') || req.path.startsWith('/uploads');

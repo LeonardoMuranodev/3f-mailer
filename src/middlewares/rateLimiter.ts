@@ -42,6 +42,7 @@ export function getClientIdentifier(req: Request): string {
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
   max: 10,
+  validate: { trustProxy: false },
   standardHeaders: true,    // Retorna rate limit info en `RateLimit-*` headers
   legacyHeaders: false,     // Desactiva `X-RateLimit-*` headers
   message: {
@@ -64,6 +65,7 @@ export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
   max: 3000,
   keyGenerator: getClientIdentifier,
+  validate: { trustProxy: false },
   skip: (req) => {
     // Excluir endpoints de polling recurrente y health checks
     return req.path.endsWith('/sync-status') || req.path.endsWith('/health');
@@ -89,6 +91,7 @@ export const queueLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuto
   max: 10,
   keyGenerator: getClientIdentifier,
+  validate: { trustProxy: false },
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -110,6 +113,7 @@ export const syncSheetsLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuto
   max: 5,
   keyGenerator: getClientIdentifier,
+  validate: { trustProxy: false },
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -120,4 +124,5 @@ export const syncSheetsLimiter = rateLimit({
     },
   },
 });
+
 
