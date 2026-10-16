@@ -107,4 +107,16 @@ Poner todas la scuentas SMTP, en la app
   - Se excluyeron endpoints de sondeo (`/sync-status`, `/health`, `/uploads`) del rate limit general.
   - Se añadió limiter específico (`syncSheetsLimiter`) para prevenir spam de clics en sincronización.
   - Se implementó sincronización automática periódica en segundo plano vía `node-cron` (`syncContactosFromSheetsCron`) para mantener los datos de Google Sheets actualizados sin depender exclusivamente del usuario.
-  - Se optimizó el polling del cliente a 5 segundos y se maneja amistosamente el estado 409 (en curso).
+  - Se optimizó el polling del cliente a 5 segundos y se maneja amistosamente el estado 409 (en curso).
+
+- [x] **Ocultamiento de pastilla de adjunto de flyer en listado de Gmail y eliminación del texto Ref: del snippet**:
+  - Se configuró `contentDisposition: 'inline'` en Nodemailer para que Gmail reconozca el flyer como recurso embebido del HTML y no lo exponga como pastilla de descarga en la bandeja de entrada.
+  - Se reemplazó el `span` de variabilidad anti-spam por un comentario HTML invisible `<!-- Ref: ... -->` para que no contamine el snippet.
+  - Se agregó preheader invisible de padding con espacios no rompibles (`&zwnj;&nbsp;`) al inicio del `<body>` en el template de email.
+
+- [x] **Detección y Circuito de Autenticación / Verificación de Google en Cuentas SMTP**:
+  - Se atrapan los errores de Google (`EAUTH`, `535`, `534`, `Username and Password not accepted`, `Web login required`, `Please log in with your web browser`, etc.).
+  - Se desactiva la cuenta inmediatamente (`estado = 'bloqueado'`) y se registra en `smtp_logs`.
+  - Se envía una notificación por Telegram al desarrollador con el detalle del bloqueo.
+  - El envío se reintenta automáticamente con la siguiente cuenta SMTP sana sin descontar intentos ni penalizar al contacto.
+

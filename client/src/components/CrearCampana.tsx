@@ -54,20 +54,24 @@ export default function CrearCampana() {
     reset,
   } = useCampanaStore();
 
-  // Limpiar mensajes y resetear el form si venimos de un envío exitoso
+  // Limpiar mensajes: solo resetear si hay un submitResult exitoso previo
+  // NO reseteamos si venimos de Vista Previa (el store tiene datos en uso)
   useEffect(() => {
-    if (useCampanaStore.getState().submitResult?.success) {
+    const state = useCampanaStore.getState();
+    if (state.submitResult?.success) {
       reset();
     } else {
       clearResult();
     }
-  }, [clearResult, reset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { id } = useParams<{ id: string }>();
 
   // Cargar borrador de localStorage o desde la API si estamos editando
   useEffect(() => {
     if (id) {
+      // ── Modo edición: cargar datos de la campaña desde la API ──
       obtenerCampanaPorId(id).then(res => {
         if (res.success && res.data) {
           const campana = res.data;
@@ -102,21 +106,34 @@ export default function CrearCampana() {
         }
       }).catch(err => console.error('Error loading campaign:', err));
     } else {
-      useCampanaStore.getState().reset();
-      const savedDraft = localStorage.getItem('draft_campana_data');
-      if (savedDraft) {
-        try {
-          const parsed = JSON.parse(savedDraft);
-          Object.entries(parsed).forEach(([k, v]) => {
-            if (k !== 'flyer_url' && k !== 'flyer' && k !== 'adjunto_url' && k !== 'adjunto') { // Evitamos cargar archivos por seguridad
-              if (k === 'cuerpo_html') setHtmlContent(v as string);
-              else setField(k as any, v);
-            }
-          });
-        } catch (err) {
-          console.error('Error parsing draft data', err);
+      // ── Modo nueva campaña ──
+      // Si el store ya tiene contenido (ej: volvemos de Vista Previa),
+      // NO reseteamos para no perder el estado en memoria (flyer, adjunto, html).
+      const currentState = useCampanaStore.getState();
+      const storeHasContent = !!(currentState.form.asunto || currentState.form.cuerpo_html || currentState.flyerPreview);
+
+      if (!storeHasContent) {
+        // Primera carga real: limpiar y restaurar desde localStorage si hay borrador
+        useCampanaStore.getState().reset();
+        const savedDraft = localStorage.getItem('draft_campana_data');
+        if (savedDraft) {
+          try {
+            const parsed = JSON.parse(savedDraft);
+            Object.entries(parsed).forEach(([k, v]) => {
+              // Evitamos cargar URLs de archivos porque son referencias del servidor,
+              // no podemos reconstruir el File object ni la URL de objeto en memoria
+              if (k !== 'flyer_url' && k !== 'flyer' && k !== 'adjunto_url' && k !== 'adjunto') {
+                if (k === 'cuerpo_html') setHtmlContent(v as string);
+                else setField(k as any, v);
+              }
+            });
+          } catch (err) {
+            console.error('Error parsing draft data', err);
+          }
         }
       }
+      // Si storeHasContent == true, el usuario acaba de volver de Vista Previa:
+      // el store ya tiene todos los datos correctos, no hacemos nada.
     }
   }, [id, setField, setHtmlContent]);
 

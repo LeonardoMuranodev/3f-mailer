@@ -178,8 +178,9 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
       let estadoNuevo = 'fallido';
       let respuestaSmtp = '';
       let cuentaIdUsada = null;
-      let nuevosIntentos = item.intentos + 1;
+      let nuevosIntentos = item.intentos;
       let intentosCirculares = 0;
+      let huboFalloEmisor = false;
 
       while (intentosCirculares < Math.max(1, cantidadCuentas) && !enviadoExitoso) {
         const cuentaSmtp = await obtenerSiguienteSmtpDisponible();
@@ -207,7 +208,8 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
             attachments.push({
               filename: path.basename(item.flyer_url),
               path: localFlyerPath,
-              cid: 'flyer_campana'
+              cid: 'flyer_campana',
+              contentDisposition: 'inline'
             });
             // Al asignar 'cid:flyer_campana', el template genera <img src="cid:flyer_campana">
             // y la imagen viaja incrustada dentro del mensaje MIME
@@ -249,8 +251,8 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
         // 2. Open Tracking Pixel (antes de </body> o al final)
         const pixelHtml = `<img src="${trackBase}/api/track/open/${item.id}" width="1" height="1" style="display:none;max-height:0px;max-width:0px;opacity:0;overflow:hidden;" alt="" />`;
         
-        // 3. Variabilidad Anti-Spam
-        const hashHtml = `<span style="display:none;color:transparent;opacity:0;font-size:0px;line-height:0px;max-height:0px;max-width:0px;overflow:hidden;">Ref: ${item.id}-${Date.now().toString(36)}</span>`;
+        // 3. Variabilidad Anti-Spam (comentario HTML para no contaminar el snippet/preheader en Gmail/Outlook)
+        const hashHtml = `<!-- Ref: ${item.id}-${Date.now().toString(36)} -->`;
 
         if (html.includes('</body>')) {
           html = html.replace('</body>', `${pixelHtml}\n${hashHtml}\n</body>`);
@@ -272,7 +274,6 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
 
         try {
           let mailHtml = html;
-
 
           if (item.adjunto_url) {
             const filename = item.adjunto_url.split('/').pop() || 'adjunto';
@@ -299,6 +300,7 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
           respuestaSmtp = info.response;
           estadoNuevo = 'enviado';
           enviadoExitoso = true;
+          nuevosIntentos = item.intentos + 1;
           
           await incrementarCuotaSmtp(cuentaSmtp.id);
 
@@ -310,25 +312,69 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
           console.error(`Error enviando correo a ${item.contacto_email} con ${cuentaSmtp.email}:`, respuestaSmtp);
           
           const lowerMsg = respuestaSmtp.toLowerCase();
-          const cuotaAgotadaMsg = lowerMsg.includes('quota exceeded') || 
-                                  lowerMsg.includes('rate limit') || 
-                                  lowerMsg.includes('daily sending limit');
-                                  
-          const malEscritoMsg = lowerMsg.includes('555 5.5.2') || lowerMsg.includes('555-5.5.2') || lowerMsg.includes('syntax error');
-          
-          if (malEscritoMsg) {
-             respuestaSmtp = `[MAIL_MAL_ESCRITO] ${respuestaSmtp}`;
-             await dbPool.query(`UPDATE contactos SET estado = 'mal_escrito' WHERE id = $1`, [item.contacto_id]);
-          }
+          const errCode = ((err.code || '') + '').toUpperCase();
+          const responseCode = err.responseCode;
 
-          if (cuotaAgotadaMsg) {
-            // Forzar actualización de estado a agotado para esta cuenta para que obtenerSiguienteSmtpDisponible no la devuelva
+          // Detección de Bloqueo / Verificación web / Fallo de credenciales en Google SMTP
+          const esBloqueoOVerificacion =
+            errCode === 'EAUTH' ||
+            responseCode === 535 ||
+            responseCode === 534 ||
+            lowerMsg.includes('username and password not accepted') ||
+            lowerMsg.includes('please log in with your web browser') ||
+            lowerMsg.includes('web login required') ||
+            lowerMsg.includes('application-specific password required') ||
+            lowerMsg.includes('invalid login') ||
+            lowerMsg.includes('badcredentials') ||
+            lowerMsg.includes('checkpoint') ||
+            lowerMsg.includes('challenge') ||
+            lowerMsg.includes('suspicious activity') ||
+            lowerMsg.includes('account suspended') ||
+            lowerMsg.includes('less secure app') ||
+            lowerMsg.includes('5.7.8') ||
+            lowerMsg.includes('5.7.9');
+
+          const cuotaAgotadaMsg = 
+            lowerMsg.includes('quota exceeded') || 
+            lowerMsg.includes('rate limit') || 
+            lowerMsg.includes('daily sending limit');
+                                  
+          const malEscritoMsg = 
+            lowerMsg.includes('555 5.5.2') || 
+            lowerMsg.includes('555-5.5.2') || 
+            lowerMsg.includes('syntax error');
+          
+          if (esBloqueoOVerificacion) {
+            huboFalloEmisor = true;
+            console.warn(`[CIRCUIT BREAKER] Cuenta ${cuentaSmtp.email} BLOQUEADA por Google (requiere verificación o falló login). Desactivando cuenta...`);
+            
+            // 1. Desactivar la cuenta para que obtenerSiguienteSmtpDisponible() no la use más
+            await dbPool.query(`UPDATE cuentas_smtp SET estado = 'bloqueado', actualizado_en = CURRENT_TIMESTAMP WHERE id = $1`, [cuentaSmtp.id]);
+            await dbPool.query(`INSERT INTO smtp_logs (cuenta_smtp_id, tipo, mensaje) VALUES ($1, 'bloqueada', $2)`, [cuentaSmtp.id, respuestaSmtp]);
+            
+            // 2. Notificar por Telegram al desarrollador con el detalle del bloqueo
+            const { notificarCuentaProblema } = await import('./notificationService.js');
+            await notificarCuentaProblema(
+              cuentaSmtp.email, 
+              'bloqueada', 
+              `Google solicitó verificación web o rechazó autenticación (EAUTH/535).\nLa cuenta fue DESACTIVADA para evitar fallos.\nDetalle: ${respuestaSmtp}`
+            );
+
+            // 3. NO penalizar al contacto: este envío se saltea y se reintenta con la siguiente cuenta en la próxima vuelta del bucle
+          } else if (cuotaAgotadaMsg) {
+            huboFalloEmisor = true;
             await dbPool.query(`UPDATE cuentas_smtp SET estado = 'agotado', actualizado_en = CURRENT_TIMESTAMP WHERE id = $1`, [cuentaSmtp.id]);
             await dbPool.query(`INSERT INTO smtp_logs (cuenta_smtp_id, tipo, mensaje) VALUES ($1, 'agotada', $2)`, [cuentaSmtp.id, respuestaSmtp]);
             const { notificarCuentaProblema } = await import('./notificationService.js');
             await notificarCuentaProblema(cuentaSmtp.email, 'agotada', respuestaSmtp);
+          } else if (malEscritoMsg) {
+            respuestaSmtp = `[MAIL_MAL_ESCRITO] ${respuestaSmtp}`;
+            await dbPool.query(`UPDATE contactos SET estado = 'mal_escrito' WHERE id = $1`, [item.contacto_id]);
+            nuevosIntentos = item.intentos + 1;
+            break; // Dirección con error de sintaxis, no reintentar con otra cuenta
           } else {
-            // Actualizar ultimo_uso para que la cuenta pase al final de la cola (Round-Robin) y se intente con otra
+            // Error atribuible al destinatario o servidor receptor (ej. buzón lleno, host inalcanzable)
+            nuevosIntentos = item.intentos + 1;
             await dbPool.query(`UPDATE cuentas_smtp SET ultimo_uso = CURRENT_TIMESTAMP WHERE id = $1`, [cuentaSmtp.id]);
           }
         } finally {
@@ -339,14 +385,17 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
       } // fin while intentosCirculares
 
       if (!enviadoExitoso) {
-        if (cuotaAgotadaHoy) {
-           estadoNuevo = 'pendiente'; // Devolver a la cola intacto si se agotó la cuota global, se procesará mañana
+        if (cuotaAgotadaHoy || huboFalloEmisor) {
+          // Si el fallo fue porque se agotaron o bloquearon las cuentas emisoras,
+          // preservamos el estado en 'pendiente' para no marcar falsamente al contacto como fallido
+          estadoNuevo = 'pendiente';
         } else if (nuevosIntentos < 3) {
-           estadoNuevo = 'pendiente';
+          estadoNuevo = 'pendiente';
         } else {
-           estadoNuevo = 'fallido';
+          estadoNuevo = 'fallido';
         }
       }
+
 
       await dbPool.query(`
         UPDATE cola_envios

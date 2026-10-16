@@ -314,7 +314,9 @@ export async function notificarCuentaProblema(email: string, tipo: 'agotada' | '
   const { telegramChatId, telegramToken } = config.notifier;
 
   const emoji = tipo === 'agotada' ? '⚠️' : '🚨';
-  const accion = tipo === 'agotada' ? 'alcanzó su cuota diaria' : 'fue BLOQUEADA por excesos de rebotes';
+  const accion = tipo === 'agotada' 
+    ? 'alcanzó su cuota diaria' 
+    : 'fue DESACTIVADA (Bloqueo o requerimiento de verificación en Google)';
 
   const msg = `${emoji} *Atención - Cuenta SMTP*\n\nLa cuenta \`${email}\` ${accion}.\n\n*Detalle:* ${detalle}`;
 
@@ -372,7 +374,8 @@ export async function enviarMailPrueba(
         attachments.push({
           filename: path.basename(flyerUrl),
           path: localFlyerPath,
-          cid: 'flyer_campana'
+          cid: 'flyer_campana',
+          contentDisposition: 'inline'
         });
         // Reemplazar cualquier referencia residual por el CID
         finalHtml = finalHtml.replaceAll(flyerUrl, 'cid:flyer_campana');

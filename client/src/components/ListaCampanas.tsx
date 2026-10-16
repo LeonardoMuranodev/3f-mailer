@@ -7,6 +7,7 @@ import { usePermisos } from '../hooks/usePermisos';
 import { formatDate } from '../utils/formatDate';
 import { RUBROS_LABELS, RUBROS_LIST } from '../data/rubros';
 import logo3f from '../assets/logo-3f.png';
+import { useCampanaStore } from '../stores/campanaStore';
 
 const ESTADO_BADGE_CLASSES: Record<string, string> = {
   borrador: 'bg-slate-100 text-slate-600 border border-slate-200',
@@ -216,7 +217,7 @@ export default function ListaCampanas() {
           )}
           {puedeCrear && (
             <button
-              onClick={() => navigate('/nueva')}
+              onClick={() => { useCampanaStore.getState().reset(); navigate('/nueva'); }}
               className="flex items-center justify-center gap-2 bg-primary text-white px-5 py-2.5 rounded-lg hover:bg-primary-dark transition-colors font-medium shadow-sm w-full sm:w-auto"
             >
               <Plus size={20} />
