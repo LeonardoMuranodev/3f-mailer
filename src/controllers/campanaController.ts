@@ -35,16 +35,11 @@ async function crear(req: Request, _res: Response, next: NextFunction): Promise<
 
     const flyer_url = flyerFile
       ? `/uploads/${flyerFile.filename}`
-      : body.flyer_url;
+      : (body.flyer_url || null);
 
     const adjunto_url = adjuntoFile
       ? `/uploads/${adjuntoFile.filename}`
-      : body.adjunto_url;
-
-    if (!flyer_url) {
-      sendError(_res, 'VALIDATION_ERROR', 'El flyer es obligatorio', 400, [{ field: 'flyer', message: 'El flyer es obligatorio' }]);
-      return;
-    }
+      : (body.adjunto_url || null);
 
     const cuerpo_html = body.cuerpo_html ? DOMPurify.sanitize(body.cuerpo_html) : undefined;
     
@@ -324,8 +319,8 @@ async function actualizar(req: Request, res: Response, next: NextFunction): Prom
     const cuerpo_html = body.cuerpo_html ? DOMPurify.sanitize(body.cuerpo_html) : undefined;
     
     const campanaData: any = { ...body };
-    if (flyer_url !== undefined) campanaData.flyer_url = flyer_url;
-    if (adjunto_url !== undefined) campanaData.adjunto_url = adjunto_url;
+    if (flyer_url !== undefined) campanaData.flyer_url = flyer_url || null;
+    if (adjunto_url !== undefined) campanaData.adjunto_url = adjunto_url || null;
     if (adjuntoFile) {
       campanaData.adjunto_nombre_original = adjuntoFile.originalname;
     }

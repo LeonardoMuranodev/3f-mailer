@@ -92,9 +92,20 @@ Poner todas la scuentas SMTP, en la app
   - Resuelto el estado "Buscando datos..." en `DetalleCampana.tsx`: ahora el análisis no depende de los filtros de la tabla de envíos y muestra los datos inmediatamente.
   - Verificado todo el entorno de producción (Dockerfiles, Docker Compose de producción, compilación de Frontend/Backend y migraciones).
 
-- [] **Que la foto del Flyer sea Opcional** ya que puede psar que no manden flyer, habria que poner un aviso de todas maneras si no la commpletan y si estan seguras de proceder
+- [x] **Que la foto del Flyer sea Opcional**:
+  - En backend (`campanaController.ts`), se eliminó la validación forzada `if (!flyer_url)` en creación y actualización, guardando `null` de forma limpia.
+  - En formulario (`CrearCampana.tsx`), se cambió la etiqueta a `Flyer adjunto (Opcional)` retirando el asterisco rojo de obligatoriedad.
+  - Al guardar como borrador se permite guardar sin flyer de forma instantánea.
+  - Al pulsar "Aprobar y Enviar", si no hay flyer cargado se despliega un modal de confirmación amigable para asegurar que la encargada no lo haya olvidado por descuido, permitiendo confirmar y enviar o volver a editar.
+  - La plantilla HTML (`emailTemplate.ts`) y la vista previa (`VistaPrevia.tsx`) se adaptan sin dejar espacios en blanco cuando no hay flyer.
 
-- [] **Que el informe de estaditicas se pueda exportar como PDF** con los graficos que tenemos, es mas impactante y dice mejor los numeros que un CSV que solo tiene numeros para un humano
+- [x] **Que el informe de estadísticas se pueda exportar como PDF**:
+  - Se incorporó el botón "Exportar PDF" en `EstadisticasGenerales.tsx` con icono `Printer` junto al exportador CSV.
+  - Se implementaron estilos de impresión nativos (`@media print`) en `index.css` forzando colores exactos (`print-color-adjust: exact`) y formato A4.
+  - Se diseñó un membrete formal con el logo de la Municipalidad de Tres de Febrero, Dirección de Producción, sello de Reporte Oficial, fecha/hora de emisión y período analizado.
+  - Se incluyen todos los gráficos visuales (donut conic-gradient de Salud del Padrón, barras de Campañas por Estado, barras de impacto por rubro, KPIs y Ranking).
+  - Se ocultan automáticamente elementos de navegación, botones, filtros y menús mediante `.no-print`.
+  - Se adapta automáticamente a fondo blanco limpio e imprimible incluso con Modo Oscuro activado.
 
 - [] **mensaje de que empieza la sincronizacion** y tambien uno que termina me gustaria una notificacion como hace google gemini, nose si se hace con websokcets o como, para que le salga la alerta a la encargada
 

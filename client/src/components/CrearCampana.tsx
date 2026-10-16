@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Mail, CheckCircle2, Save, Eye, ArrowLeft, Plus, List, FileText, HelpCircle, X, Info, ArrowUp } from 'lucide-react';
+import { Mail, CheckCircle2, Save, Eye, ArrowLeft, Plus, List, FileText, HelpCircle, X, Info, ArrowUp, AlertTriangle } from 'lucide-react';
 import { useCampanaStore, buildFormData } from '../stores/campanaStore';
 import TiptapEditor from './TiptapEditor';
 import FlyerUpload from './FlyerUpload';
@@ -12,6 +12,7 @@ export default function CrearCampana() {
   const navigate = useNavigate();
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showSinFlyerModal, setShowSinFlyerModal] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [conAdjunto, setConAdjunto] = useState(
     () => !!useCampanaStore.getState().adjuntoName || !!useCampanaStore.getState().form.adjunto_url
@@ -193,6 +194,22 @@ export default function CrearCampana() {
     }
   };
 
+  // Manejo de aprobación con advertencia de flyer opcional
+  const handleIntentarAprobar = () => {
+    const state = useCampanaStore.getState();
+    const hasFlyer = !!(state.flyer || form.flyer_url || state.flyerPreview);
+    if (!hasFlyer) {
+      setShowSinFlyerModal(true);
+    } else {
+      aprobarCampana(id);
+    }
+  };
+
+  const handleConfirmarAprobarSinFlyer = () => {
+    setShowSinFlyerModal(false);
+    aprobarCampana(id);
+  };
+
   // Bloquear formulario si ya se envió exitosamente
   const isSubmittedSuccessfully = submitResult?.success === true;
 
@@ -251,6 +268,13 @@ export default function CrearCampana() {
               </div>
 
               <div className="bg-background p-3 rounded-lg border border-border">
+                <h4 className="font-semibold text-primary mb-1">🖼️ Flyer Opcional</h4>
+                <p className="text-muted leading-relaxed">
+                  El flyer es una imagen visual destacada. Si tu comunicado no lo requiere, podés omitirlo y se enviará únicamente el texto formateado.
+                </p>
+              </div>
+
+              <div className="bg-background p-3 rounded-lg border border-border">
                 <h4 className="font-semibold text-primary mb-1">👀 Vista Previa</h4>
                 <p className="text-muted leading-relaxed">
                   Antes de enviar o guardar, tocá en "Vista Previa" (abajo de todo) para ver exactamente cómo lo recibirá el destinatario en su celular o computadora.
@@ -271,6 +295,50 @@ export default function CrearCampana() {
             >
               Entendido
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ MODAL DE ADVERTENCIA: SIN FLYER ═══ */}
+      {showSinFlyerModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-surface w-full max-w-md rounded-xl border border-border shadow-2xl overflow-hidden p-6 relative animate-slide-up">
+            <button 
+              onClick={() => setShowSinFlyerModal(false)}
+              className="absolute top-4 right-4 text-muted hover:text-dark transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full badge-warning-light mb-4 shadow-sm">
+                <AlertTriangle className="h-8 w-8" strokeWidth={2.3} />
+              </div>
+              <h3 className="text-lg font-bold text-dark mb-2">
+                ¿Enviar campaña sin Flyer?
+              </h3>
+              <p className="text-muted text-sm leading-relaxed mb-6">
+                No has adjuntado una imagen de flyer a esta campaña. Los destinatarios recibirán el comunicado únicamente con el texto redactado y los enlaces correspondientes.
+                <br /><br />
+                ¿Estás segura de continuar y aprobar la campaña sin flyer?
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowSinFlyerModal(false)}
+                  className="flex-1 px-4 py-2.5 bg-background border border-border text-dark font-medium rounded-lg hover:bg-surface transition-colors order-2 sm:order-1"
+                >
+                  Volver a editar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmarAprobarSinFlyer}
+                  className="flex-1 px-4 py-2.5 bg-secondary text-white font-medium rounded-lg hover:bg-secondary-dark transition-colors order-1 sm:order-2 shadow-sm font-semibold"
+                >
+                  Continuar sin Flyer
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -532,7 +600,7 @@ export default function CrearCampana() {
           {/* Flyer */}
           <div>
             <label className="block text-base font-semibold text-dark mb-1.5">
-              Flyer adjunto <span className="text-danger">*</span>
+              Flyer adjunto <span className="text-muted text-sm font-normal">(Opcional)</span>
             </label>
             <FlyerUpload />
           </div>
@@ -735,7 +803,7 @@ export default function CrearCampana() {
             </button>
             <button
               type="button"
-              onClick={() => aprobarCampana(id)}
+              onClick={handleIntentarAprobar}
               disabled={isSubmitting || isSubmittedSuccessfully}
               className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2.5 bg-secondary text-white text-sm font-medium rounded-lg hover:bg-secondary-dark focus:outline-none focus:ring-2 focus:ring-secondary/50 disabled:opacity-70 disabled:cursor-not-allowed transition-colors shadow-sm whitespace-nowrap"
             >
