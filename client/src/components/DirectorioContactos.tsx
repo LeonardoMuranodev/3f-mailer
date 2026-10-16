@@ -185,10 +185,19 @@ export default function DirectorioContactos() {
     try {
       const res = await syncContactosSheets();
       if (!res.success) {
+        // Si ya hay una sincronización en marcha, no es un error que deba alertar; mantenemos la UI en progreso
+        if (res.error?.code === 'CONFLICT' || res.error?.message?.toLowerCase().includes('en curso')) {
+          return;
+        }
+        // Si se excedió el límite de clics seguidos
+        if (res.error?.code === 'SYNC_RATE_LIMIT' || res.error?.code === 'RATE_LIMIT_EXCEEDED') {
+          setSyncResult({ success: false, message: 'La sincronización ya fue solicitada hace instantes. Continúa en segundo plano.' });
+          return;
+        }
         setSyncResult({ success: false, message: res.error?.message || 'Error al iniciar sincronización' });
         setIsSyncing(false);
       }
-      // If success, the polling useEffect will take over
+      // Si fue exitosa, el polling tomará el relevo para mostrar el estado final
     } catch (e: any) {
       setSyncResult({ success: false, message: e.message || 'Error de red al sincronizar' });
       setIsSyncing(false);
@@ -225,18 +234,19 @@ export default function DirectorioContactos() {
       }
     };
 
-    // Check status inmediately on mount
+    // Consultar estado inmediatamente al montar el componente
     checkStatus();
 
-    // Setup polling every 3 seconds if syncing
+    // Polling cada 5 segundos únicamente mientras haya una sincronización activa
     if (isSyncing) {
-      interval = setInterval(checkStatus, 3000);
+      interval = setInterval(checkStatus, 5000);
     }
 
     return () => {
       if (interval) clearInterval(interval);
     };
   }, [isSyncing]);
+
 
   const openCrearModal = () => {
     setEditingId(null);

@@ -132,3 +132,25 @@ export async function syncContactosFromSheets(): Promise<void> {
     isSyncingStatus = false;
   }
 }
+
+/**
+ * Ejecución periódica para cron en segundo plano.
+ * No arroja excepciones no controladas si faltan variables o si ya hay una sync en curso.
+ */
+export async function syncContactosFromSheetsCron(): Promise<void> {
+  const { sheetId, clientEmail, privateKey } = config.google;
+  if (!sheetId || !clientEmail || !privateKey) {
+    return;
+  }
+  if (isSyncingStatus) {
+    console.log('[Sheets Cron] Sincronización omitida: ya hay una en curso.');
+    return;
+  }
+  console.log('[Sheets Cron] Iniciando sincronización automática periódica con Google Sheets...');
+  try {
+    await syncContactosFromSheets();
+    console.log('[Sheets Cron] Sincronización automática finalizada exitosamente.');
+  } catch (err: any) {
+    console.error('[Sheets Cron] Error en sincronización automática:', err?.message || err);
+  }
+}

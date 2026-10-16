@@ -15,21 +15,29 @@ import {
 import { procesarCola } from './services/emailWorker.js';
 import { procesarRebotes, MODO_PRUEBA } from './services/bounceService.js';
 import { resetearContadoresSmtp } from './services/smtpAccountService.js';
+import { syncContactosFromSheetsCron } from './services/googleSheetsService.js';
+import { getClientIdentifier } from './middlewares/rateLimiter.js';
 import cron from 'node-cron';
 import rateLimit from 'express-rate-limit';
 const app = express();
 
-// Confiar en Nginx (Proxy Inverso) para Rate Limiting
-app.set('trust proxy', 1);
+// Confiar en Nginx y cadena de proxies para Rate Limiting
+app.set('trust proxy', true);
 
 // ── Security Middlewares ─────────────────────────────────
 app.use(securityHeaders);
 app.use(corsMiddleware);
 
 // ── Global Rate Limiter ──────────────────────────────────
+// Protección general para la aplicación (5000 peticiones por usuario/IP cada 15 min)
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 300, // Límite de 300 peticiones por IP cada 15 min
+  max: 5000,
+  keyGenerator: getClientIdentifier,
+  skip: (req) => {
+    // Excluir endpoints de polling recurrente, healthcheck y archivos estáticos
+    return req.path.endsWith('/sync-status') || req.path.endsWith('/health') || req.path.startsWith('/uploads');
+  },
   message: { success: false, error: { code: 'TOO_MANY_REQUESTS', message: 'Demasiadas peticiones, intente más tarde' } },
   standardHeaders: true,
   legacyHeaders: false,
@@ -136,4 +144,13 @@ app.listen(config.port, async () => {
   }, {
     timezone: 'America/Argentina/Buenos_Aires',
   });
+
+  // Sincronización automática de contactos desde Google Sheets
+  // Se ejecuta cada 2 horas (de 8 a 18 hs los días hábiles) en segundo plano
+  const cronSheets = MODO_PRUEBA ? '*/15 * * * *' : '0 8-18/2 * * 1-5';
+  logger.info(`📊 Programando sincronización automática con Google Sheets (Cron: ${cronSheets})...`);
+  cron.schedule(cronSheets, syncContactosFromSheetsCron, {
+    timezone: 'America/Argentina/Buenos_Aires',
+  });
 });
+

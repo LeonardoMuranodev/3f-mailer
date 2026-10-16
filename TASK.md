@@ -91,3 +91,20 @@ Poner todas la scuentas SMTP, en la app
   - Agregación computada directamente en el backend (`obtenerCampanaConEstadisticas` en `campanaService.ts`), retornando `stats.desglose_fallos`.
   - Resuelto el estado "Buscando datos..." en `DetalleCampana.tsx`: ahora el análisis no depende de los filtros de la tabla de envíos y muestra los datos inmediatamente.
   - Verificado todo el entorno de producción (Dockerfiles, Docker Compose de producción, compilación de Frontend/Backend y migraciones).
+
+- [] **Que la foto del Flyer sea Opcional** ya que puede psar que no manden flyer, habria que poner un aviso de todas maneras si no la commpletan y si estan seguras de proceder
+
+- [] **Que el informe de estaditicas se pueda exportar como PDF** con los graficos que tenemos, es mas impactante y dice mejor los numeros que un CSV que solo tiene numeros para un humano
+
+- [] **mensaje de que empieza la sincronizacion** y tambien uno que termina me gustaria una notificacion como hace google gemini, nose si se hace con websokcets o como, para que le salga la alerta a la encargada
+
+- [] **Tambien alertas diferentes** como que empieza una campaña, o termina
+
+- [x] **Error de demasiadas peticiones al sincronizar Google Sheets (Rate Limit 429)**:
+  - Se identificó un `globalLimiter` asfixiante de 300 peticiones / 15 min en `src/index.ts` que se saturaba con el uso normal y el polling.
+  - Se configuró `trust proxy: true` para la cadena de Nginx y Docker.
+  - Se elevó el límite global a 5000 y se configuró identificación por usuario (`req.user.id`) en lugar de IP ciega, para que distintas encargadas en la misma red municipal no compitan por el cupo.
+  - Se excluyeron endpoints de sondeo (`/sync-status`, `/health`, `/uploads`) del rate limit general.
+  - Se añadió limiter específico (`syncSheetsLimiter`) para prevenir spam de clics en sincronización.
+  - Se implementó sincronización automática periódica en segundo plano vía `node-cron` (`syncContactosFromSheetsCron`) para mantener los datos de Google Sheets actualizados sin depender exclusivamente del usuario.
+  - Se optimizó el polling del cliente a 5 segundos y se maneja amistosamente el estado 409 (en curso).
