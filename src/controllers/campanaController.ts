@@ -1,4 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
+import fs from 'node:fs';
+import path from 'node:path';
 import DOMPurify from 'isomorphic-dompurify';
 import { dbPool } from '../config/db.js';
 import {
@@ -260,6 +262,15 @@ async function enviarPrueba(req: Request, res: Response, next: NextFunction): Pr
       adjuntoUrlFinal = `/uploads/${files.adjunto[0].filename}`;
     }
 
+    let flyerParaTemplate = flyerUrlFinal;
+    if (flyerUrlFinal) {
+      const cleanFlyerPath = flyerUrlFinal.startsWith('/') ? flyerUrlFinal.slice(1) : flyerUrlFinal;
+      const localFlyerPath = path.resolve(process.cwd(), cleanFlyerPath);
+      if (fs.existsSync(localFlyerPath)) {
+        flyerParaTemplate = 'cid:flyer_campana';
+      }
+    }
+
     const campanaMock: Campana = {
       id: 'mock-id',
       asunto,
@@ -267,7 +278,7 @@ async function enviarPrueba(req: Request, res: Response, next: NextFunction): Pr
       link_inscripcion: link_inscripcion || null,
       link_nacion: link_nacion || null,
       link_provincia: link_provincia || null,
-      flyer_url: flyerUrlFinal,
+      flyer_url: flyerParaTemplate,
       adjunto_url: adjuntoUrlFinal,
       adjunto_nombre_original: null,
       estado: 'borrador',

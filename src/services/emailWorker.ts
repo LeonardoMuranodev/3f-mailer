@@ -195,9 +195,26 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
         cuentaIdUsada = cuentaSmtp.id;
 
         const trackBase = config.publicApiUrl || 'http://localhost:3000';
-        let flyerAbsUrl = item.flyer_url;
-        if (flyerAbsUrl && flyerAbsUrl.startsWith('/uploads/')) {
-          flyerAbsUrl = `${trackBase}${flyerAbsUrl}`;
+        
+        // Determinar flyer para template y attachments
+        const attachments: any[] = [];
+        let flyerParaTemplate = item.flyer_url;
+
+        if (item.flyer_url) {
+          const cleanFlyerPath = item.flyer_url.startsWith('/') ? item.flyer_url.slice(1) : item.flyer_url;
+          const localFlyerPath = path.resolve(process.cwd(), cleanFlyerPath);
+          if (fs.existsSync(localFlyerPath)) {
+            attachments.push({
+              filename: path.basename(item.flyer_url),
+              path: localFlyerPath,
+              cid: 'flyer_campana'
+            });
+            // Al asignar 'cid:flyer_campana', el template genera <img src="cid:flyer_campana">
+            // y la imagen viaja incrustada dentro del mensaje MIME
+            flyerParaTemplate = 'cid:flyer_campana';
+          } else if (item.flyer_url.startsWith('/uploads/')) {
+            flyerParaTemplate = `${trackBase}${item.flyer_url}`;
+          }
         }
 
         const campanaMock: Campana = {
@@ -207,7 +224,7 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
           link_inscripcion: item.link_inscripcion,
           link_nacion: item.link_nacion,
           link_provincia: item.link_provincia,
-          flyer_url: flyerAbsUrl,
+          flyer_url: flyerParaTemplate,
           adjunto_url: null,
           adjunto_nombre_original: null,
           estado: item.campana_estado,
@@ -254,27 +271,8 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
         });
 
         try {
-          const attachments: any[] = [];
           let mailHtml = html;
 
-          // Si la campaña tiene flyer y el archivo existe localmente, adjuntarlo como CID inline
-          // Esto garantiza que se vea en Gmail, Outlook y cualquier cliente sin depender de IPs privadas
-          if (item.flyer_url) {
-            const cleanFlyerPath = item.flyer_url.startsWith('/') ? item.flyer_url.slice(1) : item.flyer_url;
-            const localFlyerPath = path.resolve(process.cwd(), cleanFlyerPath);
-            if (fs.existsSync(localFlyerPath)) {
-              attachments.push({
-                filename: path.basename(item.flyer_url),
-                path: localFlyerPath,
-                cid: 'flyer_campana'
-              });
-              // Reemplazar la URL del flyer por el CID
-              mailHtml = mailHtml.replace(item.flyer_url, 'cid:flyer_campana');
-              if (flyerAbsUrl) {
-                mailHtml = mailHtml.replace(flyerAbsUrl, 'cid:flyer_campana');
-              }
-            }
-          }
 
           if (item.adjunto_url) {
             const filename = item.adjunto_url.split('/').pop() || 'adjunto';

@@ -374,8 +374,8 @@ export async function enviarMailPrueba(
           path: localFlyerPath,
           cid: 'flyer_campana'
         });
-        // Reemplazar la referencia relativa por el CID
-        finalHtml = finalHtml.replace(flyerUrl, 'cid:flyer_campana');
+        // Reemplazar cualquier referencia residual por el CID
+        finalHtml = finalHtml.replaceAll(flyerUrl, 'cid:flyer_campana');
       }
     }
 
