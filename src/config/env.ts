@@ -4,7 +4,20 @@ dotenv.config();
 
 export const config = {
   port: process.env.PORT || 3000,
-  publicApiUrl: process.env.PUBLIC_API_URL || process.env.VITE_API_BASE_URL || `http://localhost:${process.env.PORT || 3000}`,
+  appUrl: (
+    process.env.APP_URL || 
+    process.env.VITE_APP_URL || 
+    (process.env.NODE_ENV === 'production' 
+      ? 'https://3fmailer.tresdefebrero.gob.ar' 
+      : 'http://localhost:5173')
+  ).replace(/\/+$/, ''),
+  publicApiUrl: (
+    process.env.PUBLIC_API_URL || 
+    process.env.VITE_API_BASE_URL || 
+    (process.env.NODE_ENV === 'production' 
+      ? 'https://3fmailer.tresdefebrero.gob.ar' 
+      : `http://localhost:${process.env.PORT || 3000}`)
+  ).replace(/\/+$/, ''),
   supabase: {
     url: process.env.SUPABASE_URL || '',
     anonKey: process.env.SUPABASE_ANON_KEY || '',
