@@ -13,6 +13,7 @@ import {
 import type { ContactoConRubro, CrearContactoInput } from '../types/contacto';
 import { RUBROS_LABELS, RUBROS_LIST } from '../data/rubros';
 import { usePermisos } from '../hooks/usePermisos';
+import { useNotificationStore } from '../stores/useNotificationStore';
 import AlertMessage from './ui/AlertMessage';
 import ImportadorVisual from './ImportadorVisual';
 
@@ -246,6 +247,23 @@ export default function DirectorioContactos() {
       if (interval) clearInterval(interval);
     };
   }, [isSyncing]);
+
+  // Actualización instantánea en vivo cuando llega evento SSE
+  const ultimaNotificacion = useNotificationStore((state) => state.historial[0]);
+  useEffect(() => {
+    if (!ultimaNotificacion) return;
+    if (ultimaNotificacion.tipo === 'sync_started') {
+      setIsSyncing(true);
+    } else if (ultimaNotificacion.tipo === 'sync_finished') {
+      setIsSyncing(false);
+      setSyncResult({
+        success: Boolean(ultimaNotificacion.detalles?.exito ?? true),
+        message: ultimaNotificacion.mensaje,
+      });
+      fetchContactosData(1);
+      setPage(1);
+    }
+  }, [ultimaNotificacion]);
 
 
   const openCrearModal = () => {

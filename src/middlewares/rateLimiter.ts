@@ -67,8 +67,8 @@ export const apiLimiter = rateLimit({
   keyGenerator: getClientIdentifier,
   validate: { trustProxy: false },
   skip: (req) => {
-    // Excluir endpoints de polling recurrente y health checks
-    return req.path.endsWith('/sync-status') || req.path.endsWith('/health');
+    // Excluir endpoints de polling recurrente, streaming SSE y health checks
+    return req.path.endsWith('/sync-status') || req.path.endsWith('/stream') || req.path.endsWith('/health');
   },
   standardHeaders: true,
   legacyHeaders: false,

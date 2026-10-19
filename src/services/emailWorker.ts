@@ -4,6 +4,7 @@ import path from 'node:path';
 import { dbPool } from '../config/db.js';
 import { obtenerSiguienteSmtpDisponible, incrementarCuotaSmtp } from './queueService.js';
 import { notificarCampanaTerminada, notificarCuotaGlobalAgotada } from './notificationService.js';
+import { emitirAlertaRealtime } from './realtimeService.js';
 import { generarHtmlDesdeCampana } from './emailTemplate.js';
 import { limpiarHistorialAntiguo } from './historialService.js';
 import { decrypt } from '../utils/encryption.js';
@@ -171,6 +172,15 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
       if (item.campana_estado === 'aprobada' && !campanasTransicionadas.has(item.campana_id)) {
         await dbPool.query(`UPDATE campanas SET estado = 'en_proceso', actualizado_en = CURRENT_TIMESTAMP WHERE id = $1`, [item.campana_id]);
         campanasTransicionadas.add(item.campana_id);
+
+        emitirAlertaRealtime({
+          tipo: 'campaign_started',
+          titulo: 'Campaña iniciada',
+          mensaje: `El despacho de "${item.asunto}" ha comenzado.`,
+          detalles: { campanaId: item.campana_id, asunto: item.asunto },
+          urlDestino: `/campanas/${item.campana_id}`,
+          timestamp: new Date().toISOString(),
+        });
       }
 
       // Intentar enviar con hasta `cantidadCuentas` cuentas distintas si fallan
@@ -190,6 +200,13 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
           cuotaAgotadaHoy = true;
           fechaAgotamiento = hoy;
           await notificarCuotaGlobalAgotada();
+
+          emitirAlertaRealtime({
+            tipo: 'smtp_quota_warning',
+            titulo: 'Límite de cuota diaria alcanzado',
+            mensaje: 'Todas las cuentas SMTP alcanzaron su límite de hoy. Los envíos se reanudarán mañana a las 09:00.',
+            timestamp: new Date().toISOString(),
+          });
           break; // Salir del while de reintentos
         }
 
@@ -454,5 +471,18 @@ async function verificarCampanasCompletadas() {
 
     const stats = statsRows[0] || { total: 0, enviados: 0, fallidos: 0 };
     await notificarCampanaTerminada(campana.id, campana.asunto, stats);
+
+    emitirAlertaRealtime({
+      tipo: 'campaign_finished',
+      titulo: 'Campaña completada',
+      mensaje: `"${campana.asunto}" finalizó con éxito (${stats.enviados} enviados${stats.fallidos > 0 ? `, ${stats.fallidos} fallidos` : ''}).`,
+      detalles: {
+        campanaId: campana.id,
+        asunto: campana.asunto,
+        stats,
+      },
+      urlDestino: `/campanas/${campana.id}`,
+      timestamp: new Date().toISOString(),
+    });
   }
 }

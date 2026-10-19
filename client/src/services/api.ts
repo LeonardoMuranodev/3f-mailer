@@ -34,9 +34,27 @@ async function fetchApi<T>(url: string, options: RequestInit = {}): Promise<ApiR
     const contentType = res.headers.get('content-type');
 
     if (!contentType || !contentType.includes('application/json')) {
+      if (res.status === 413) {
+        return {
+          success: false,
+          error: {
+            code: 'PAYLOAD_TOO_LARGE',
+            message: 'El flyer o archivo adjunto supera el tamaño máximo permitido por el servidor. Por favor, suba un archivo más liviano (máx 10 MB).'
+          }
+        };
+      }
+      if (res.status === 502 || res.status === 504) {
+        return {
+          success: false,
+          error: {
+            code: 'SERVER_GATEWAY_ERROR',
+            message: 'El servidor se encuentra reiniciando o no responde (Error ' + res.status + '). Por favor, intente en unos instantes.'
+          }
+        };
+      }
       return {
         success: false,
-        error: { code: 'SERVER_ERROR', message: 'El servidor respondió con un formato inválido. Por favor, intente nuevamente más tarde.' }
+        error: { code: 'SERVER_ERROR', message: `El servidor respondió con error ${res.status}. Por favor, intente nuevamente más tarde.` }
       };
     }
 
