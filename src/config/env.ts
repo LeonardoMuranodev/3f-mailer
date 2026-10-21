@@ -76,4 +76,5 @@ export const config = {
     clientEmail: process.env.GOOGLE_CLIENT_EMAIL || '',
     privateKey: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
   },
+  maxAdjuntos: parseInt(process.env.MAX_ADJUNTOS || process.env.VITE_MAX_ADJUNTOS || '6', 10),
 };

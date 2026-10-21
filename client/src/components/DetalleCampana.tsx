@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Send, AlertTriangle, CheckCircle2, Clock, Mail, Search, RefreshCw, BarChart2, Download, MousePointerClick, Pause, Play, Trash2, Edit3, ArrowUp } from 'lucide-react';
 import { obtenerCampanaDetalle, obtenerColaCampana, cambiarEstadoCampana, eliminarCampana } from '../services/api';
@@ -35,6 +36,17 @@ const COLA_BADGE_CLASSES: Record<string, string> = {
 export default function DetalleCampana() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [forzarConfirm, setForzarConfirm] = useState(false);
+
+  // Bloquear scroll del fondo cuando hay modal abierto
+  useEffect(() => {
+    const isAnyModalOpen = Boolean(deleteConfirm || forzarConfirm);
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [deleteConfirm, forzarConfirm]);
 
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -561,9 +573,9 @@ export default function DetalleCampana() {
       </div>
 
       {/* Modal de Confirmación de Eliminación */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+      {deleteConfirm && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-modal-pop border border-border">
             <div className="p-6">
               <div className="flex justify-center mb-4">
                 <div className="bg-red-100 p-3 rounded-full">
@@ -574,7 +586,7 @@ export default function DetalleCampana() {
                 ¿Eliminar campaña?
               </h3>
               <p className="text-center text-muted mb-6">
-                Estás a punto de eliminar la campaña <strong>{campana.asunto}</strong>. Esta acción también eliminará todo su historial y métricas y no se puede deshacer.
+                Estás a punto de eliminar la campaña <strong>{campana?.asunto}</strong>. Esta acción también eliminará todo su historial y métricas y no se puede deshacer.
               </p>
 
               <div className="flex gap-3">
@@ -593,13 +605,14 @@ export default function DetalleCampana() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal de Confirmación para Forzar Envío */}
-      {forzarConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+      {forzarConfirm && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-modal-pop border border-border">
             <div className="p-6">
               <div className="flex justify-center mb-4">
                 <div className="bg-indigo-100 p-3 rounded-full">
@@ -629,7 +642,8 @@ export default function DetalleCampana() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Botón flotante para volver arriba (a las estadísticas) */}

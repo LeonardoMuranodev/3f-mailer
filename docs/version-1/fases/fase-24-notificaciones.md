@@ -292,3 +292,8 @@ export function emitirAlertaRealtime(payload: RealtimePayload, rolesPermitidos: 
 - [ ] **Fase 5: Verificación y Pruebas en Vivo:**
   - Probar sincronización manual y comprobar que el toast se actualice fluidamente.
   - Probar pasar a otra pestaña (Google Docs) y comprobar la aparición de la notificación del sistema de Chrome / Windows y el retorno con `window.focus()`.
+
+- [x] **Fase 6: Integración con Mail de Prueba:**
+  - Se eliminó el cartel estático de alerta superior en `CrearCampana.tsx` que requería hacer scroll manual tras enviar una prueba con adjuntos pesados.
+  - Se integró `agregarNotificacion` en `useNotificationStore`: dispara un Toast flotante estilo Gemini (verde con icono `MailCheck` para éxito o rojo para fallos) y, si el usuario está en otra ventana o pestaña (`document.hidden || !document.hasFocus()`), dispara la notificación nativa de Chrome / Windows Notification API con `window.focus()` al hacer clic.
+  - El botón "Mail de Prueba" actualiza su estado dinámicamente a "Enviando prueba..." con spinner mientras se procesan los adjuntos.

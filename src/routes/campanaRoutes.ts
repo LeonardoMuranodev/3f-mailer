@@ -1,5 +1,6 @@
-import { Router } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import { upload } from '../config/multerConfig.js';
+import { config } from '../config/env.js';
 import { validateSchema } from '../middlewares/validateSchema.js';
 import { crearCampanaSchema, cambiarEstadoSchema, actualizarCampanaSchema } from '../schemas/campanaSchema.js';
 import { campanaController } from '../controllers/campanaController.js';
@@ -8,11 +9,21 @@ import { cache } from '../middlewares/cache.js';
 
 export const campanaRouter = Router();
 
+const uploadCampana = (req: Request, res: Response, next: NextFunction) => {
+  upload.fields([
+    { name: 'flyer', maxCount: 1 },
+    { name: 'adjuntos', maxCount: config.maxAdjuntos },
+  ])(req, res, next);
+};
+
+// GET /api/campanas/config — Configuración de campañas (ej: maxAdjuntos)
+campanaRouter.get('/config', campanaController.obtenerConfig);
+
 // POST /api/campanas — Crear campaña (multipart + validación Zod)
 campanaRouter.post(
   '/',
   requireRole(['desarrollador', 'encargada']),
-  upload.fields([{ name: 'flyer', maxCount: 1 }, { name: 'adjunto', maxCount: 1 }]),
+  uploadCampana,
   validateSchema(crearCampanaSchema),
   campanaController.crear,
 );
@@ -21,7 +32,7 @@ campanaRouter.post(
 campanaRouter.put(
   '/:id',
   requireRole(['desarrollador', 'encargada']),
-  upload.fields([{ name: 'flyer', maxCount: 1 }, { name: 'adjunto', maxCount: 1 }]),
+  uploadCampana,
   validateSchema(actualizarCampanaSchema),
   campanaController.actualizar,
 );
@@ -30,7 +41,7 @@ campanaRouter.put(
 campanaRouter.post(
   '/prueba',
   requireRole(['desarrollador', 'encargada']),
-  upload.fields([{ name: 'flyer', maxCount: 1 }, { name: 'adjunto', maxCount: 1 }]),
+  uploadCampana,
   campanaController.enviarPrueba
 );
 

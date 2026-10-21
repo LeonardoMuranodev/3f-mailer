@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
+import { config } from '../config/env.js';
 import { sendError } from '../utils/responseHandler.js';
 import { notifyError } from '../services/telegramNotifier.js';
 
@@ -37,7 +38,7 @@ export function errorHandler(
       return;
     }
     if (multerErr.code === 'LIMIT_UNEXPECTED_FILE') {
-      sendError(res, 'UNEXPECTED_FILE', 'Campo de archivo inesperado', 400);
+      sendError(res, 'UNEXPECTED_FILE', `Se superó la cantidad máxima de archivos permitidos (máx. ${config.maxAdjuntos}) o el campo es inválido`, 400);
       return;
     }
   }

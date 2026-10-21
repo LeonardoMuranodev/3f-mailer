@@ -68,6 +68,13 @@ async function fetchApi<T>(url: string, options: RequestInit = {}): Promise<ApiR
 }
 
 /**
+ * Obtiene la configuración del servidor para campañas (ej: maxAdjuntos).
+ */
+export async function obtenerConfigCampana(): Promise<ApiResponse<{ maxAdjuntos: number }>> {
+  return fetchApi<{ maxAdjuntos: number }>(`${API_BASE}/api/campanas/config`);
+}
+
+/**
  * Crea una campaña en estado 'borrador'.
  * Envía multipart/form-data para soportar upload de flyer.
  */

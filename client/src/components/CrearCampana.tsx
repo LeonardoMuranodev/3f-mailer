@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { Mail, CheckCircle2, Save, Eye, ArrowLeft, Plus, List, FileText, HelpCircle, X, Info, ArrowUp, AlertTriangle } from 'lucide-react';
 import { useCampanaStore, buildFormData } from '../stores/campanaStore';
 import TiptapEditor from './TiptapEditor';
@@ -7,17 +8,30 @@ import FlyerUpload from './FlyerUpload';
 import { RUBROS_LIST, RUBROS_LABELS } from '../data/rubros';
 import AlertMessage from './ui/AlertMessage';
 import { enviarMailPruebaCampana, obtenerCampanaPorId } from '../services/api';
+import { useNotificationStore } from '../stores/useNotificationStore';
 
 export default function CrearCampana() {
   const navigate = useNavigate();
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showSinFlyerModal, setShowSinFlyerModal] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [conAdjunto, setConAdjunto] = useState(
-    () => !!useCampanaStore.getState().adjuntoName || !!useCampanaStore.getState().form.adjunto_url
+    () => !!(useCampanaStore.getState().adjuntosNames.length > 0) || !!useCampanaStore.getState().form.adjuntos_extras?.length
   );
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Bloqueo de scroll en el body mientras cualquier modal esté abierto
+  const submitSuccess = useCampanaStore((s) => s.submitResult?.success);
+  const isAnyModalOpen = showHelp || showSinFlyerModal || Boolean(submitSuccess);
+  useEffect(() => {
+    if (isAnyModalOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isAnyModalOpen]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -43,9 +57,10 @@ export default function CrearCampana() {
     errors,
     setField,
     setHtmlContent,
-    setAdjunto,
-    adjunto,
-    adjuntoName,
+    setAdjuntos,
+    adjuntos,
+    maxAdjuntos,
+    cargarConfig,
     toggleRubro,
     guardarBorrador,
     aprobarCampana,
@@ -58,6 +73,7 @@ export default function CrearCampana() {
   // Limpiar mensajes: solo resetear si hay un submitResult exitoso previo
   // NO reseteamos si venimos de Vista Previa (el store tiene datos en uso)
   useEffect(() => {
+    cargarConfig();
     const state = useCampanaStore.getState();
     if (state.submitResult?.success) {
       reset();
@@ -93,11 +109,16 @@ export default function CrearCampana() {
             useCampanaStore.setState({ flyerPreview: campana.flyer_url });
           }
           
-          if (campana.adjunto_url) {
-            setField('adjunto_url', campana.adjunto_url);
+          if (campana.adjunto_url || (campana.adjuntos_extras && campana.adjuntos_extras.length > 0)) {
             setConAdjunto(true);
-            const fileName = campana.adjunto_nombre_original || campana.adjunto_url.split('/').pop() || 'Archivo adjunto';
-            useCampanaStore.setState({ adjuntoName: fileName });
+            // Poblar adjuntos_extras en el form para que buildFormData los preserve
+            if (campana.adjuntos_extras && campana.adjuntos_extras.length > 0) {
+              setField('adjuntos_extras', campana.adjuntos_extras);
+            } else if (campana.adjunto_url) {
+              // Retrocompatibilidad: campaña vieja con adjunto_url solo
+              const nombre = campana.adjunto_nombre_original || campana.adjunto_url.split('/').pop() || 'Adjunto';
+              setField('adjuntos_extras', [{ url: campana.adjunto_url, nombre_original: nombre }]);
+            }
           }
           
           if (campana.fecha_limite_envio) setField('fecha_limite_envio', campana.fecha_limite_envio.split('T')[0]);
@@ -168,27 +189,55 @@ export default function CrearCampana() {
   };
 
   const handleMandarPrueba = async () => {
+    const { agregarNotificacion, pedirPermisoDesktop } = useNotificationStore.getState();
+
+    // Solicitar permiso de notificaciones de escritorio si aún no se solicitó (mediante el click del usuario)
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+      pedirPermisoDesktop();
+    }
+
     if (!form.asunto || !form.cuerpo_html) {
-      setTestResult({ success: false, message: 'El asunto y el cuerpo del correo son requeridos para la prueba.' });
+      agregarNotificacion({
+        tipo: 'test_mail_error',
+        titulo: 'Faltan datos para la prueba',
+        mensaje: 'El asunto y el cuerpo del correo son requeridos para enviar la prueba.',
+        timestamp: new Date().toISOString(),
+      });
       return;
     }
     
     setIsSendingTest(true);
-    setTestResult(null);
     try {
-      const fd = buildFormData(form, useCampanaStore.getState().flyer, useCampanaStore.getState().adjunto);
-      // Incluir flyer_url y adjunto_url si existen pero no se subió archivo nuevo
+      const fd = buildFormData(form, useCampanaStore.getState().flyer, useCampanaStore.getState().adjuntos);
+      // Incluir flyer_url si existe pero no se subió archivo nuevo
       if (!useCampanaStore.getState().flyer && form.flyer_url) fd.append('flyer_url', form.flyer_url);
-      if (!useCampanaStore.getState().adjunto && form.adjunto_url) fd.append('adjunto_url', form.adjunto_url);
+      // adjuntos_extras se maneja dentro de buildFormData automáticamente
 
       const res = await enviarMailPruebaCampana(fd);
       if (res.success) {
-        setTestResult({ success: true, message: res.data?.message || 'Mail de prueba enviado con éxito' });
+        const destinatario = res.data?.destinatario || '';
+        const mensaje = res.data?.message || `Mail de prueba enviado exitosamente${destinatario ? ` a ${destinatario}` : ''}`;
+        agregarNotificacion({
+          tipo: 'test_mail_sent',
+          titulo: 'Mail de Prueba Enviado',
+          mensaje,
+          timestamp: new Date().toISOString(),
+        });
       } else {
-        setTestResult({ success: false, message: res.error?.message || 'Error al enviar mail de prueba' });
+        agregarNotificacion({
+          tipo: 'test_mail_error',
+          titulo: 'Error en Mail de Prueba',
+          mensaje: res.error?.message || 'Error al enviar mail de prueba',
+          timestamp: new Date().toISOString(),
+        });
       }
     } catch (e: any) {
-      setTestResult({ success: false, message: e.message || 'Error de red' });
+      agregarNotificacion({
+        tipo: 'test_mail_error',
+        titulo: 'Error de Red',
+        mensaje: e.message || 'Error de conexión al enviar el mail de prueba',
+        timestamp: new Date().toISOString(),
+      });
     } finally {
       setIsSendingTest(false);
     }
@@ -245,9 +294,9 @@ export default function CrearCampana() {
         </button>
       </div>
 
-      {showHelp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg p-6 border border-border relative animate-slide-up max-h-[90vh] overflow-y-auto">
+      {showHelp && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg p-6 border border-border relative my-auto animate-slide-up max-h-[90vh] overflow-y-auto">
             <button 
               onClick={() => setShowHelp(false)}
               className="absolute top-4 right-4 text-muted hover:text-dark transition-colors"
@@ -296,13 +345,14 @@ export default function CrearCampana() {
               Entendido
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ═══ MODAL DE ADVERTENCIA: SIN FLYER ═══ */}
-      {showSinFlyerModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-surface w-full max-w-md rounded-xl border border-border shadow-2xl overflow-hidden p-6 relative animate-slide-up">
+      {showSinFlyerModal && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-surface w-full max-w-md rounded-xl border border-border shadow-2xl overflow-hidden p-6 relative my-auto animate-slide-up">
             <button 
               onClick={() => setShowSinFlyerModal(false)}
               className="absolute top-4 right-4 text-muted hover:text-dark transition-colors"
@@ -340,7 +390,8 @@ export default function CrearCampana() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Error message (solo errores, no éxito) */}
@@ -368,21 +419,11 @@ export default function CrearCampana() {
         </div>
       )}
 
-      {/* Test result message */}
-      {testResult && (
-        <div className="mb-6">
-          <AlertMessage
-            type={testResult.success ? "success" : "error"}
-            message={testResult.message}
-            onClose={() => setTestResult(null)}
-          />
-        </div>
-      )}
 
       {/* ═══ MODAL DE ÉXITO ═══ */}
-      {submitResult?.success && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-surface w-full max-w-md rounded-xl border border-border shadow-2xl overflow-hidden animate-fade-in">
+      {submitResult?.success && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-surface w-full max-w-md rounded-xl border border-border shadow-2xl overflow-hidden my-auto animate-fade-in">
             <div className="p-6 sm:p-8 text-center">
               <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/30 mb-4">
                 <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
@@ -438,7 +479,8 @@ export default function CrearCampana() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <div className="bg-surface rounded-xl shadow-sm border border-border overflow-hidden transition-colors">
@@ -502,10 +544,10 @@ export default function CrearCampana() {
           </div>
 
           {/* Fila 2: Primer Link y Fecha Límite */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
             {/* Primer Link */}
-            <div className="relative overflow-hidden">
-              <div className={`transition-all duration-300 ease-in-out ${form.usa_links_multiples ? 'opacity-0 h-0 scale-y-95 absolute' : 'opacity-100 h-auto scale-y-100 relative'}`}>
+            {!form.usa_links_multiples ? (
+              <div className="animate-fade-in">
                 <label htmlFor="link_inscripcion" className="block text-base font-semibold text-dark mb-1.5">
                   Link de inscripción <span className="text-danger">*</span>
                 </label>
@@ -524,8 +566,8 @@ export default function CrearCampana() {
                 />
                 {errors.link_inscripcion && <p className="text-danger text-sm mt-1.5">{errors.link_inscripcion}</p>}
               </div>
-
-              <div className={`transition-all duration-300 ease-in-out ${!form.usa_links_multiples ? 'opacity-0 h-0 scale-y-95 absolute pointer-events-none' : 'opacity-100 h-auto scale-y-100 relative'}`}>
+            ) : (
+              <div className="animate-fade-in">
                 <label htmlFor="link_nacion" className="block text-base font-semibold text-dark mb-1.5">
                   Link Nación <span className="text-danger">*</span>
                 </label>
@@ -544,7 +586,7 @@ export default function CrearCampana() {
                 />
                 {errors.link_nacion && <p className="text-danger text-sm mt-1.5">{errors.link_nacion}</p>}
               </div>
-            </div>
+            )}
 
             {/* Fecha límite */}
             <div>
@@ -573,8 +615,8 @@ export default function CrearCampana() {
           </div>
 
           {/* Fila 3: Segundo Link (solo si múltiple) */}
-          <div className={`transition-all duration-300 ease-in-out origin-top overflow-hidden ${!form.usa_links_multiples ? 'opacity-0 max-h-0 mb-0' : 'opacity-100 max-h-[200px] mb-8'}`}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {form.usa_links_multiples && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start animate-fade-in mb-8">
               <div>
                 <label htmlFor="link_provincia" className="block text-base font-semibold text-dark mb-1.5">
                   Link Provincia <span className="text-danger">*</span>
@@ -595,7 +637,7 @@ export default function CrearCampana() {
                 {errors.link_provincia && <p className="text-danger text-sm mt-1.5">{errors.link_provincia}</p>}
               </div>
             </div>
-          </div>
+          )}
 
           {/* Flyer */}
           <div>
@@ -605,7 +647,7 @@ export default function CrearCampana() {
             <FlyerUpload />
           </div>
 
-          {/* Adjunto Opcional Toggle */}
+          {/* Adjuntos Múltiples Toggle */}
           <div className="pt-4 border-t border-border">
             <div className="mb-4">
               <label className="flex items-center gap-3 cursor-pointer group w-fit">
@@ -617,9 +659,8 @@ export default function CrearCampana() {
                     onChange={(e) => {
                       setConAdjunto(e.target.checked);
                       if (!e.target.checked) {
-                        setAdjunto(null);
-                        setField('adjunto_url', '');
-                        useCampanaStore.setState({ adjuntoName: null });
+                        setAdjuntos([]);
+                        setField('adjuntos_extras', []);
                       }
                     }}
                     disabled={isSubmittedSuccessfully}
@@ -628,45 +669,101 @@ export default function CrearCampana() {
                   <div className={`absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${conAdjunto ? 'transform translate-x-6' : ''}`}></div>
                 </div>
                 <div className="text-base font-semibold text-dark group-hover:text-primary transition-colors">
-                  Añadir adjunto opcional
+                  Añadir adjuntos opcionales
                 </div>
               </label>
               <p className="text-muted text-sm mt-1 ml-17">
-                Permite enviar un archivo extra (PDF, DOCX, CSV, Excel, Imágenes) adjunto en el correo.
+                Permite enviar hasta {maxAdjuntos} archivos adjuntos (PDF, DOCX, CSV, Excel, Imágenes) en el correo.
               </p>
             </div>
-            
+
             {conAdjunto && (
               <div className="animate-fade-in mt-4">
-                <label className="block text-base font-semibold text-dark mb-1.5">
-                  Archivo Adjunto (máx 10MB)
-                </label>
-                <div className="flex items-center gap-4">
-                  <input
-                    type="file"
-                    accept=".pdf,.docx,.xlsx,.xls,.csv,image/*"
-                    onChange={(e) => setAdjunto(e.target.files ? e.target.files[0] : null)}
-                    disabled={isSubmittedSuccessfully}
-                    className="block w-full text-sm text-muted
-                      file:mr-4 file:py-2.5 file:px-4
-                      file:rounded-lg file:border-0
-                      file:text-sm file:font-semibold
-                      file:bg-primary file:text-white
-                      hover:file:bg-primary-dark
-                      file:cursor-pointer file:transition-colors
-                      disabled:opacity-60 disabled:cursor-not-allowed"
-                  />
-                  {adjuntoName && !adjunto && (
-                    <span className="text-sm font-medium text-primary bg-primary/10 px-3 py-1 rounded-full whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]" title={adjuntoName}>
-                      {adjuntoName}
-                    </span>
-                  )}
-                  {!adjuntoName && form.adjunto_url && (
-                    <span className="text-sm font-medium text-muted bg-surface px-3 py-1 rounded-full whitespace-nowrap border border-border">
-                      Archivo ya subido previamente
-                    </span>
-                  )}
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-base font-semibold text-dark">
+                    Archivos Adjuntos <span className="text-muted text-sm font-normal">(máx. 10MB por archivo)</span>
+                  </label>
+                  <span className={`text-sm font-medium px-2 py-0.5 rounded-full ${
+                    adjuntos.length >= maxAdjuntos ? 'bg-warning/10 text-warning' : 'bg-primary/10 text-primary'
+                  }`}>
+                    {adjuntos.length > 0 ? adjuntos.length : (form.adjuntos_extras?.length || 0)}/{maxAdjuntos} archivos
+                  </span>
                 </div>
+
+                {/* Input para seleccionar múltiples archivos */}
+                {adjuntos.length < maxAdjuntos && (
+                  <div className="mb-3">
+                    <input
+                      id="adjuntos-input"
+                      type="file"
+                      multiple
+                      accept=".pdf,.docx,.xlsx,.xls,.csv,image/*"
+                      onChange={(e) => {
+                        if (e.target.files) {
+                          const nuevos = Array.from(e.target.files);
+                          const combined = [...adjuntos, ...nuevos].slice(0, maxAdjuntos);
+                          setAdjuntos(combined);
+                          // Limpiar extras guardados si se suben nuevos
+                          if (combined.length > 0) setField('adjuntos_extras', []);
+                          e.target.value = '';
+                        }
+                      }}
+                      disabled={isSubmittedSuccessfully}
+                      className="block w-full text-sm text-muted
+                        file:mr-4 file:py-2.5 file:px-4
+                        file:rounded-lg file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-primary file:text-white
+                        hover:file:bg-primary-dark
+                        file:cursor-pointer file:transition-colors
+                        disabled:opacity-60 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                )}
+
+                {/* Lista de archivos nuevos seleccionados */}
+                {adjuntos.length > 0 && (
+                  <ul className="space-y-2">
+                    {adjuntos.map((file, idx) => (
+                      <li key={idx} className="flex items-center gap-2 bg-surface border border-border rounded-lg px-3 py-2">
+                        <FileText size={16} className="text-primary shrink-0" />
+                        <span className="text-sm text-dark flex-1 truncate" title={file.name}>{file.name}</span>
+                        <span className="text-xs text-muted shrink-0">{(file.size / 1024 / 1024).toFixed(1)} MB</span>
+                        <button
+                          type="button"
+                          onClick={() => setAdjuntos(adjuntos.filter((_, i) => i !== idx))}
+                          disabled={isSubmittedSuccessfully}
+                          className="ml-1 text-muted hover:text-danger transition-colors disabled:opacity-40"
+                          title="Quitar este archivo"
+                        >
+                          <X size={16} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {/* Archivos existentes (al editar un borrador) */}
+                {adjuntos.length === 0 && form.adjuntos_extras && form.adjuntos_extras.length > 0 && (
+                  <ul className="space-y-2">
+                    {form.adjuntos_extras.map((adj, idx) => (
+                      <li key={idx} className="flex items-center gap-2 bg-surface border border-border rounded-lg px-3 py-2">
+                        <FileText size={16} className="text-muted shrink-0" />
+                        <span className="text-sm text-dark flex-1 truncate" title={adj.nombre_original}>{adj.nombre_original}</span>
+                        <span className="text-xs text-muted shrink-0 bg-background border border-border px-2 py-0.5 rounded-full">Guardado</span>
+                        <button
+                          type="button"
+                          onClick={() => setField('adjuntos_extras', form.adjuntos_extras!.filter((_, i) => i !== idx))}
+                          disabled={isSubmittedSuccessfully}
+                          className="ml-1 text-muted hover:text-danger transition-colors disabled:opacity-40"
+                          title="Quitar este archivo"
+                        >
+                          <X size={16} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
           </div>
@@ -783,7 +880,7 @@ export default function CrearCampana() {
               ) : (
                 <Mail size={18} />
               )}
-              Mail de Prueba
+              {isSendingTest ? 'Enviando prueba...' : 'Mail de Prueba'}
             </button>
           </div>
           

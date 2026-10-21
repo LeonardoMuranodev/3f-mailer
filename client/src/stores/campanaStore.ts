@@ -1,27 +1,32 @@
 import { create } from 'zustand';
 import type { CampanaFormData } from '../types/campana';
 import { CAMPANA_FORM_INITIAL } from '../types/campana';
-import { crearCampana, actualizarCampana, cambiarEstadoCampana } from '../services/api';
+import { crearCampana, actualizarCampana, cambiarEstadoCampana, obtenerConfigCampana } from '../services/api';
 import { validarFormulario, validarBorrador } from '../schemas/campanaSchema';
+import { useNotificationStore } from './useNotificationStore';
 
 const STORAGE_KEY = 'draft_campana_data';
+
+const DEFAULT_MAX_ADJUNTOS = parseInt(import.meta.env.VITE_MAX_ADJUNTOS || '6', 10) || 6;
 
 interface CampanaStore {
   // ── Estado ─────────────────────────────────────
   form: CampanaFormData;
   flyer: File | null;
   flyerPreview: string | null;
-  adjunto: File | null;
-  adjuntoName: string | null;
+  adjuntos: File[];
+  adjuntosNames: string[];
+  maxAdjuntos: number;
   htmlPreview: string;
   errors: Record<string, string>;
   isSubmitting: boolean;
   submitResult: { success: boolean; message: string; id?: string; mode?: 'borrador' | 'aprobada' } | null;
 
   // ── Acciones ───────────────────────────────────
+  cargarConfig: () => Promise<void>;
   setField: <K extends keyof CampanaFormData>(field: K, value: CampanaFormData[K]) => void;
   setFlyer: (file: File | null) => void;
-  setAdjunto: (file: File | null) => void;
+  setAdjuntos: (files: File[]) => void;
   setHtmlContent: (html: string) => void;
   toggleRubro: (rubro: string) => void;
   reset: () => void;
@@ -38,12 +43,24 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
   form: { ...CAMPANA_FORM_INITIAL },
   flyer: null,
   flyerPreview: null,
-  adjunto: null,
-  adjuntoName: null,
+  adjuntos: [],
+  adjuntosNames: [],
+  maxAdjuntos: DEFAULT_MAX_ADJUNTOS,
   htmlPreview: '',
   errors: {},
   isSubmitting: false,
   submitResult: null,
+
+  cargarConfig: async () => {
+    try {
+      const res = await obtenerConfigCampana();
+      if (res.success && res.data?.maxAdjuntos) {
+        set({ maxAdjuntos: res.data.maxAdjuntos });
+      }
+    } catch {
+      // Ignorar error y mantener DEFAULT_MAX_ADJUNTOS
+    }
+  },
 
   // ── Acciones ────────────────────────────────────
   setField: (field, value) =>
@@ -63,10 +80,10 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
     });
   },
 
-  setAdjunto: (file) => {
+  setAdjuntos: (files) => {
     set({
-      adjunto: file,
-      adjuntoName: file ? file.name : null,
+      adjuntos: files,
+      adjuntosNames: files.map((f) => f.name),
     });
   },
 
@@ -95,6 +112,8 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
       form: { ...CAMPANA_FORM_INITIAL },
       flyer: null,
       flyerPreview: null,
+      adjuntos: [],
+      adjuntosNames: [],
       htmlPreview: '',
       errors: {},
       isSubmitting: false,
@@ -108,7 +127,7 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
 
   // ── Submit ──────────────────────────────────────
   guardarBorrador: async (id?: string) => {
-    const { form, flyer, adjunto } = get();
+    const { form, flyer, adjuntos } = get();
 
     // Validar con Zod de forma laxa
     const validationErrors = validarBorrador(form);
@@ -123,7 +142,7 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
     set({ isSubmitting: true, errors: {}, submitResult: null });
 
     try {
-      const fd = buildFormData(form, flyer, adjunto);
+      const fd = buildFormData(form, flyer, adjuntos);
       let res;
       if (id) {
         res = await actualizarCampana(id, fd);
@@ -165,7 +184,7 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
   },
 
   aprobarCampana: async (id?: string) => {
-    const { form, flyer, adjunto } = get();
+    const { form, flyer, adjuntos } = get();
 
     // Validar con Zod
     const validationErrors = validarFormulario(form);
@@ -181,7 +200,7 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
 
     try {
       // 1. Crear o actualizar la campaña como borrador
-      const fd = buildFormData(form, flyer, adjunto);
+      const fd = buildFormData(form, flyer, adjuntos);
       let createRes;
       if (id) {
         createRes = await actualizarCampana(id, fd);
@@ -204,6 +223,13 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
 
       if (approveRes.success) {
         localStorage.removeItem(STORAGE_KEY);
+        useNotificationStore.getState().agregarNotificacion({
+          tipo: 'campaign_approved',
+          titulo: 'Campaña Aprobada',
+          mensaje: `La campaña "${form.asunto}" fue aprobada y quedó lista para su envío.`,
+          urlDestino: `/campanas/${createRes.data.id}`,
+          timestamp: new Date().toISOString(),
+        });
         set({
           submitResult: {
             success: true,
@@ -237,7 +263,7 @@ export const useCampanaStore = create<CampanaStore>((set, get) => ({
 }));
 
 // ── Helper ────────────────────────────────────────────────
-export function buildFormData(form: CampanaFormData, flyer: File | null, adjunto: File | null): FormData {
+export function buildFormData(form: CampanaFormData, flyer: File | null, adjuntos: File[]): FormData {
   const fd = new FormData();
   fd.append('asunto', form.asunto);
   fd.append('cuerpo_html', form.cuerpo_html);
@@ -260,8 +286,12 @@ export function buildFormData(form: CampanaFormData, flyer: File | null, adjunto
     fd.append('flyer', flyer);
   }
 
-  if (adjunto) {
-    fd.append('adjunto', adjunto);
+  // Múltiples adjuntos: subir como 'adjuntos'
+  if (adjuntos && adjuntos.length > 0) {
+    adjuntos.forEach((file) => fd.append('adjuntos', file));
+  } else if (form.adjuntos_extras && form.adjuntos_extras.length > 0) {
+    // Al editar sin subir nuevos archivos, preservar los existentes como JSON
+    fd.append('adjuntos_extras', JSON.stringify(form.adjuntos_extras));
   }
 
   return fd;

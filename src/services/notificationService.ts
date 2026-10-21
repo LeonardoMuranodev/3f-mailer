@@ -341,7 +341,8 @@ export async function enviarMailPrueba(
   asunto: string,
   cuerpoHtml: string,
   adjuntoUrl?: string | null,
-  flyerUrl?: string | null
+  flyerUrl?: string | null,
+  adjuntosExtras?: Array<{ url: string; nombre_original?: string }> | null
 ) {
   const { smtpHost, smtpPort, smtpUser, smtpPass } = config.notifier;
   const destinatario = config.modoPrueba
@@ -390,6 +391,20 @@ export async function enviarMailPrueba(
           filename: path.basename(adjuntoUrl),
           path: localAdjuntoPath
         });
+      }
+    }
+
+    if (adjuntosExtras && Array.isArray(adjuntosExtras)) {
+      for (const adj of adjuntosExtras) {
+        if (adj.url === adjuntoUrl) continue; // ya agregado
+        const cleanPath = adj.url.startsWith('/') ? adj.url.slice(1) : adj.url;
+        const filepath = path.resolve(process.cwd(), cleanPath);
+        if (fs.existsSync(filepath)) {
+          attachments.push({
+            filename: adj.nombre_original || path.basename(adj.url),
+            path: filepath
+          });
+        }
       }
     }
 

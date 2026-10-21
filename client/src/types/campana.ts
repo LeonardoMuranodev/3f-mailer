@@ -9,6 +9,7 @@ export interface CampanaFormData {
   flyer_url: string;
   adjunto_url: string;
   adjunto_nombre_original: string;
+  adjuntos_extras: Array<{ url: string; nombre_original: string }>;
   fecha_limite_envio: string;
   prioridad: 'alta' | 'media' | 'baja';
   para_todos_rubros: boolean;
@@ -28,6 +29,7 @@ export interface CampanaResponse {
   flyer_url: string | null;
   adjunto_url: string | null;
   adjunto_nombre_original: string | null;
+  adjuntos_extras: Array<{ url: string; nombre_original: string }> | null;
   fecha_limite_envio: string;
   prioridad: 'alta' | 'media' | 'baja';
   para_todos_rubros: boolean;
@@ -87,6 +89,7 @@ export const CAMPANA_FORM_INITIAL: CampanaFormData = {
   flyer_url: '',
   adjunto_url: '',
   adjunto_nombre_original: '',
+  adjuntos_extras: [],
   fecha_limite_envio: '',
   prioridad: 'alta',
   para_todos_rubros: true,

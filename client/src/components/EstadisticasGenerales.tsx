@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Send, Clock, CheckCircle2, Mail, RefreshCw, Download, Calendar, FilterX, BarChart3, Plus, AlertTriangle, X, HelpCircle, Info, Eye, MousePointerClick, Printer } from 'lucide-react';
 import { obtenerEstadisticasGlobales, exportarEstadisticasCampanas } from '../services/api';
 import type { GlobalStatsResult } from '../types/stats';
@@ -12,6 +13,17 @@ export default function EstadisticasGenerales() {
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [showHelp, setShowHelp] = useState(false);
+  const [errorExport, setErrorExport] = useState<string | null>(null);
+
+  // Bloquear scroll del fondo cuando hay modal abierto
+  useEffect(() => {
+    if (Boolean(errorExport || showHelp)) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [errorExport, showHelp]);
 
   const fetchStats = async () => {
     setLoading(true);
@@ -27,8 +39,6 @@ export default function EstadisticasGenerales() {
       setLoading(false);
     }
   };
-
-  const [errorExport, setErrorExport] = useState<string | null>(null);
 
   const handleExportPdf = () => {
     const originalTitle = document.title;
@@ -186,9 +196,9 @@ export default function EstadisticasGenerales() {
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 animate-fade-in relative printable-report">
       {/* Modal de Error (Exportación) */}
-      {errorExport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-surface w-full max-w-sm rounded-2xl shadow-xl border border-border p-6 relative animate-slide-up">
+      {errorExport && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface w-full max-w-sm rounded-2xl shadow-xl border border-border p-6 relative animate-modal-pop">
             <button 
               onClick={() => setErrorExport(null)}
               className="absolute top-4 right-4 text-muted hover:text-dark transition-colors"
@@ -209,7 +219,8 @@ export default function EstadisticasGenerales() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── CONTENEDOR DEL REPORTE EJECUTIVO (1 SOLA HOJA) ── */}
@@ -287,9 +298,9 @@ export default function EstadisticasGenerales() {
         </div>
 
         {/* Modal de Ayuda */}
-        {showHelp && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-            <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg p-6 border border-border relative animate-slide-up max-h-[90vh] overflow-y-auto">
+        {showHelp && createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in">
+            <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg p-6 border border-border relative animate-modal-pop max-h-[90vh] overflow-y-auto">
               <button 
                 onClick={() => setShowHelp(false)}
                 className="absolute top-4 right-4 text-muted hover:text-dark transition-colors"
@@ -332,7 +343,8 @@ export default function EstadisticasGenerales() {
                 Entendido
               </button>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Filtros */}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Clock, CalendarX, Plus, Trash2, CalendarDays, HelpCircle, X, Info } from 'lucide-react';
 import {
   obtenerHorariosSmtp,
@@ -16,6 +17,17 @@ export default function HorariosSmtp() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+
+  // Bloqueo de scroll en el body mientras el modal de ayuda esté abierto
+  useEffect(() => {
+    if (showHelp) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [showHelp]);
   
   const [horaInicio, setHoraInicio] = useState('08:00');
   const [horaFin, setHoraFin] = useState('18:00');
@@ -173,9 +185,9 @@ export default function HorariosSmtp() {
         </button>
       </div>
 
-      {showHelp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg p-6 border border-border relative animate-slide-up max-h-[90vh] overflow-y-auto">
+      {showHelp && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg p-6 border border-border relative my-auto animate-slide-up max-h-[90vh] overflow-y-auto">
             <button 
               onClick={() => setShowHelp(false)}
               className="absolute top-4 right-4 text-muted hover:text-dark transition-colors"
@@ -228,7 +240,8 @@ export default function HorariosSmtp() {
               Entendido
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {message && (

@@ -31,7 +31,7 @@ const storage = multer.diskStorage({
     
     let prefix = 'file';
     if (file.fieldname === 'flyer') prefix = 'flyer';
-    else if (file.fieldname === 'adjunto') prefix = 'adjunto';
+    else if (file.fieldname === 'adjunto' || file.fieldname === 'adjuntos') prefix = 'adjunto';
     else if (req.originalUrl?.includes('soporte')) prefix = 'adjunto-soporte';
     
     cb(null, `${prefix}-${uniqueSuffix}${ext}`);

@@ -7,7 +7,8 @@ import {
   AlertTriangle, 
   ShieldAlert, 
   X, 
-  ExternalLink 
+  ExternalLink,
+  MailCheck
 } from 'lucide-react';
 import { useNotificationStore } from '../stores/useNotificationStore';
 import type { ToastNotification } from '../types/notificacion';
@@ -79,6 +80,14 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ toast, onClose, o
           accentText: 'text-secondary',
           shimmer: false,
         };
+      case 'campaign_approved':
+        return {
+          icon: <CheckCircle2 size={18} className="text-secondary" />,
+          borderColor: 'border-secondary/40',
+          accentBg: 'bg-secondary/10',
+          accentText: 'text-secondary',
+          shimmer: false,
+        };
       case 'smtp_quota_warning':
         return {
           icon: <AlertTriangle size={18} className="text-warning" />,
@@ -90,6 +99,22 @@ const NotificationToast: React.FC<NotificationToastProps> = ({ toast, onClose, o
       case 'smtp_account_issue':
         return {
           icon: <ShieldAlert size={18} className="text-danger" />,
+          borderColor: 'border-danger/40',
+          accentBg: 'bg-danger/10',
+          accentText: 'text-danger',
+          shimmer: false,
+        };
+      case 'test_mail_sent':
+        return {
+          icon: <MailCheck size={18} className="text-secondary" />,
+          borderColor: 'border-secondary/40',
+          accentBg: 'bg-secondary/10',
+          accentText: 'text-secondary',
+          shimmer: false,
+        };
+      case 'test_mail_error':
+        return {
+          icon: <AlertTriangle size={18} className="text-danger" />,
           borderColor: 'border-danger/40',
           accentBg: 'bg-danger/10',
           accentText: 'text-danger',

@@ -16,6 +16,7 @@ interface NotificationState {
   limpiarHistorial: () => void;
   navegarCallback?: (url: string) => void;
   setNavegarCallback: (cb: (url: string) => void) => void;
+  agregarNotificacion: (payload: RealtimePayload) => void;
 }
 
 let eventSourceInstance: EventSource | null = null;
@@ -44,6 +45,77 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     }
   },
 
+  agregarNotificacion: (payload: RealtimePayload) => {
+    // Evitar notificaciones duplicadas idénticas en una ventana de 3.5 segundos (ej: disparada localmente y recibida por SSE)
+    const yaExiste = get().toasts.some(
+      (t) => t.tipo === payload.tipo && t.titulo === payload.titulo && Math.abs(Date.now() - new Date(t.timestamp).getTime()) < 3500
+    );
+    if (yaExiste) return;
+
+    const { permission, navegarCallback } = get();
+
+    // 1. Notificación nativa de escritorio (Chrome / Windows Web Notification API)
+    // Se dispara cuando hay permisos concedidos y la app está en segundo plano (otra pestaña o ventana)
+    const permisoActual = typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : permission;
+    if (permisoActual === 'granted') {
+      const enSegundoPlano = typeof document !== 'undefined' && (
+        document.hidden || (typeof document.hasFocus === 'function' && !document.hasFocus())
+      );
+
+      if (enSegundoPlano) {
+        try {
+          const notif = new Notification(`3F Mailer: ${payload.titulo}`, {
+            body: payload.mensaje,
+            icon: '/favicon.ico',
+            tag: `3f-${payload.tipo}-${payload.timestamp}`,
+          });
+
+          notif.onclick = () => {
+            window.focus();
+            if (payload.urlDestino && navegarCallback) {
+              navegarCallback(payload.urlDestino);
+            }
+            notif.close();
+          };
+        } catch (err) {
+          console.error('[Web Notification] Error al lanzar notificación de escritorio:', err);
+        }
+      }
+    }
+
+    // 2. Gestionar Toasts en la aplicación
+    const nuevoId = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const esIndeterminada = payload.tipo === 'sync_started';
+
+    set((state) => {
+      let nuevosToasts = [...state.toasts];
+
+      // Si terminó la sincronización, reemplazamos o removemos el toast de "sync_started"
+      if (payload.tipo === 'sync_finished') {
+        nuevosToasts = nuevosToasts.filter((t) => t.tipo !== 'sync_started');
+      }
+
+      const nuevoToast: ToastNotification = {
+        ...payload,
+        id: nuevoId,
+        leida: false,
+        indeterminada: esIndeterminada,
+      };
+
+      return {
+        toasts: [nuevoToast, ...nuevosToasts].slice(0, 5), // Máximo 5 toasts visibles
+        historial: [nuevoToast, ...state.historial].slice(0, 30), // Máximo 30 en historial
+      };
+    });
+
+    // 3. Auto-remover tras 7 segundos (a menos que sea una tarea indeterminada activa)
+    if (!esIndeterminada) {
+      setTimeout(() => {
+        get().removerToast(nuevoId);
+      }, 7000);
+    }
+  },
+
   conectarSSE: (token: string) => {
     if (!token) return;
 
@@ -68,60 +140,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     es.addEventListener('notificacion', (event: MessageEvent) => {
       try {
         const payload: RealtimePayload = JSON.parse(event.data);
-        const { permission, navegarCallback } = get();
-
-        // 1. Si la pestaña está en segundo plano y hay permisos, disparar notificación de Chrome / Windows
-        if (typeof document !== 'undefined' && document.hidden && permission === 'granted') {
-          try {
-            const notif = new Notification(`3F Mailer: ${payload.titulo}`, {
-              body: payload.mensaje,
-              icon: '/favicon.ico',
-              tag: `3f-${payload.tipo}-${payload.timestamp}`,
-            });
-
-            notif.onclick = () => {
-              window.focus();
-              if (payload.urlDestino && navegarCallback) {
-                navegarCallback(payload.urlDestino);
-              }
-              notif.close();
-            };
-          } catch (err) {
-            console.error('[Web Notification] Error al lanzar notificación de escritorio:', err);
-          }
-        }
-
-        // 2. Gestionar Toasts en la aplicación
-        const nuevoId = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-        const esIndeterminada = payload.tipo === 'sync_started';
-
-        set((state) => {
-          let nuevosToasts = [...state.toasts];
-
-          // Si terminó la sincronización, reemplazamos o removemos el toast de "sync_started"
-          if (payload.tipo === 'sync_finished') {
-            nuevosToasts = nuevosToasts.filter((t) => t.tipo !== 'sync_started');
-          }
-
-          const nuevoToast: ToastNotification = {
-            ...payload,
-            id: nuevoId,
-            leida: false,
-            indeterminada: esIndeterminada,
-          };
-
-          return {
-            toasts: [nuevoToast, ...nuevosToasts].slice(0, 5), // Máximo 5 toasts visibles
-            historial: [nuevoToast, ...state.historial].slice(0, 30), // Máximo 30 en historial
-          };
-        });
-
-        // 3. Auto-remover tras 7 segundos (a menos que sea una tarea indeterminada activa)
-        if (!esIndeterminada) {
-          setTimeout(() => {
-            get().removerToast(nuevoId);
-          }, 7000);
-        }
+        get().agregarNotificacion(payload);
       } catch (err) {
         console.error('[Realtime SSE] Error procesando mensaje de notificación:', err);
       }

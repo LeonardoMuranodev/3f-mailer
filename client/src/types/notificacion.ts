@@ -3,8 +3,11 @@ export type RealtimeEventType =
   | 'sync_finished'
   | 'campaign_started'
   | 'campaign_finished'
+  | 'campaign_approved'
   | 'smtp_quota_warning'
-  | 'smtp_account_issue';
+  | 'smtp_account_issue'
+  | 'test_mail_sent'
+  | 'test_mail_error';
 
 export interface RealtimePayload {
   tipo: RealtimeEventType;

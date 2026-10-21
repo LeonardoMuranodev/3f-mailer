@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Routes, Route, useLocation, Link, Navigate, useNavigate } from 'react-router-dom';
 import { Mail, BarChart3, Users, Settings, LogOut, UserCircle2, AlertTriangle, LifeBuoy, Menu, X, ChevronDown, Clock, ShieldAlert } from 'lucide-react';
 import { useAuthStore } from './stores/authStore';
@@ -29,6 +30,16 @@ function App() {
   const { conectarSSE, desconectarSSE, setNavegarCallback } = useNotificationStore();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Bloquear scroll del fondo cuando hay modal abierto
+  useEffect(() => {
+    if (showLogoutModal) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [showLogoutModal]);
 
   useEffect(() => {
     checkAuth();
@@ -226,9 +237,9 @@ function App() {
       </main>
 
       {/* ── Logout Modal ───────────────────────────────── */}
-      {showLogoutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-surface rounded-xl shadow-xl w-full max-w-sm p-6 border border-border text-center">
+      {showLogoutModal && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-sm p-6 border border-border text-center animate-modal-pop">
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-warning/10 mb-4">
               <AlertTriangle className="h-6 w-6 text-warning" />
             </div>
@@ -254,7 +265,8 @@ function App() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── Footer ────────────────────────────────────── */}

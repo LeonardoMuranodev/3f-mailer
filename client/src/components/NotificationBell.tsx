@@ -10,7 +10,8 @@ import {
   PartyPopper, 
   AlertTriangle, 
   ShieldAlert, 
-  ExternalLink 
+  ExternalLink,
+  MailCheck
 } from 'lucide-react';
 import { useNotificationStore } from '../stores/useNotificationStore';
 import type { ToastNotification } from '../types/notificacion';
@@ -69,10 +70,16 @@ export const NotificationBell: React.FC = () => {
         return <Rocket size={16} className="text-accent-orange" />;
       case 'campaign_finished':
         return <PartyPopper size={16} className="text-secondary" />;
+      case 'campaign_approved':
+        return <CheckCircle2 size={16} className="text-secondary" />;
       case 'smtp_quota_warning':
         return <AlertTriangle size={16} className="text-warning" />;
       case 'smtp_account_issue':
         return <ShieldAlert size={16} className="text-danger" />;
+      case 'test_mail_sent':
+        return <MailCheck size={16} className="text-secondary" />;
+      case 'test_mail_error':
+        return <AlertTriangle size={16} className="text-danger" />;
       default:
         return <Sparkles size={16} className="text-primary" />;
     }

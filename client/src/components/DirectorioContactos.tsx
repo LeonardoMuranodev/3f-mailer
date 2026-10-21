@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, Filter, RotateCcw, Upload, Download, Plus, Edit2, Trash2, X, Building2, AlertCircle, HelpCircle, Info } from 'lucide-react';
 import {
   obtenerContactos,
@@ -80,6 +81,18 @@ export default function DirectorioContactos() {
   // Sync Sheets
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  // Bloqueo de scroll en el body mientras cualquier modal esté abierto
+  const isAnyModalOpen = isModalOpen || isImportModalOpen || !!deleteConfirmId || bulkDeleteConfirm || showHelp;
+  useEffect(() => {
+    if (isAnyModalOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isAnyModalOpen]);
 
   const fetchContactosData = async (currentPage = page) => {
     setLoading(true);
@@ -454,9 +467,9 @@ export default function DirectorioContactos() {
         </div>
       </div>
 
-      {showHelp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg p-6 border border-border relative animate-slide-up max-h-[90vh] overflow-y-auto">
+      {showHelp && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg p-6 border border-border relative my-auto animate-slide-up max-h-[90vh] overflow-y-auto">
             <button 
               onClick={() => setShowHelp(false)}
               className="absolute top-4 right-4 text-muted hover:text-dark transition-colors"
@@ -498,7 +511,8 @@ export default function DirectorioContactos() {
               Entendido
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {syncResult && (
@@ -784,9 +798,9 @@ export default function DirectorioContactos() {
         )}
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-surface w-full max-w-lg rounded-xl border border-border shadow-2xl overflow-hidden animate-fade-in">
+      {isModalOpen && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-surface w-full max-w-lg rounded-xl border border-border shadow-2xl overflow-hidden my-auto animate-fade-in">
             <div className="px-6 py-4 border-b border-border flex justify-between items-center">
               <h2 className="text-lg font-bold text-dark">{editingId ? 'Editar Contacto' : 'Nuevo Contacto'}</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-muted hover:text-dark">
@@ -960,7 +974,8 @@ export default function DirectorioContactos() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {isImportModalOpen && (
@@ -971,9 +986,9 @@ export default function DirectorioContactos() {
       )}
 
       {/* Modal de Confirmación de Eliminación */}
-      {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in p-4">
-          <div className="bg-surface rounded-xl shadow-xl w-full max-w-sm p-6 animate-fade-in border border-border text-center">
+      {deleteConfirmId && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in p-4 overflow-y-auto">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-sm p-6 animate-fade-in border border-border text-center my-auto">
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-danger/10 mb-4">
               <Trash2 className="h-6 w-6 text-danger" />
             </div>
@@ -996,13 +1011,14 @@ export default function DirectorioContactos() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal de Confirmación de Eliminación Masiva */}
-      {bulkDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in p-4">
-          <div className="bg-surface rounded-xl shadow-xl w-full max-w-sm p-6 animate-fade-in border border-border text-center">
+      {bulkDeleteConfirm && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in p-4 overflow-y-auto">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-sm p-6 animate-fade-in border border-border text-center my-auto">
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-danger/10 mb-4">
               <Trash2 className="h-6 w-6 text-danger" />
             </div>
@@ -1029,7 +1045,8 @@ export default function DirectorioContactos() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
