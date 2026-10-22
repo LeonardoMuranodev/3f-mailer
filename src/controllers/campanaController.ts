@@ -14,10 +14,11 @@ import {
   eliminarCampanasMasivo,
   archivarCampana,
   desarchivarCampana,
+  actualizarProgramacionCampana,
 } from '../services/campanaService.js';
 import { enviarMailPrueba } from '../services/notificationService.js';
 import { sendSuccess, sendError } from '../utils/responseHandler.js';
-import type { CrearCampanaBody, CambiarEstadoBody, ActualizarCampanaBody } from '../schemas/campanaSchema.js';
+import type { CrearCampanaBody, CambiarEstadoBody, ActualizarCampanaBody, ActualizarProgramacionBody } from '../schemas/campanaSchema.js';
 import { clearCacheByPrefix } from '../middlewares/cache.js';
 import { registrarAccion } from '../services/historialService.js';
 
@@ -344,9 +345,43 @@ async function actualizar(req: Request, res: Response, next: NextFunction): Prom
   }
 }
 
+/**
+ * PATCH /api/campanas/:id/programacion
+ * Body validado por Zod middleware (actualizarProgramacionSchema).
+ * Permite cambiar la fecha límite o prioridad de campañas activas (aprobada, en_proceso, pausada)
+ * o borradores para acelerar/regular el ritmo de envíos en el worker.
+ */
+async function actualizarProgramacion(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const id = req.params.id as string;
+    const body = req.body as ActualizarProgramacionBody;
+
+    const campana = await actualizarProgramacionCampana(id, body);
+    if (!campana) {
+      sendError(res, 'NOT_FOUND', 'Campaña no encontrada', 404);
+      return;
+    }
+
+    // Invalidar caché
+    await clearCacheByPrefix('/api/campanas');
+    await clearCacheByPrefix('/api/stats');
+
+    await registrarAccion(req.user?.userId || null, 'ACTUALIZAR', 'CAMPANA', campana.id, {
+      motivo: 'Modificación de fecha límite / prioridad',
+      fecha_limite_envio: body.fecha_limite_envio,
+      prioridad: body.prioridad || campana.prioridad,
+    });
+
+    sendSuccess(res, campana, 200);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export const campanaController = {
   crear,
   actualizar,
+  actualizarProgramacion,
   obtenerPorId,
   cambiarEstado,
   listar,

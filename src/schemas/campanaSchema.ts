@@ -106,6 +106,15 @@ export const cambiarEstadoSchema = z.object({
 
 export const actualizarCampanaSchema = crearCampanaSchema.partial();
 
+/** Esquema para modificar fecha límite y prioridad de campañas activas o en borrador */
+export const actualizarProgramacionSchema = z.object({
+  fecha_limite_envio: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (YYYY-MM-DD)'),
+  prioridad: z.enum(['alta', 'media', 'baja']).optional(),
+});
+
 /** Esquema para validar params con UUID */
 export const uuidParamSchema = z.object({
   id: z.string().uuid('El ID debe ser un UUID válido'),
@@ -115,3 +124,4 @@ export const uuidParamSchema = z.object({
 export type CrearCampanaBody = z.infer<typeof crearCampanaSchema>;
 export type CambiarEstadoBody = z.infer<typeof cambiarEstadoSchema>;
 export type ActualizarCampanaBody = z.infer<typeof actualizarCampanaSchema>;
+export type ActualizarProgramacionBody = z.infer<typeof actualizarProgramacionSchema>;

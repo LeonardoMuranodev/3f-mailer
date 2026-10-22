@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { upload } from '../config/multerConfig.js';
 import { validateSchema } from '../middlewares/validateSchema.js';
-import { crearCampanaSchema, cambiarEstadoSchema, actualizarCampanaSchema } from '../schemas/campanaSchema.js';
+import { crearCampanaSchema, cambiarEstadoSchema, actualizarCampanaSchema, actualizarProgramacionSchema } from '../schemas/campanaSchema.js';
 import { campanaController } from '../controllers/campanaController.js';
 import { requireRole } from '../middlewares/requireRole.js';
 import { cache } from '../middlewares/cache.js';
@@ -49,6 +49,14 @@ campanaRouter.patch(
   requireRole(['desarrollador', 'encargada']),
   validateSchema(cambiarEstadoSchema),
   campanaController.cambiarEstado,
+);
+
+// PATCH /api/campanas/:id/programacion — Modificar fecha límite y prioridad
+campanaRouter.patch(
+  '/:id/programacion',
+  requireRole(['desarrollador', 'encargada']),
+  validateSchema(actualizarProgramacionSchema),
+  campanaController.actualizarProgramacion,
 );
 
 // DELETE /api/campanas/masivo — Eliminar campañas masivamente

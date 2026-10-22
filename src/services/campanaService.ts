@@ -464,3 +464,41 @@ export async function eliminarCampanasMasivo(ids: string[]): Promise<boolean> {
   const { rowCount } = await dbPool.query(query, [ids]);
   return (rowCount ?? 0) > 0;
 }
+
+/**
+ * Modifica la fecha límite de envío y/o prioridad de una campaña.
+ * Permitido en estados 'borrador', 'aprobada', 'en_proceso' y 'pausada'.
+ * Esto permite regular o acelerar el ritmo de despacho de correos en el worker
+ * sin afectar destinatarios, contenido ni campañas existentes.
+ */
+export async function actualizarProgramacionCampana(
+  id: string,
+  data: { fecha_limite_envio: string; prioridad?: 'alta' | 'media' | 'baja' }
+): Promise<Campana | null> {
+  const campanaActual = await obtenerCampanaPorId(id);
+  if (!campanaActual) return null;
+
+  if (['completada', 'cancelada'].includes(campanaActual.estado)) {
+    throw new Error(`No se puede modificar la programación de una campaña en estado '${campanaActual.estado}'`);
+  }
+
+  const updates: string[] = ['fecha_limite_envio = $1', 'actualizado_en = CURRENT_TIMESTAMP'];
+  const values: any[] = [data.fecha_limite_envio];
+  let paramIdx = 2;
+
+  if (data.prioridad) {
+    updates.push(`prioridad = $${paramIdx++}`);
+    values.push(data.prioridad);
+  }
+
+  values.push(id);
+  const query = `
+    UPDATE campanas
+    SET ${updates.join(', ')}
+    WHERE id = $${paramIdx}
+    RETURNING *;
+  `;
+
+  const result = await dbPool.query<Campana>(query, values);
+  return result.rows[0] ?? null;
+}

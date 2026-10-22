@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Send, AlertTriangle, CheckCircle2, Clock, Mail, Search, RefreshCw, BarChart2, Download, MousePointerClick, Pause, Play, Trash2, Edit3, ArrowUp } from 'lucide-react';
-import { obtenerCampanaDetalle, obtenerColaCampana, cambiarEstadoCampana, eliminarCampana } from '../services/api';
+import { ArrowLeft, Send, AlertTriangle, CheckCircle2, Clock, Mail, Search, RefreshCw, BarChart2, Download, MousePointerClick, Pause, Play, Trash2, Edit3, ArrowUp, Zap, X } from 'lucide-react';
+import { obtenerCampanaDetalle, obtenerColaCampana, cambiarEstadoCampana, eliminarCampana, actualizarProgramacionCampana } from '../services/api';
 import type { CampanaConStats, ColaEnvioItem } from '../types/campana';
 import { formatDate } from '../utils/formatDate';
 import { RUBROS_LABELS } from '../data/rubros';
@@ -35,6 +35,14 @@ const COLA_BADGE_CLASSES: Record<string, string> = {
 export default function DetalleCampana() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [forzarConfirm, setForzarConfirm] = useState(false);
+
+  // Modal para cambiar fecha límite / ritmo
+  const [showModalFecha, setShowModalFecha] = useState(false);
+  const [nuevaFecha, setNuevaFecha] = useState('');
+  const [nuevaPrioridad, setNuevaPrioridad] = useState<'alta' | 'media' | 'baja'>('media');
+  const [guardandoFecha, setGuardandoFecha] = useState(false);
+  const [errorModalFecha, setErrorModalFecha] = useState<string | null>(null);
+  const [exitoModalFecha, setExitoModalFecha] = useState(false);
 
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -147,6 +155,40 @@ export default function DetalleCampana() {
     }
   };
 
+  const handleGuardarProgramacion = async () => {
+    if (!campana || !nuevaFecha) return;
+    setGuardandoFecha(true);
+    setErrorModalFecha(null);
+    try {
+      const res = await actualizarProgramacionCampana(campana.id, {
+        fecha_limite_envio: nuevaFecha,
+        prioridad: nuevaPrioridad,
+      });
+      if (res.success && res.data) {
+        setCampana((prev) =>
+          prev
+            ? {
+                ...prev,
+                fecha_limite_envio: res.data!.fecha_limite_envio,
+                prioridad: res.data!.prioridad,
+              }
+            : prev
+        );
+        setExitoModalFecha(true);
+        setTimeout(() => {
+          setExitoModalFecha(false);
+          setShowModalFecha(false);
+        }, 900);
+      } else {
+        setErrorModalFecha(res.error?.message || 'Error al actualizar la programación');
+      }
+    } catch (err: any) {
+      setErrorModalFecha(err.message || 'Error de conexión');
+    } finally {
+      setGuardandoFecha(false);
+    }
+  };
+
   const exportarCSV = () => {
     if (!campana) return;
 
@@ -227,11 +269,39 @@ export default function DetalleCampana() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-dark">{campana.asunto}</h1>
-            <p className="text-sm text-muted mt-1 flex flex-col sm:flex-row sm:items-center gap-2">
+            <div className="text-sm text-muted mt-1 flex flex-col sm:flex-row sm:items-center gap-2 flex-wrap">
               <span className="flex items-center gap-1"><CalendarIcon size={14} /> Creada: {formatDate(campana.creado_en)}</span>
               <span className="hidden sm:inline">•</span>
-              <span className="flex items-center gap-1"><Clock size={14} /> Límite: {formatDate(campana.fecha_limite_envio)}</span>
-            </p>
+              <span className="flex items-center gap-1.5 flex-wrap">
+                <Clock size={14} /> Límite: {formatDate(campana.fecha_limite_envio)}
+                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase border ${
+                  campana.prioridad === 'alta'
+                    ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                    : campana.prioridad === 'baja'
+                    ? 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/30'
+                    : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
+                }`}>
+                  {campana.prioridad}
+                </span>
+                {puedeEditar && ['borrador', 'aprobada', 'en_proceso', 'pausada'].includes(campana.estado) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNuevaFecha(campana.fecha_limite_envio ? campana.fecha_limite_envio.split('T')[0] : '');
+                      setNuevaPrioridad(campana.prioridad || 'media');
+                      setErrorModalFecha(null);
+                      setExitoModalFecha(false);
+                      setShowModalFecha(true);
+                    }}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-dark hover:underline ml-1 cursor-pointer"
+                    title="Modificar fecha límite y ritmo de despacho"
+                  >
+                    <Edit3 size={13} />
+                    <span>Modificar</span>
+                  </button>
+                )}
+              </span>
+            </div>
             <p className="text-sm text-dark mt-2">
               <strong>Rubros:</strong> {campana.para_todos_rubros ? 'Todos los rubros' : (campana.rubros_seleccionados || []).map((r: string) => r === '__sin_rubro__' ? 'Sin Rubro' : RUBROS_LABELS[r as keyof typeof RUBROS_LABELS] || r).join(', ')}
             </p>
@@ -290,6 +360,22 @@ export default function DetalleCampana() {
             {puedeEditar && campana.estado === 'pausada' && (
               <button onClick={handleTogglePausa} className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium">
                 <Play size={16} /> Reanudar
+              </button>
+            )}
+            {puedeEditar && ['en_proceso', 'aprobada', 'pausada'].includes(campana.estado) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setNuevaFecha(campana.fecha_limite_envio ? campana.fecha_limite_envio.split('T')[0] : '');
+                  setNuevaPrioridad(campana.prioridad || 'media');
+                  setErrorModalFecha(null);
+                  setExitoModalFecha(false);
+                  setShowModalFecha(true);
+                }}
+                className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border text-dark rounded-lg hover:text-primary hover:border-primary/30 transition-colors text-sm font-medium"
+                title="Ajustar fecha límite o prioridad para acelerar o regular el ritmo de despacho"
+              >
+                <Zap size={16} className="text-amber-500" /> Cambiar Ritmo
               </button>
             )}
             <button onClick={exportarCSV} className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border text-dark rounded-lg hover:bg-border transition-colors text-sm font-medium">
@@ -626,6 +712,120 @@ export default function DetalleCampana() {
                 >
                   Sí, Disparar Envíos
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para Modificar Fecha Límite / Ritmo */}
+      {showModalFecha && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-border">
+            <div className="p-6">
+              <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+                <h3 className="text-lg font-bold text-dark flex items-center gap-2">
+                  <Zap className="text-amber-500" size={20} />
+                  Modificar Ritmo y Fecha Límite
+                </h3>
+                <button
+                  onClick={() => {
+                    if (!guardandoFecha) {
+                      setShowModalFecha(false);
+                      setErrorModalFecha(null);
+                    }
+                  }}
+                  className="text-muted hover:text-dark p-1 rounded-md transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-4 text-sm text-dark">
+                {/* Explicación del funcionamiento dinámico */}
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
+                  <AlertTriangle size={16} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                  <p>
+                    <strong>¿Cómo acelerar los envíos?</strong> Al adelantar la fecha límite a un día más cercano, el worker calcula automáticamente lotes más grandes por hora para enviar todos los correos a tiempo (respetando los límites seguros de las cuentas SMTP).
+                  </p>
+                </div>
+
+                {errorModalFecha && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-600 dark:text-red-400 flex items-center gap-2">
+                    <AlertTriangle size={15} className="shrink-0" />
+                    <span>{errorModalFecha}</span>
+                  </div>
+                )}
+
+                {exitoModalFecha && (
+                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                    <CheckCircle2 size={15} className="shrink-0" />
+                    <span>¡Fecha y ritmo actualizados con éxito!</span>
+                  </div>
+                )}
+
+                {/* Input Fecha Límite */}
+                <div>
+                  <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
+                    Nueva Fecha Límite de Envío <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={nuevaFecha}
+                    onChange={(e) => setNuevaFecha(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    disabled={guardandoFecha}
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-dark disabled:opacity-50"
+                  />
+                  <p className="text-xs text-muted mt-1">
+                    Fecha actual: <strong>{formatDate(campana.fecha_limite_envio)}</strong>
+                  </p>
+                </div>
+
+                {/* Selector de Prioridad */}
+                <div>
+                  <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">
+                    Prioridad de Despacho
+                  </label>
+                  <select
+                    value={nuevaPrioridad}
+                    onChange={(e) => setNuevaPrioridad(e.target.value as 'alta' | 'media' | 'baja')}
+                    disabled={guardandoFecha}
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-dark disabled:opacity-50"
+                  >
+                    <option value="alta">Alta (Se despacha prioritariamente en la cola)</option>
+                    <option value="media">Media (Ritmo estándar ponderado)</option>
+                    <option value="baja">Baja (Segundo plano)</option>
+                  </select>
+                </div>
+
+                {/* Botones de acción */}
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-border mt-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowModalFecha(false);
+                      setErrorModalFecha(null);
+                    }}
+                    disabled={guardandoFecha}
+                    className="px-4 py-2 border border-border rounded-lg text-sm font-medium text-muted hover:text-dark hover:bg-background transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleGuardarProgramacion}
+                    disabled={guardandoFecha || !nuevaFecha}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50"
+                  >
+                    {guardandoFecha ? (
+                      <RefreshCw size={16} className="animate-spin" />
+                    ) : (
+                      <CheckCircle2 size={16} />
+                    )}
+                    Guardar Cambios
+                  </button>
+                </div>
               </div>
             </div>
           </div>

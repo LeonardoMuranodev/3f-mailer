@@ -91,6 +91,21 @@ export async function cambiarEstadoCampana(
 }
 
 /**
+ * Modifica la fecha límite de envío y/o prioridad de una campaña (activa o borrador).
+ * Permite regular la velocidad de despacho del worker o corregir la fecha del evento/comunicado.
+ */
+export async function actualizarProgramacionCampana(
+  id: string,
+  data: { fecha_limite_envio: string; prioridad?: 'alta' | 'media' | 'baja' }
+): Promise<ApiResponse<CampanaResponse>> {
+  return fetchApi<CampanaResponse>(`${API_BASE}/api/campanas/${id}/programacion`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
+/**
  * Envia un mail de prueba con los datos de la campaña actual (soporta archivos)
  */
 export async function enviarMailPruebaCampana(
