@@ -9,6 +9,7 @@ import { limpiarHistorialAntiguo } from './historialService.js';
 import { decrypt } from '../utils/encryption.js';
 import { config } from '../config/env.js';
 import type { Campana } from '../types/campana.js';
+import { calcularObjetivoHora } from './dosificadorService.js';
 
 let isWorkerRunning = false;
 let cuotaAgotadaHoy = false;
@@ -117,17 +118,30 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
         return; // Nada que hacer
       }
 
-      if (campana.fecha_limite_envio) {
-        const fechaEvento = new Date(campana.fecha_limite_envio);
-        if (!isNaN(fechaEvento.getTime())) {
-          const hoyDate = new Date();
-          const diffTiempo = fechaEvento.getTime() - hoyDate.getTime();
-          const diasRestantes = Math.ceil(diffTiempo / (1000 * 60 * 60 * 24));
-          const diasEfectivos = diasRestantes <= 0 ? 1 : diasRestantes;
+      // Consultar configuración de horarios y fechas excluidas para el cálculo operativo
+      const { rows: cfgRows } = await dbPool.query('SELECT hora_inicio, hora_fin, dias_permitidos FROM configuracion_horarios WHERE id = 1');
+      const cfg = cfgRows[0] || {};
+      const { rows: excluidasRows } = await dbPool.query('SELECT fecha FROM fechas_excluidas');
+      const fechasExcluidas = excluidasRows.map((r: { fecha: string | Date }) => {
+        if (typeof r.fecha === 'string') return r.fecha.split('T')[0];
+        return r.fecha.toISOString().split('T')[0];
+      });
 
-          objetivoGlobalHora = Math.ceil(totalPendientes / (diasEfectivos * EJECUCIONES_DIARIAS));
-        }
-      }
+      const dosificador = calcularObjetivoHora({
+        totalPendientes,
+        fechaLimite: campana.fecha_limite_envio,
+        fechaActual: new Date(),
+        diasPermitidos: cfg.dias_permitidos || [1, 2, 3, 4, 5],
+        fechasExcluidas,
+        horaInicio: cfg.hora_inicio || '09:00',
+        horaFin: cfg.hora_fin || '17:00',
+        minGlobalPorHora,
+        maxGlobalPorHora,
+      });
+
+      objetivoGlobalHora = dosificador.objetivoHora;
+
+      console.log(`Worker SMTP: Dosificador calculado: ${objetivoGlobalHora}/hora (pendientes: ${totalPendientes}, días operativos: ${dosificador.diasOperativos}, ejecuciones diarias: ${dosificador.ejecucionesDiarias}, ejecuciones totales: ${dosificador.ejecucionesTotales}, teórico: ${dosificador.calculoTeorico})`);
     } else {
       await verificarCampanasCompletadas();
       return;
