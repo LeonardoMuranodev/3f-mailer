@@ -10,6 +10,13 @@ import { decrypt } from '../utils/encryption.js';
 import { config } from '../config/env.js';
 import type { Campana } from '../types/campana.js';
 import { calcularObjetivoHora } from './dosificadorService.js';
+import {
+  obtenerDemoraAleatoria,
+  obtenerDemoraError,
+  generarMessageId,
+  inyectarEntropiaHtml,
+} from './antispamService.js';
+import crypto from 'node:crypto';
 
 let isWorkerRunning = false;
 let cuotaAgotadaHoy = false;
@@ -178,9 +185,11 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
     }
 
     const campanasTransicionadas = new Set<string>();
+    let indiceLote = 0;
 
     // 4. Procesar el lote
     for (const item of lote) {
+      indiceLote++;
       // Si la campaña estaba en "aprobada", la pasamos a "en_proceso" al enviar el primer mail
       if (item.campana_estado === 'aprobada' && !campanasTransicionadas.has(item.campana_id)) {
         await dbPool.query(`UPDATE campanas SET estado = 'en_proceso', actualizado_en = CURRENT_TIMESTAMP WHERE id = $1`, [item.campana_id]);
@@ -305,8 +314,12 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
             from: `"Dirección de Producción - 3F" <${cuentaSmtp.email}>`,
             to: item.contacto_email,
             subject: item.asunto,
-            html: mailHtml,
-            attachments
+            html: inyectarEntropiaHtml(mailHtml, item.id),
+            messageId: generarMessageId(cuentaSmtp.email),
+            attachments,
+            headers: {
+              'X-Entity-Ref-ID': crypto.randomUUID(),
+            }
           };
 
           const info = await transporter.sendMail(mailOptions);
@@ -318,12 +331,19 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
           
           await incrementarCuotaSmtp(cuentaSmtp.id);
 
-          // Sleep Anti-Spam entre envíos exitosos
-          await sleep(5000);
+          // Cadencia Anti-Spam: Delay aleatorio no lineal con micro-pausas humanas
+          const demora = obtenerDemoraAleatoria(esForzado, indiceLote);
+          console.log(`[ANTI-SPAM] ${demora.descripcion} (destinatario: ${item.contacto_email})`);
+          await sleep(demora.ms);
 
         } catch (err: any) {
           respuestaSmtp = err.message || 'Error desconocido';
           console.error(`Error enviando correo a ${item.contacto_email} con ${cuentaSmtp.email}:`, respuestaSmtp);
+
+          // Cooldown de seguridad ante error de transporte para no congestionar el canal SMTP
+          const demoraErr = obtenerDemoraError();
+          console.warn(`[ANTI-SPAM] Cooldown por error de transporte (${(demoraErr / 1000).toFixed(1)}s): ${respuestaSmtp}`);
+          await sleep(demoraErr);
           
           const lowerMsg = respuestaSmtp.toLowerCase();
           const errCode = ((err.code || '') + '').toUpperCase();
