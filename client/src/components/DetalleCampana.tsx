@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Send, AlertTriangle, CheckCircle2, Clock, Mail, Search, RefreshCw, BarChart2, Download, MousePointerClick, Pause, Play, Trash2, Edit3, ArrowUp, Zap, X } from 'lucide-react';
 import { obtenerCampanaDetalle, obtenerColaCampana, cambiarEstadoCampana, eliminarCampana, actualizarProgramacionCampana } from '../services/api';
@@ -8,12 +9,12 @@ import { RUBROS_LABELS } from '../data/rubros';
 import { usePermisos } from '../hooks/usePermisos';
 
 const ESTADO_BADGE_CLASSES: Record<string, string> = {
-  borrador: 'bg-slate-100 text-slate-600 border-slate-200',
-  aprobada: 'bg-blue-50 text-blue-700 border-blue-200',
-  en_proceso: 'bg-amber-50 text-amber-700 border-amber-200',
-  pausada: 'bg-orange-50 text-orange-700 border-orange-200',
-  completada: 'bg-green-50 text-green-700 border-green-200',
-  cancelada: 'bg-red-50 text-red-700 border-red-200',
+  borrador: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+  aprobada: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800',
+  en_proceso: 'bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-700',
+  pausada: 'bg-orange-50 text-orange-700 border-orange-300 dark:bg-orange-950/50 dark:text-orange-300 dark:border-orange-700',
+  completada: 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-700',
+  cancelada: 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-700',
 };
 
 const ESTADO_LABELS: Record<string, string> = {
@@ -57,6 +58,17 @@ export default function DetalleCampana() {
   // Filtros para la cola
   const [emailFiltro, setEmailFiltro] = useState('');
   const [estadoFiltro, setEstadoFiltro] = useState('');
+
+  // Bloquear scroll del fondo cuando hay modal abierto
+  useEffect(() => {
+    const isAnyModalOpen = Boolean(deleteConfirm || forzarConfirm || showModalFecha);
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [deleteConfirm, forzarConfirm, showModalFecha]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -266,15 +278,29 @@ export default function DetalleCampana() {
           <ArrowLeft size={18} />
           Volver a Campañas
         </button>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-dark">{campana.asunto}</h1>
-            <div className="text-sm text-muted mt-1 flex flex-col sm:flex-row sm:items-center gap-2 flex-wrap">
-              <span className="flex items-center gap-1"><CalendarIcon size={14} /> Creada: {formatDate(campana.creado_en)}</span>
-              <span className="hidden sm:inline">•</span>
+
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 pb-5 border-b border-border/70">
+          {/* Identificación de la Campaña y Estado */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl sm:text-3xl font-bold text-dark tracking-tight">{campana.asunto}</h1>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full border shadow-xs tracking-wider uppercase ${ESTADO_BADGE_CLASSES[campana.estado] || 'bg-slate-100'}`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80 animate-pulse"></span>
+                {ESTADO_LABELS[campana.estado] || campana.estado}
+              </span>
+            </div>
+
+            {/* Metadatos: Fechas, Prioridad y Modificar */}
+            <div className="text-xs sm:text-sm text-muted flex items-center gap-2 flex-wrap">
+              <span className="flex items-center gap-1.5">
+                <CalendarIcon size={14} className="text-muted" />
+                <span>Creada: <strong>{formatDate(campana.creado_en)}</strong></span>
+              </span>
+              <span className="text-border">•</span>
               <span className="flex items-center gap-1.5 flex-wrap">
-                <Clock size={14} /> Límite: {formatDate(campana.fecha_limite_envio)}
-                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase border ${
+                <Clock size={14} className="text-muted" />
+                <span>Límite: <strong>{formatDate(campana.fecha_limite_envio)}</strong></span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase border ${
                   campana.prioridad === 'alta'
                     ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30'
                     : campana.prioridad === 'baja'
@@ -293,7 +319,7 @@ export default function DetalleCampana() {
                       setExitoModalFecha(false);
                       setShowModalFecha(true);
                     }}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-dark hover:underline ml-1 cursor-pointer"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-dark transition-colors ml-1 cursor-pointer"
                     title="Modificar fecha límite y ritmo de despacho"
                   >
                     <Edit3 size={13} />
@@ -302,90 +328,125 @@ export default function DetalleCampana() {
                 )}
               </span>
             </div>
-            <p className="text-sm text-dark mt-2">
-              <strong>Rubros:</strong> {campana.para_todos_rubros ? 'Todos los rubros' : (campana.rubros_seleccionados || []).map((r: string) => r === '__sin_rubro__' ? 'Sin Rubro' : RUBROS_LABELS[r as keyof typeof RUBROS_LABELS] || r).join(', ')}
+
+            <p className="text-xs sm:text-sm text-dark/90">
+              <strong className="text-muted">Rubros:</strong> {campana.para_todos_rubros ? 'Todos los rubros' : (campana.rubros_seleccionados || []).map((r: string) => r === '__sin_rubro__' ? 'Sin Rubro' : RUBROS_LABELS[r as keyof typeof RUBROS_LABELS] || r).join(', ')}
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <span className={`px-3 py-1.5 text-sm font-semibold border rounded-full ${ESTADO_BADGE_CLASSES[campana.estado] || 'bg-slate-100'}`}>
-              {ESTADO_LABELS[campana.estado] || campana.estado}
-            </span>
-            {puedeEditar && campana.estado === 'borrador' && (
-              <>
-                <button
-                  onClick={() => navigate(`/campanas/editar/${campana.id}`)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border text-dark rounded-lg hover:text-primary hover:border-primary/30 transition-colors text-sm font-medium"
-                >
-                  <Edit3 size={16} /> Editar
-                </button>
-                <button
-                  onClick={async () => {
-                    try {
-                      const res = await cambiarEstadoCampana(campana.id, 'aprobada');
-                      if (res.success && res.data) {
-                        setCampana(prev => prev ? { ...prev, estado: res.data!.estado } : prev);
-                      }
-                    } catch (err) {
-                      console.error('Error al aprobar campaña:', err);
-                    }
-                  }}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
-                >
-                  <CheckCircle2 size={16} /> Aprobar
-                </button>
-              </>
-            )}
-            {puedeEditar && ['en_proceso', 'aprobada'].includes(campana.estado) && (
-              <>
-                {(() => {
-                  const stamp = localStorage.getItem(`forzado_${campana.id}`);
-                  const isBlocked = stamp && (Date.now() - parseInt(stamp) < 600000); // 10 mins
-                  if (!isBlocked) {
-                    return (
-                      <button onClick={() => setForzarConfirm(true)} className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium" title="Ignorar cron y procesar la cola de envíos ahora mismo">
-                        <Send size={16} /> Forzar Envío
-                      </button>
-                    );
-                  }
-                  return null;
-                })()}
 
-                {campana.estado === 'en_proceso' && (
-                  <button onClick={handleTogglePausa} className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors text-sm font-medium">
-                    <Pause size={16} /> Pausar
+          {/* Barra de Acciones Normalizada (Mobile: 2 columnas alineadas / Desktop: fila homogénea) */}
+          <div className="w-full lg:w-auto">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end gap-2 sm:gap-2.5">
+              {puedeEditar && campana.estado === 'borrador' && (
+                <>
+                  <button
+                    onClick={() => navigate(`/campanas/editar/${campana.id}`)}
+                    className="h-10 px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-2 transition-all duration-200 whitespace-nowrap shadow-xs cursor-pointer bg-surface border border-border text-dark hover:border-primary/40 hover:text-primary"
+                  >
+                    <Edit3 size={16} className="shrink-0" />
+                    <span>Editar</span>
                   </button>
-                )}
-              </>
-            )}
-            {puedeEditar && campana.estado === 'pausada' && (
-              <button onClick={handleTogglePausa} className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium">
-                <Play size={16} /> Reanudar
-              </button>
-            )}
-            {puedeEditar && ['en_proceso', 'aprobada', 'pausada'].includes(campana.estado) && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await cambiarEstadoCampana(campana.id, 'aprobada');
+                        if (res.success && res.data) {
+                          setCampana(prev => prev ? { ...prev, estado: res.data!.estado } : prev);
+                        }
+                      } catch (err) {
+                        console.error('Error al aprobar campaña:', err);
+                      }
+                    }}
+                    className="h-10 px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-2 transition-all duration-200 whitespace-nowrap shadow-xs cursor-pointer bg-primary hover:bg-primary-dark text-white shadow-primary/20"
+                  >
+                    <CheckCircle2 size={16} className="shrink-0" />
+                    <span>Aprobar</span>
+                  </button>
+                </>
+              )}
+
+              {puedeEditar && ['en_proceso', 'aprobada'].includes(campana.estado) && (
+                <>
+                  {(() => {
+                    const stamp = localStorage.getItem(`forzado_${campana.id}`);
+                    const isBlocked = stamp && (Date.now() - parseInt(stamp) < 600000); // 10 mins
+                    if (!isBlocked) {
+                      return (
+                        <button
+                          onClick={() => setForzarConfirm(true)}
+                          className="h-10 px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-2 transition-all duration-200 whitespace-nowrap shadow-xs cursor-pointer bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/20 hover:border-indigo-500/50"
+                          title="Ignorar cron y procesar la cola de envíos ahora mismo"
+                        >
+                          <Send size={16} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
+                          <span>Forzar Envío</span>
+                        </button>
+                      );
+                    }
+                    return null;
+                  })()}
+
+                  {campana.estado === 'en_proceso' && (
+                    <button
+                      onClick={handleTogglePausa}
+                      className="h-10 px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-2 transition-all duration-200 whitespace-nowrap shadow-xs cursor-pointer bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500/50"
+                      title="Pausar temporalmente los envíos automáticos"
+                    >
+                      <Pause size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
+                      <span>Pausar</span>
+                    </button>
+                  )}
+                </>
+              )}
+
+              {puedeEditar && campana.estado === 'pausada' && (
+                <button
+                  onClick={handleTogglePausa}
+                  className="h-10 px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-2 transition-all duration-200 whitespace-nowrap shadow-xs cursor-pointer bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 hover:border-emerald-500/50"
+                  title="Reanudar el despacho automático de correos"
+                >
+                  <Play size={16} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <span>Reanudar</span>
+                </button>
+              )}
+
+              {puedeEditar && ['en_proceso', 'aprobada', 'pausada'].includes(campana.estado) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNuevaFecha(campana.fecha_limite_envio ? campana.fecha_limite_envio.split('T')[0] : '');
+                    setNuevaPrioridad(campana.prioridad || 'media');
+                    setErrorModalFecha(null);
+                    setExitoModalFecha(false);
+                    setShowModalFecha(true);
+                  }}
+                  className="h-10 px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-2 transition-all duration-200 whitespace-nowrap shadow-xs cursor-pointer bg-surface text-dark border border-border hover:border-amber-500/40 hover:bg-amber-500/5 hover:text-amber-600 dark:hover:text-amber-400"
+                  title="Ajustar fecha límite o prioridad para acelerar o regular el ritmo de despacho"
+                >
+                  <Zap size={16} className="shrink-0 text-amber-500" />
+                  <span>Cambiar Ritmo</span>
+                </button>
+              )}
+
               <button
-                type="button"
-                onClick={() => {
-                  setNuevaFecha(campana.fecha_limite_envio ? campana.fecha_limite_envio.split('T')[0] : '');
-                  setNuevaPrioridad(campana.prioridad || 'media');
-                  setErrorModalFecha(null);
-                  setExitoModalFecha(false);
-                  setShowModalFecha(true);
-                }}
-                className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border text-dark rounded-lg hover:text-primary hover:border-primary/30 transition-colors text-sm font-medium"
-                title="Ajustar fecha límite o prioridad para acelerar o regular el ritmo de despacho"
+                onClick={exportarCSV}
+                className="h-10 px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-2 transition-all duration-200 whitespace-nowrap shadow-xs cursor-pointer bg-surface text-dark border border-border hover:bg-background hover:text-primary hover:border-primary/40"
+                title="Descargar lista de destinatarios y estados en formato CSV"
               >
-                <Zap size={16} className="text-amber-500" /> Cambiar Ritmo
+                <Download size={16} className="shrink-0 text-muted" />
+                <span>Exportar CSV</span>
               </button>
-            )}
-            <button onClick={exportarCSV} className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border text-dark rounded-lg hover:bg-border transition-colors text-sm font-medium">
-              <Download size={16} /> Exportar CSV
-            </button>
-            {puedeEliminar && (
-              <button onClick={() => setDeleteConfirm(true)} className="flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-200 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium">
-                <Trash2 size={16} /> Eliminar
-              </button>
-            )}
+
+              {puedeEliminar && (
+                <button
+                  onClick={() => setDeleteConfirm(true)}
+                  className="h-10 px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-2 transition-all duration-200 whitespace-nowrap shadow-xs cursor-pointer bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/40 col-span-2 sm:col-span-1"
+                  title="Eliminar campaña"
+                >
+                  <Trash2 size={16} className="shrink-0 text-rose-500" />
+                  <span>Eliminar</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -647,13 +708,13 @@ export default function DetalleCampana() {
       </div>
 
       {/* Modal de Confirmación de Eliminación */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+      {deleteConfirm && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-modal-pop border border-border">
             <div className="p-6">
               <div className="flex justify-center mb-4">
-                <div className="bg-red-100 p-3 rounded-full">
-                  <AlertTriangle size={32} className="text-red-600" />
+                <div className="bg-red-100 dark:bg-red-950/40 p-3 rounded-full">
+                  <AlertTriangle size={32} className="text-red-600 dark:text-red-400" />
                 </div>
               </div>
               <h3 className="text-xl font-bold text-center text-dark mb-2">
@@ -666,30 +727,31 @@ export default function DetalleCampana() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setDeleteConfirm(false)}
-                  className="flex-1 py-2.5 px-4 bg-surface border border-border text-dark rounded-lg font-medium hover:bg-border transition-colors"
+                  className="flex-1 py-2.5 px-4 bg-surface border border-border text-dark rounded-lg font-medium hover:bg-border transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="flex-1 py-2.5 px-4 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors shadow-sm"
+                  className="flex-1 py-2.5 px-4 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors shadow-sm cursor-pointer"
                 >
                   Sí, Eliminar
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal de Confirmación para Forzar Envío */}
-      {forzarConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+      {forzarConfirm && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-modal-pop border border-border">
             <div className="p-6">
               <div className="flex justify-center mb-4">
-                <div className="bg-indigo-100 p-3 rounded-full">
-                  <Send size={32} className="text-indigo-600" />
+                <div className="bg-indigo-100 dark:bg-indigo-950/40 p-3 rounded-full">
+                  <Send size={32} className="text-indigo-600 dark:text-indigo-400" />
                 </div>
               </div>
               <h3 className="text-xl font-bold text-center text-dark mb-2">
@@ -702,26 +764,27 @@ export default function DetalleCampana() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setForzarConfirm(false)}
-                  className="flex-1 py-2.5 px-4 bg-surface border border-border text-dark rounded-lg font-medium hover:bg-border transition-colors"
+                  className="flex-1 py-2.5 px-4 bg-surface border border-border text-dark rounded-lg font-medium hover:bg-border transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleForzarEnvio}
-                  className="flex-1 py-2.5 px-4 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm"
+                  className="flex-1 py-2.5 px-4 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer"
                 >
                   Sí, Disparar Envíos
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal para Modificar Fecha Límite / Ritmo */}
-      {showModalFecha && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-border">
+      {showModalFecha && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-modal-pop border border-border">
             <div className="p-6">
               <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
                 <h3 className="text-lg font-bold text-dark flex items-center gap-2">
@@ -735,7 +798,7 @@ export default function DetalleCampana() {
                       setErrorModalFecha(null);
                     }
                   }}
-                  className="text-muted hover:text-dark p-1 rounded-md transition-colors"
+                  className="text-muted hover:text-dark p-1 rounded-md transition-colors cursor-pointer"
                 >
                   <X size={18} />
                 </button>
@@ -793,9 +856,9 @@ export default function DetalleCampana() {
                     disabled={guardandoFecha}
                     className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-dark disabled:opacity-50"
                   >
-                    <option value="alta">Alta (Se despacha prioritariamente en la cola)</option>
-                    <option value="media">Media (Ritmo estándar ponderado)</option>
-                    <option value="baja">Baja (Segundo plano)</option>
+                    <option value="alta">Alta</option>
+                    <option value="media">Media</option>
+                    <option value="baja">Baja</option>
                   </select>
                 </div>
 
@@ -808,7 +871,7 @@ export default function DetalleCampana() {
                       setErrorModalFecha(null);
                     }}
                     disabled={guardandoFecha}
-                    className="px-4 py-2 border border-border rounded-lg text-sm font-medium text-muted hover:text-dark hover:bg-background transition-colors"
+                    className="px-4 py-2 border border-border rounded-lg text-sm font-medium text-muted hover:text-dark hover:bg-background transition-colors cursor-pointer"
                   >
                     Cancelar
                   </button>
@@ -816,7 +879,7 @@ export default function DetalleCampana() {
                     type="button"
                     onClick={handleGuardarProgramacion}
                     disabled={guardandoFecha || !nuevaFecha}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
                   >
                     {guardandoFecha ? (
                       <RefreshCw size={16} className="animate-spin" />
@@ -829,7 +892,8 @@ export default function DetalleCampana() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Botón flotante para volver arriba (a las estadísticas) */}
