@@ -16,6 +16,7 @@ import {
   generarMessageId,
   inyectarEntropiaHtml,
 } from './antispamService.js';
+import { esCuentaOAuth, enviarConGmailApi } from './gmailApiService.js';
 import crypto from 'node:crypto';
 
 let isWorkerRunning = false;
@@ -283,17 +284,19 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
           html += `\n${pixelHtml}\n${hashHtml}`;
         }
         // ────────────────────────
-        const pass = decrypt(cuentaSmtp.password_encrypted);
-
-        const transporter = nodemailer.createTransport({
-          host: cuentaSmtp.host,
-          port: cuentaSmtp.puerto,
-          secure: cuentaSmtp.puerto === 465,
-          auth: {
-            user: cuentaSmtp.usuario,
-            pass,
-          },
-        });
+        let transporter: nodemailer.Transporter | null = null;
+        if (!esCuentaOAuth(cuentaSmtp.email)) {
+          const pass = decrypt(cuentaSmtp.password_encrypted);
+          transporter = nodemailer.createTransport({
+            host: cuentaSmtp.host,
+            port: cuentaSmtp.puerto,
+            secure: cuentaSmtp.puerto === 465,
+            auth: {
+              user: cuentaSmtp.usuario,
+              pass,
+            },
+          });
+        }
 
         try {
           let mailHtml = html;
@@ -312,6 +315,7 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
 
           const mailOptions: any = {
             from: `"Dirección de Producción - 3F" <${cuentaSmtp.email}>`,
+            replyTo: 'dpim3f@gmail.com',
             to: item.contacto_email,
             subject: item.asunto,
             html: inyectarEntropiaHtml(mailHtml, item.id),
@@ -322,9 +326,14 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
             }
           };
 
-          const info = await transporter.sendMail(mailOptions);
+          if (esCuentaOAuth(cuentaSmtp.email)) {
+            const apiResult = await enviarConGmailApi(mailOptions);
+            respuestaSmtp = apiResult.response;
+          } else {
+            const info = await transporter!.sendMail(mailOptions);
+            respuestaSmtp = info.response;
+          }
           
-          respuestaSmtp = info.response;
           estadoNuevo = 'enviado';
           enviadoExitoso = true;
           nuevosIntentos = item.intentos + 1;
@@ -333,7 +342,7 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
 
           // Cadencia Anti-Spam: Delay aleatorio no lineal con micro-pausas humanas
           const demora = obtenerDemoraAleatoria(esForzado, indiceLote);
-          console.log(`[ANTI-SPAM] ${demora.descripcion} (destinatario: ${item.contacto_email})`);
+          console.log(`[ANTI-SPAM] ${demora.descripcion} (destinatario: ${item.contacto_email}, emisor: ${cuentaSmtp.email})`);
           await sleep(demora.ms);
 
         } catch (err: any) {
@@ -347,13 +356,17 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
           
           const lowerMsg = respuestaSmtp.toLowerCase();
           const errCode = ((err.code || '') + '').toUpperCase();
-          const responseCode = err.responseCode;
+          const responseCode = err.responseCode || err.status || err.code;
 
-          // Detección de Bloqueo / Verificación web / Fallo de credenciales en Google SMTP
+          // Detección de Bloqueo / Verificación web / Fallo de credenciales en Google SMTP o OAuth
           const esBloqueoOVerificacion =
             errCode === 'EAUTH' ||
             responseCode === 535 ||
             responseCode === 534 ||
+            responseCode === 401 ||
+            lowerMsg.includes('invalid_grant') ||
+            lowerMsg.includes('invalid_client') ||
+            lowerMsg.includes('unauthorized') ||
             lowerMsg.includes('username and password not accepted') ||
             lowerMsg.includes('please log in with your web browser') ||
             lowerMsg.includes('web login required') ||
@@ -371,7 +384,9 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
           const cuotaAgotadaMsg = 
             lowerMsg.includes('quota exceeded') || 
             lowerMsg.includes('rate limit') || 
-            lowerMsg.includes('daily sending limit');
+            lowerMsg.includes('user rate limit') || 
+            lowerMsg.includes('daily sending limit') ||
+            responseCode === 429;
                                   
           const malEscritoMsg = 
             lowerMsg.includes('555 5.5.2') || 
@@ -412,7 +427,9 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
             await dbPool.query(`UPDATE cuentas_smtp SET ultimo_uso = CURRENT_TIMESTAMP WHERE id = $1`, [cuentaSmtp.id]);
           }
         } finally {
-          transporter.close();
+          if (transporter) {
+            transporter.close();
+          }
         }
 
         intentosCirculares++;

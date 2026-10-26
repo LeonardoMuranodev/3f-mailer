@@ -63,4 +63,12 @@ export const config = {
     clientEmail: process.env.GOOGLE_CLIENT_EMAIL || '',
     privateKey: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
   },
+  oauth: {
+    dpim3f3: {
+      user: (process.env.USER_DPIM3F3 || 'dpim3f3@gmail.com').replace(/"/g, '').trim(),
+      clientId: (process.env.CLIENT_ID_TOKEN_DPIM3F3 || '').replace(/"/g, '').trim(),
+      clientSecret: (process.env.CLIENT_SECRET_DPIM3F3 || '').replace(/"/g, '').trim(),
+      refreshToken: (process.env.REFRESH_TOKEN_DPIM3F3 || '').replace(/"/g, '').trim(),
+    },
+  },
 };
