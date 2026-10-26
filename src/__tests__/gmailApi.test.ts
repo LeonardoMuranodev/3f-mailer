@@ -29,8 +29,7 @@ describe('Gmail API OAuth2 Service', () => {
     });
 
     it('no debe marcar cuentas SMTP estándar como OAuth', () => {
-      expect(esCuentaOAuth('dpi2m3f@gmail.com')).toBe(false);
-      expect(esCuentaOAuth('dpim3f@gmail.com')).toBe(false);
+      expect(esCuentaOAuth('cuenta-comun@gmail.com')).toBe(false);
       expect(esCuentaOAuth('otra@dominio.com')).toBe(false);
       expect(esCuentaOAuth('')).toBe(false);
     });

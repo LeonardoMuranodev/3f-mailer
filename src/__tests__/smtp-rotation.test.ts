@@ -30,6 +30,7 @@ import {
   obtenerSiguienteSmtpDisponible,
   incrementarCuotaSmtp,
 } from '../services/queueService.js';
+import { resetearContadoresSmtp } from '../services/smtpAccountService.js';
 
 describe('SMTP Rotation — Round-Robin', () => {
   beforeEach(() => {
@@ -164,9 +165,6 @@ describe('resetearContadoresSmtp', () => {
 
   it('debería ejecutar el UPDATE para resetear contadores y cambiar estado agotado', async () => {
     mockQuery.mockResolvedValueOnce({ rowCount: 1, rows: [] });
-    
-    // resetearContadoresSmtp debe importarse estáticamente arriba
-    const { resetearContadoresSmtp } = await import('../services/smtpAccountService.js');
     await resetearContadoresSmtp();
     
     expect(mockQuery).toHaveBeenCalledTimes(1);
