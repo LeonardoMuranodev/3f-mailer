@@ -16,16 +16,22 @@ export function obtenerConfiguracionOAuth(email: string): OAuthConfig | null {
   if (!email) return null;
   const currentEmail = email.toLowerCase().trim();
 
-  for (const key of Object.keys(config.oauth)) {
-    const acc = (config.oauth as Record<string, OAuthConfig>)[key];
-    if (
-      acc &&
-      acc.user &&
-      acc.user.toLowerCase().trim() === currentEmail &&
-      Boolean(acc.clientId && acc.refreshToken)
-    ) {
-      return acc;
-    }
+  const { clientId, clientSecret, cuentas } = config.oauth;
+  if (!clientId || !clientSecret || !Array.isArray(cuentas)) {
+    return null;
+  }
+
+  const cuenta = cuentas.find(
+    c => c.user && c.user.toLowerCase().trim() === currentEmail && Boolean(c.refreshToken)
+  );
+
+  if (cuenta) {
+    return {
+      user: cuenta.user,
+      clientId,
+      clientSecret,
+      refreshToken: cuenta.refreshToken,
+    };
   }
 
   return null;

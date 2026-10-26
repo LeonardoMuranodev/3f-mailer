@@ -64,17 +64,11 @@ export const config = {
     privateKey: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
   },
   oauth: {
-    dpim3f3: {
-      user: (process.env.USER_DPIM3F3 || 'dpim3f3@gmail.com').replace(/"/g, '').trim(),
-      clientId: (process.env.CLIENT_ID_TOKEN_DPIM3F3 || '').replace(/"/g, '').trim(),
-      clientSecret: (process.env.CLIENT_SECRET_DPIM3F3 || '').replace(/"/g, '').trim(),
-      refreshToken: (process.env.REFRESH_TOKEN_DPIM3F3 || '').replace(/"/g, '').trim(),
-    },
-    dpim3f4: {
-      user: (process.env.USER_DPIM3F4 || 'dpim3f4@gmail.com').replace(/"/g, '').trim(),
-      clientId: (process.env.CLIENT_ID_TOKEN_DPIM3F4 || '').replace(/"/g, '').trim(),
-      clientSecret: (process.env.CLIENT_SECRET_DPIM3F4 || '').replace(/"/g, '').trim(),
-      refreshToken: (process.env.REFRESH_TOKEN_DPIM3F4 || '').replace(/"/g, '').trim(),
-    },
+    clientId: (process.env.GMAIL_OAUTH_CLIENT_ID || '').replace(/"/g, '').trim(),
+    clientSecret: (process.env.GMAIL_OAUTH_CLIENT_SECRET || '').replace(/"/g, '').trim(),
+    cuentas: [1, 2, 3, 4, 5, 6, 7, 8].map(i => ({
+      user: (process.env[`USER_DPI${i}`] || '').replace(/"/g, '').trim(),
+      refreshToken: (process.env[`REFRESH_TOKEN_DPI${i}`] || '').replace(/"/g, '').trim(),
+    })).filter(c => c.user && c.refreshToken),
   },
 };

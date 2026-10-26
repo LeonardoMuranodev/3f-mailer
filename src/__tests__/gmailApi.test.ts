@@ -23,7 +23,9 @@ describe('Gmail API OAuth2 Service', () => {
       expect(cfg4).not.toBeNull();
       expect(cfg3?.user).toBe('dpim3f3@gmail.com');
       expect(cfg4?.user).toBe('dpim3f4@gmail.com');
-      expect(cfg3?.clientId).not.toBe(cfg4?.clientId);
+      expect(cfg3?.clientId).toBe(cfg4?.clientId);
+      expect(cfg3?.clientSecret).toBe(cfg4?.clientSecret);
+      expect(cfg3?.refreshToken).not.toBe(cfg4?.refreshToken);
     });
 
     it('no debe marcar cuentas SMTP estándar como OAuth', () => {

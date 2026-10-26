@@ -12,8 +12,10 @@ import type { CuentaSmtp } from '../types/smtp';
 import AlertMessage from './ui/AlertMessage';
 import { usePermisos } from '../hooks/usePermisos';
 
-const CUENTAS_OAUTH = ['dpim3f3@gmail.com', 'dpim3f4@gmail.com'];
-const esCuentaOAuthUI = (email: string) => CUENTAS_OAUTH.includes((email || '').toLowerCase().trim());
+const esCuentaOAuthUI = (email: string, listaCuentas: CuentaSmtp[] = []) => {
+  const cuenta = listaCuentas.find(c => c.email.toLowerCase().trim() === (email || '').toLowerCase().trim());
+  return Boolean(cuenta?.es_oauth);
+};
 
 export default function CuentasSmtp() {
   const [cuentas, setCuentas] = useState<CuentaSmtp[]>([]);
@@ -287,7 +289,7 @@ export default function CuentasSmtp() {
                             'bg-gray-500'}`}>
                           {cuenta.estado.charAt(0).toUpperCase() + cuenta.estado.slice(1)}
                         </span>
-                        {esCuentaOAuthUI(cuenta.email) && (
+                        {cuenta.es_oauth && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center gap-1">
                             <ShieldCheck size={11} />
                             OAuth 2.0
@@ -433,7 +435,7 @@ export default function CuentasSmtp() {
                 />
               </div>
 
-              {esCuentaOAuthUI(form.email) ? (
+              {esCuentaOAuthUI(form.email, cuentas) ? (
                 <div className="p-3.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-700 dark:text-blue-300">
                   <div className="flex items-center gap-2 font-semibold mb-1">
                     <CheckCircle2 size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
