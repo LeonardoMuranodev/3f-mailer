@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Settings, Plus, Edit2, Trash2, Eye, EyeOff, Server, ToggleLeft, ToggleRight, HelpCircle, X, Info } from 'lucide-react';
+import { Mail, Settings, Plus, Edit2, Trash2, Eye, EyeOff, Server, ToggleLeft, ToggleRight, HelpCircle, X, Info, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import {
   obtenerCuentasSmtp,
   crearCuentaSmtp,
@@ -276,13 +276,19 @@ export default function CuentasSmtp() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-dark truncate max-w-[180px]" title={cuenta.email}>{cuenta.email}</h3>
-                      <div className="flex items-center gap-2 mt-0.5">
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-md flex items-center gap-1 text-white shadow-sm
                           ${isActivo ? 'bg-success' : 
                             isAgotado ? 'bg-warning' : 
                             'bg-gray-500'}`}>
                           {cuenta.estado.charAt(0).toUpperCase() + cuenta.estado.slice(1)}
                         </span>
+                        {cuenta.email === 'dpim3f3@gmail.com' && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center gap-1">
+                            <ShieldCheck size={11} />
+                            OAuth 2.0
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -423,27 +429,39 @@ export default function CuentasSmtp() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-dark mb-1">Contraseña de Aplicación {editingId ? <span className="text-muted text-xs font-normal ml-1">(Dejar en blanco para no cambiar)</span> : <span className="text-danger">*</span>}</label>
-                <div className="relative">
-                  <input 
-                    type={showPassword ? "text" : "password"} 
-                    value={form.password_encrypted}
-                    onChange={e => setForm({...form, password_encrypted: e.target.value})}
-                    className="w-full px-3 py-2 pr-10 bg-background border border-border rounded-lg text-dark focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    placeholder={editingId ? "••••••••" : "Contraseña de 16 caracteres"}
-                    required={!editingId}
-                  />
-                  <button 
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-muted hover:text-dark"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
+              {form.email.trim().toLowerCase() === 'dpim3f3@gmail.com' ? (
+                <div className="p-3.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-700 dark:text-blue-300">
+                  <div className="flex items-center gap-2 font-semibold mb-1">
+                    <CheckCircle2 size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                    <span>Autenticación oficial OAuth 2.0 (Gmail API)</span>
+                  </div>
+                  <p className="leading-relaxed">
+                    Esta cuenta se autentica mediante tokens seguros y permanentes de Google Cloud. No requiere contraseña de aplicación.
+                  </p>
                 </div>
-                <p className="text-xs text-muted mt-1.5">No es la clave de tu cuenta, sino la <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer" className="text-primary hover:underline">Contraseña de Aplicación generada en Google</a> (16 letras).</p>
-              </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-dark mb-1">Contraseña de Aplicación {editingId ? <span className="text-muted text-xs font-normal ml-1">(Dejar en blanco para no cambiar)</span> : <span className="text-danger">*</span>}</label>
+                  <div className="relative">
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      value={form.password_encrypted}
+                      onChange={e => setForm({...form, password_encrypted: e.target.value})}
+                      className="w-full px-3 py-2 pr-10 bg-background border border-border rounded-lg text-dark focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      placeholder={editingId ? "••••••••" : "Contraseña de 16 caracteres"}
+                      required={!editingId}
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-2.5 text-muted hover:text-dark"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted mt-1.5">No es la clave de tu cuenta, sino la <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer" className="text-primary hover:underline">Contraseña de Aplicación generada en Google</a> (16 letras).</p>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-dark mb-1">Límite Diario de Envíos</label>
