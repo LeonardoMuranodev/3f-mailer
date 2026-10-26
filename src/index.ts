@@ -45,8 +45,15 @@ const globalLimiter = rateLimit({
 });
 app.use(globalLimiter);
 
-// ── Body Parsers (con límite de tamaño) ─────────────────
-app.use(express.json({ limit: '1mb' }));
+// ── Body Parsers (con límite de tamaño y captura de rawBody para firmas Svix) ───
+app.use(
+  express.json({
+    limit: '1mb',
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Servir archivos subidos de forma estática

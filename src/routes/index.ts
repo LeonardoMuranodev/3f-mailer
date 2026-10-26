@@ -15,12 +15,19 @@ import { requireRole } from '../middlewares/requireRole.js';
 import { healthRouter } from './healthRoutes.js';
 import { dnsRouter } from './dnsRoutes.js';
 import { trackRouter } from './trackRoutes.js';
+import webhookRouter from './webhookRoutes.js';
 import { apiLimiter, authLimiter, queueLimiter } from '../middlewares/rateLimiter.js';
 
 export function registerRoutes(app: Application): void {
-  // Rate limiter general para toda la API — excluye /api/auth para no bloquear la validación de sesión
+  // Rate limiter general para toda la API — excluye /api/auth, /api/webhooks y /api/track
   app.use('/api', (req, res, next) => {
-    if (req.path.startsWith('/auth')) return next();
+    if (
+      req.path.startsWith('/auth') || 
+      req.path.startsWith('/webhooks') || 
+      req.path.startsWith('/track')
+    ) {
+      return next();
+    }
     return apiLimiter(req, res, next);
   });
 
@@ -35,6 +42,9 @@ export function registerRoutes(app: Application): void {
 
   // Tracking endpoints (Públicos - Para clientes de correo)
   app.use('/api/track', trackRouter);
+
+  // Webhooks de Proveedores (Públicos con verificación criptográfica Svix/HMAC)
+  app.use('/api/webhooks', webhookRouter);
 
   // Campañas y Contactos rutas a partir de aquí requieren autenticación
   app.use('/api', requireAuth);

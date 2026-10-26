@@ -71,4 +71,8 @@ export const config = {
       refreshToken: (process.env[`REFRESH_TOKEN_DPI${i}`] || '').replace(/"/g, '').trim(),
     })).filter(c => c.user && c.refreshToken),
   },
+  resend: {
+    apiKey: (process.env.SMTP_RESEND || process.env.RESEND_API_KEY || '').replace(/"/g, '').trim(),
+    webhookSecret: (process.env.RESEND_WEBHOOK_SECRET || '').replace(/"/g, '').trim(),
+  },
 };

@@ -205,6 +205,7 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
       let nuevosIntentos = item.intentos;
       let intentosCirculares = 0;
       let huboFalloEmisor = false;
+      let proveedorMessageId: string | null = null;
 
       while (intentosCirculares < Math.max(1, cantidadCuentas) && !enviadoExitoso) {
         const cuentaSmtp = await obtenerSiguienteSmtpDisponible();
@@ -322,16 +323,20 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
             messageId: generarMessageId(cuentaSmtp.email),
             attachments,
             headers: {
-              'X-Entity-Ref-ID': crypto.randomUUID(),
+              'X-Entity-Ref-ID': item.id.toString(),
             }
           };
 
           if (esCuentaOAuth(cuentaSmtp.email)) {
             const apiResult = await enviarConGmailApi(mailOptions);
             respuestaSmtp = apiResult.response;
+            proveedorMessageId = apiResult.messageId || null;
           } else {
             const info = await transporter!.sendMail(mailOptions);
             respuestaSmtp = info.response;
+            if (info.messageId) {
+              proveedorMessageId = info.messageId.replace(/[<>]/g, '').trim();
+            }
           }
           
           estadoNuevo = 'enviado';
@@ -451,9 +456,9 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
       await dbPool.query(`
         UPDATE cola_envios
         SET estado = $1, respuesta_smtp = $2, fecha_envio = CURRENT_TIMESTAMP, 
-            cuenta_smtp_id = $3, intentos = $4
-        WHERE id = $5
-      `, [estadoNuevo, respuestaSmtp, cuentaIdUsada, nuevosIntentos, item.id]);
+            cuenta_smtp_id = $3, intentos = $4, proveedor_message_id = COALESCE($5, proveedor_message_id)
+        WHERE id = $6
+      `, [estadoNuevo, respuestaSmtp, cuentaIdUsada, nuevosIntentos, proveedorMessageId, item.id]);
 
       // Si se agotó la cuota global durante el procesamiento de un correo, detenemos el procesamiento del lote
       if (cuotaAgotadaHoy) {
