@@ -16,15 +16,17 @@ import { healthRouter } from './healthRoutes.js';
 import { dnsRouter } from './dnsRoutes.js';
 import { trackRouter } from './trackRoutes.js';
 import webhookRouter from './webhookRoutes.js';
+import { notificacionRouter } from './notificacionRoutes.js';
 import { apiLimiter, authLimiter, queueLimiter } from '../middlewares/rateLimiter.js';
 
 export function registerRoutes(app: Application): void {
-  // Rate limiter general para toda la API — excluye /api/auth, /api/webhooks y /api/track
+  // Rate limiter general para toda la API — excluye /api/auth, /api/webhooks, /api/track y /api/notificaciones/stream
   app.use('/api', (req, res, next) => {
     if (
       req.path.startsWith('/auth') || 
       req.path.startsWith('/webhooks') || 
-      req.path.startsWith('/track')
+      req.path.startsWith('/track') ||
+      req.path.startsWith('/notificaciones/stream')
     ) {
       return next();
     }
@@ -59,8 +61,9 @@ export function registerRoutes(app: Application): void {
   app.use('/api/soporte', soporteRouter);
   app.use('/api/horarios', horariosRouter);
   app.use('/api/historial', historialRouter);
+  app.use('/api/notificaciones', notificacionRouter);
   
-  console.log('[Routes] ✅ REST endpoints registered: /api/auth, /api/campanas, /api/queue, /api/smtp, /api/stats, /api/contactos, /api/empresas, /api/usuarios, /api/soporte, /api/historial');
+  console.log('[Routes] ✅ REST endpoints registered: /api/auth, /api/campanas, /api/queue, /api/smtp, /api/stats, /api/contactos, /api/empresas, /api/usuarios, /api/soporte, /api/historial, /api/notificaciones');
   console.log('[Routes] 🛡️  Rate limiters active: auth (10/15min), api (200/15min), queue (5/1min)');
 }
 

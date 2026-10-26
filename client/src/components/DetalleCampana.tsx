@@ -45,6 +45,17 @@ export default function DetalleCampana() {
   const [errorModalFecha, setErrorModalFecha] = useState<string | null>(null);
   const [exitoModalFecha, setExitoModalFecha] = useState(false);
 
+  // Bloquear scroll del fondo cuando hay modal abierto
+  useEffect(() => {
+    const isAnyModalOpen = Boolean(deleteConfirm || forzarConfirm || showModalFecha);
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [deleteConfirm, forzarConfirm, showModalFecha]);
+
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
 
@@ -721,7 +732,7 @@ export default function DetalleCampana() {
                 ¿Eliminar campaña?
               </h3>
               <p className="text-center text-muted mb-6">
-                Estás a punto de eliminar la campaña <strong>{campana.asunto}</strong>. Esta acción también eliminará todo su historial y métricas y no se puede deshacer.
+                Estás a punto de eliminar la campaña <strong>{campana?.asunto}</strong>. Esta acción también eliminará todo su historial y métricas y no se puede deshacer.
               </p>
 
               <div className="flex gap-3">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Send, Clock, CheckCircle2, Mail, RefreshCw, Download, Calendar, FilterX, BarChart3, Plus, AlertTriangle, X, HelpCircle, Info, Eye, MousePointerClick, Printer } from 'lucide-react';
 import { obtenerEstadisticasGlobales, exportarEstadisticasCampanas } from '../services/api';
 import type { GlobalStatsResult } from '../types/stats';
@@ -12,6 +13,17 @@ export default function EstadisticasGenerales() {
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [showHelp, setShowHelp] = useState(false);
+  const [errorExport, setErrorExport] = useState<string | null>(null);
+
+  // Bloquear scroll del fondo cuando hay modal abierto
+  useEffect(() => {
+    if (Boolean(errorExport || showHelp)) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [errorExport, showHelp]);
 
   const fetchStats = async () => {
     setLoading(true);
@@ -27,8 +39,6 @@ export default function EstadisticasGenerales() {
       setLoading(false);
     }
   };
-
-  const [errorExport, setErrorExport] = useState<string | null>(null);
 
   const handleExportPdf = () => {
     const originalTitle = document.title;
@@ -186,9 +196,9 @@ export default function EstadisticasGenerales() {
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 animate-fade-in relative printable-report">
       {/* Modal de Error (Exportación) */}
-      {errorExport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-surface w-full max-w-sm rounded-2xl shadow-xl border border-border p-6 relative animate-slide-up">
+      {errorExport && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface w-full max-w-sm rounded-2xl shadow-xl border border-border p-6 relative animate-modal-pop">
             <button 
               onClick={() => setErrorExport(null)}
               className="absolute top-4 right-4 text-muted hover:text-dark transition-colors"
@@ -209,7 +219,8 @@ export default function EstadisticasGenerales() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── CONTENEDOR DEL REPORTE EJECUTIVO (1 SOLA HOJA) ── */}
@@ -287,9 +298,9 @@ export default function EstadisticasGenerales() {
         </div>
 
         {/* Modal de Ayuda */}
-        {showHelp && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-            <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg p-6 border border-border relative animate-slide-up max-h-[90vh] overflow-y-auto">
+        {showHelp && createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in">
+            <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg p-6 border border-border relative animate-modal-pop max-h-[90vh] overflow-y-auto">
               <button 
                 onClick={() => setShowHelp(false)}
                 className="absolute top-4 right-4 text-muted hover:text-dark transition-colors"
@@ -332,7 +343,8 @@ export default function EstadisticasGenerales() {
                 Entendido
               </button>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Filtros */}
@@ -402,71 +414,71 @@ export default function EstadisticasGenerales() {
         </div>
 
         {/* KPIs Grid - 3 arriba y 3 abajo en impresión */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8 print:grid-cols-3 print:gap-3 print:mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-8 print:grid-cols-3 print:gap-3 print:mb-4">
           {/* Campañas */}
-          <div className="bg-surface p-5 rounded-xl border border-border shadow-sm flex items-center gap-3 print:p-2.5 print:flex-col print:items-stretch print:justify-between print:gap-1.5">
-            <div className="flex items-center justify-between w-full">
-              <span className="text-xs font-semibold text-muted uppercase print:text-[11px] print:font-bold print:tracking-tight">Campañas</span>
-              <div className="bg-dark/10 p-2.5 rounded-lg text-dark print:p-1.5 print:rounded-md shrink-0">
-                <Mail size={24} className="print:w-4 print:h-4" />
+          <div className="bg-surface p-4 sm:p-5 rounded-xl border border-border shadow-sm flex flex-col justify-between min-h-[96px] print:p-2.5 print:min-h-0 print:gap-1.5 transition-colors">
+            <div className="flex items-center justify-between w-full mb-2 print:mb-1">
+              <span className="text-xs font-semibold text-muted uppercase tracking-wider print:text-[11px] print:font-bold print:tracking-tight truncate mr-2">Campañas</span>
+              <div className="bg-dark/10 p-2 sm:p-2.5 rounded-lg text-dark print:p-1.5 print:rounded-md shrink-0">
+                <Mail size={22} className="print:w-4 print:h-4" />
               </div>
             </div>
-            <p className="text-xl font-bold text-dark print:text-lg print:leading-none">{totalCampanas}</p>
+            <p className="text-2xl font-bold text-dark print:text-lg print:leading-none">{totalCampanas}</p>
           </div>
 
           {/* Despachados */}
-          <div className="bg-surface p-5 rounded-xl border border-border shadow-sm flex items-center gap-3 print:p-2.5 print:flex-col print:items-stretch print:justify-between print:gap-1.5">
-            <div className="flex items-center justify-between w-full">
-              <span className="text-xs font-semibold text-muted uppercase print:text-[11px] print:font-bold print:tracking-tight">Despachados</span>
-              <div className="bg-secondary/10 p-2.5 rounded-lg text-secondary print:p-1.5 print:rounded-md shrink-0">
-                <Send size={24} className="print:w-4 print:h-4" />
+          <div className="bg-surface p-4 sm:p-5 rounded-xl border border-border shadow-sm flex flex-col justify-between min-h-[96px] print:p-2.5 print:min-h-0 print:gap-1.5 transition-colors">
+            <div className="flex items-center justify-between w-full mb-2 print:mb-1">
+              <span className="text-xs font-semibold text-muted uppercase tracking-wider print:text-[11px] print:font-bold print:tracking-tight truncate mr-2">Despachados</span>
+              <div className="bg-secondary/10 p-2 sm:p-2.5 rounded-lg text-secondary print:p-1.5 print:rounded-md shrink-0">
+                <Send size={22} className="print:w-4 print:h-4" />
               </div>
             </div>
-            <p className="text-xl font-bold text-dark print:text-lg print:leading-none">{colaEnviados}</p>
+            <p className="text-2xl font-bold text-dark print:text-lg print:leading-none">{colaEnviados}</p>
           </div>
 
           {/* Pendientes */}
-          <div className="bg-surface p-5 rounded-xl border border-border shadow-sm flex items-center gap-3 print:p-2.5 print:flex-col print:items-stretch print:justify-between print:gap-1.5">
-            <div className="flex items-center justify-between w-full">
-              <span className="text-xs font-semibold text-muted uppercase print:text-[11px] print:font-bold print:tracking-tight">Pendientes</span>
-              <div className="bg-warning/10 p-2.5 rounded-lg text-warning print:p-1.5 print:rounded-md shrink-0">
-                <Clock size={24} className="print:w-4 print:h-4" />
+          <div className="bg-surface p-4 sm:p-5 rounded-xl border border-border shadow-sm flex flex-col justify-between min-h-[96px] print:p-2.5 print:min-h-0 print:gap-1.5 transition-colors">
+            <div className="flex items-center justify-between w-full mb-2 print:mb-1">
+              <span className="text-xs font-semibold text-muted uppercase tracking-wider print:text-[11px] print:font-bold print:tracking-tight truncate mr-2">Pendientes</span>
+              <div className="bg-warning/10 p-2 sm:p-2.5 rounded-lg text-warning print:p-1.5 print:rounded-md shrink-0">
+                <Clock size={22} className="print:w-4 print:h-4" />
               </div>
             </div>
-            <p className="text-xl font-bold text-dark print:text-lg print:leading-none">{colaPendientes}</p>
+            <p className="text-2xl font-bold text-dark print:text-lg print:leading-none">{colaPendientes}</p>
           </div>
 
           {/* Tasa Entrega */}
-          <div className="bg-surface p-5 rounded-xl border border-border shadow-sm flex items-center gap-3 print:p-2.5 print:flex-col print:items-stretch print:justify-between print:gap-1.5">
-            <div className="flex items-center justify-between w-full">
-              <span className="text-xs font-semibold text-muted uppercase print:text-[11px] print:font-bold print:tracking-tight">Tasa de Entrega</span>
-              <div className="bg-primary/10 p-2.5 rounded-lg text-primary print:p-1.5 print:rounded-md shrink-0">
-                <CheckCircle2 size={24} className="print:w-4 print:h-4" />
+          <div className="bg-surface p-4 sm:p-5 rounded-xl border border-border shadow-sm flex flex-col justify-between min-h-[96px] print:p-2.5 print:min-h-0 print:gap-1.5 transition-colors">
+            <div className="flex items-center justify-between w-full mb-2 print:mb-1">
+              <span className="text-xs font-semibold text-muted uppercase tracking-wider print:text-[11px] print:font-bold print:tracking-tight truncate mr-2" title="Tasa de Entrega">Tasa de Entrega</span>
+              <div className="bg-primary/10 p-2 sm:p-2.5 rounded-lg text-primary print:p-1.5 print:rounded-md shrink-0">
+                <CheckCircle2 size={22} className="print:w-4 print:h-4" />
               </div>
             </div>
-            <p className="text-xl font-bold text-dark print:text-lg print:leading-none">{successRate}%</p>
+            <p className="text-2xl font-bold text-dark print:text-lg print:leading-none">{successRate}%</p>
           </div>
 
           {/* Aperturas */}
-          <div className="bg-surface p-5 rounded-xl border border-border shadow-sm flex items-center gap-3 print:p-2.5 print:flex-col print:items-stretch print:justify-between print:gap-1.5">
-            <div className="flex items-center justify-between w-full">
-              <span className="text-xs font-semibold text-muted uppercase print:text-[11px] print:font-bold print:tracking-tight">Aperturas</span>
-              <div className="bg-info/10 p-2.5 rounded-lg text-[#0ea5e9] print:p-1.5 print:rounded-md shrink-0">
-                <Eye size={24} className="print:w-4 print:h-4" />
+          <div className="bg-surface p-4 sm:p-5 rounded-xl border border-border shadow-sm flex flex-col justify-between min-h-[96px] print:p-2.5 print:min-h-0 print:gap-1.5 transition-colors">
+            <div className="flex items-center justify-between w-full mb-2 print:mb-1">
+              <span className="text-xs font-semibold text-muted uppercase tracking-wider print:text-[11px] print:font-bold print:tracking-tight truncate mr-2">Aperturas</span>
+              <div className="bg-info/10 p-2 sm:p-2.5 rounded-lg text-[#0ea5e9] print:p-1.5 print:rounded-md shrink-0">
+                <Eye size={22} className="print:w-4 print:h-4" />
               </div>
             </div>
-            <p className="text-xl font-bold text-dark print:text-lg print:leading-none">{stats.aperturasTotales}</p>
+            <p className="text-2xl font-bold text-dark print:text-lg print:leading-none">{stats.aperturasTotales}</p>
           </div>
 
           {/* Clics */}
-          <div className="bg-surface p-5 rounded-xl border border-border shadow-sm flex items-center gap-3 print:p-2.5 print:flex-col print:items-stretch print:justify-between print:gap-1.5">
-            <div className="flex items-center justify-between w-full">
-              <span className="text-xs font-semibold text-muted uppercase print:text-[11px] print:font-bold print:tracking-tight">Clics</span>
-              <div className="bg-success/10 p-2.5 rounded-lg text-[#10b981] print:p-1.5 print:rounded-md shrink-0">
-                <MousePointerClick size={24} className="print:w-4 print:h-4" />
+          <div className="bg-surface p-4 sm:p-5 rounded-xl border border-border shadow-sm flex flex-col justify-between min-h-[96px] print:p-2.5 print:min-h-0 print:gap-1.5 transition-colors">
+            <div className="flex items-center justify-between w-full mb-2 print:mb-1">
+              <span className="text-xs font-semibold text-muted uppercase tracking-wider print:text-[11px] print:font-bold print:tracking-tight truncate mr-2">Clics</span>
+              <div className="bg-success/10 p-2 sm:p-2.5 rounded-lg text-[#10b981] print:p-1.5 print:rounded-md shrink-0">
+                <MousePointerClick size={22} className="print:w-4 print:h-4" />
               </div>
             </div>
-            <p className="text-xl font-bold text-dark print:text-lg print:leading-none">{stats.clicsTotales}</p>
+            <p className="text-2xl font-bold text-dark print:text-lg print:leading-none">{stats.clicsTotales}</p>
           </div>
         </div>
 

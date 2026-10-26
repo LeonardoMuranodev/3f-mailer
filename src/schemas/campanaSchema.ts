@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import DOMPurify from 'isomorphic-dompurify';
+import { config } from '../config/env.js';
 
 // ── Helpers de coerción para multipart/form-data ─────────
 
@@ -71,6 +72,17 @@ export const crearCampanaSchema = z.object({
     .string()
     .trim()
     .optional(),
+
+  adjuntos_extras: z.preprocess((val) => {
+    if (!val) return [];
+    if (typeof val === 'string') {
+      try { return JSON.parse(val); } catch { return []; }
+    }
+    return Array.isArray(val) ? val : [];
+  }, z.array(z.object({
+    url: z.string(),
+    nombre_original: z.string(),
+  })).max(config.maxAdjuntos, `No se pueden adjuntar más de ${config.maxAdjuntos} archivos`).optional().default([])),
 
   fecha_limite_envio: z
     .string()

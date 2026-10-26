@@ -36,8 +36,8 @@ const globalLimiter = rateLimit({
   keyGenerator: getClientIdentifier,
   validate: { trustProxy: false },
   skip: (req) => {
-    // Excluir endpoints de polling recurrente, healthcheck y archivos estáticos
-    return req.path.endsWith('/sync-status') || req.path.endsWith('/health') || req.path.startsWith('/uploads');
+    // Excluir endpoints de polling recurrente, SSE streaming, healthcheck y archivos estáticos
+    return req.path.endsWith('/sync-status') || req.path.endsWith('/stream') || req.path.endsWith('/health') || req.path.startsWith('/uploads');
   },
   message: { success: false, error: { code: 'TOO_MANY_REQUESTS', message: 'Demasiadas peticiones, intente más tarde' } },
   standardHeaders: true,

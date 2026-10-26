@@ -4,6 +4,7 @@ import path from 'node:path';
 import { dbPool } from '../config/db.js';
 import { obtenerSiguienteSmtpDisponible, incrementarCuotaSmtp } from './queueService.js';
 import { notificarCampanaTerminada, notificarCuotaGlobalAgotada } from './notificationService.js';
+import { emitirAlertaRealtime } from './realtimeService.js';
 import { generarHtmlDesdeCampana } from './emailTemplate.js';
 import { limpiarHistorialAntiguo } from './historialService.js';
 import { decrypt } from '../utils/encryption.js';
@@ -164,7 +165,7 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
     // 3. Obtener el lote con el objetivo calculado usando FOR UPDATE SKIP LOCKED
     const queryPendientes = `
       SELECT ce.id, ce.contacto_id, ce.campana_id, co.email as contacto_email,
-             c.asunto, c.cuerpo_html, c.link_inscripcion, c.link_nacion, c.link_provincia, c.flyer_url, c.adjunto_url, c.estado as campana_estado,
+             c.asunto, c.cuerpo_html, c.link_inscripcion, c.link_nacion, c.link_provincia, c.flyer_url, c.adjunto_url, c.adjuntos_extras, c.estado as campana_estado,
              ce.intentos
       FROM cola_envios ce
       JOIN contactos co ON ce.contacto_id = co.id
@@ -195,6 +196,15 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
       if (item.campana_estado === 'aprobada' && !campanasTransicionadas.has(item.campana_id)) {
         await dbPool.query(`UPDATE campanas SET estado = 'en_proceso', actualizado_en = CURRENT_TIMESTAMP WHERE id = $1`, [item.campana_id]);
         campanasTransicionadas.add(item.campana_id);
+
+        emitirAlertaRealtime({
+          tipo: 'campaign_started',
+          titulo: 'Campaña iniciada',
+          mensaje: `El despacho de "${item.asunto}" ha comenzado.`,
+          detalles: { campanaId: item.campana_id, asunto: item.asunto },
+          urlDestino: `/campanas/${item.campana_id}`,
+          timestamp: new Date().toISOString(),
+        });
       }
 
       // Intentar enviar con hasta `cantidadCuentas` cuentas distintas si fallan
@@ -215,6 +225,13 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
           cuotaAgotadaHoy = true;
           fechaAgotamiento = hoy;
           await notificarCuotaGlobalAgotada();
+
+          emitirAlertaRealtime({
+            tipo: 'smtp_quota_warning',
+            titulo: 'Límite de cuota diaria alcanzado',
+            mensaje: 'Todas las cuentas SMTP alcanzaron su límite de hoy. Los envíos se reanudarán mañana a las 09:00.',
+            timestamp: new Date().toISOString(),
+          });
           break; // Salir del while de reintentos
         }
 
@@ -254,6 +271,7 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
           flyer_url: flyerParaTemplate,
           adjunto_url: null,
           adjunto_nombre_original: null,
+          adjuntos_extras: item.adjuntos_extras || null,
           estado: item.campana_estado,
           fecha_limite_envio: '',
           prioridad: 'media',
@@ -303,13 +321,28 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
           let mailHtml = html;
 
           if (item.adjunto_url) {
-            const filename = item.adjunto_url.split('/').pop() || 'adjunto';
+            const filename = item.adjunto_nombre_original || item.adjunto_url.split('/').pop() || 'adjunto';
             const cleanAdjuntoPath = item.adjunto_url.startsWith('/') ? item.adjunto_url.slice(1) : item.adjunto_url;
             const filepath = path.resolve(process.cwd(), cleanAdjuntoPath);
             if (fs.existsSync(filepath)) {
               attachments.push({
                 filename,
                 path: filepath
+              });
+            }
+          }
+
+          // Adjuntos extras (múltiples): iterar sobre el array JSONB
+          const adjuntosExtras: Array<{ url: string; nombre_original: string }> = item.adjuntos_extras || [];
+          for (const adj of adjuntosExtras) {
+            // Saltear si ya fue cargado como adjunto_url (retrocompatibilidad sin duplicar)
+            if (adj.url === item.adjunto_url) continue;
+            const cleanPath = adj.url.startsWith('/') ? adj.url.slice(1) : adj.url;
+            const adjFilepath = path.resolve(process.cwd(), cleanPath);
+            if (fs.existsSync(adjFilepath)) {
+              attachments.push({
+                filename: adj.nombre_original,
+                path: adjFilepath
               });
             }
           }
@@ -510,5 +543,18 @@ async function verificarCampanasCompletadas() {
 
     const stats = statsRows[0] || { total: 0, enviados: 0, fallidos: 0 };
     await notificarCampanaTerminada(campana.id, campana.asunto, stats);
+
+    emitirAlertaRealtime({
+      tipo: 'campaign_finished',
+      titulo: 'Campaña completada',
+      mensaje: `"${campana.asunto}" finalizó con éxito (${stats.enviados} enviados${stats.fallidos > 0 ? `, ${stats.fallidos} fallidos` : ''}).`,
+      detalles: {
+        campanaId: campana.id,
+        asunto: campana.asunto,
+        stats,
+      },
+      urlDestino: `/campanas/${campana.id}`,
+      timestamp: new Date().toISOString(),
+    });
   }
 }

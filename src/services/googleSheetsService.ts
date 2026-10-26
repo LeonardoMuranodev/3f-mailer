@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 import { config } from '../config/env.js';
 import { importarContactosJson, type ContactoImportRow } from './contactoService.js';
+import { emitirAlertaRealtime } from './realtimeService.js';
 
 function normalizeString(str: string | null | undefined): string {
   if (!str) return '';
@@ -28,6 +29,13 @@ export async function syncContactosFromSheets(): Promise<void> {
 
   isSyncingStatus = true;
   lastSyncResult = null;
+
+  emitirAlertaRealtime({
+    tipo: 'sync_started',
+    titulo: 'Sincronización en curso',
+    mensaje: 'Iniciando sincronización de contactos con Google Sheets...',
+    timestamp: new Date().toISOString(),
+  });
 
   try {
     const { sheetId, clientEmail, privateKey } = config.google;
@@ -130,6 +138,22 @@ export async function syncContactosFromSheets(): Promise<void> {
     lastSyncResult = { success: false, message: err.message || 'Error desconocido al sincronizar' };
   } finally {
     isSyncingStatus = false;
+
+    if (lastSyncResult) {
+      const exito = lastSyncResult.success;
+      emitirAlertaRealtime({
+        tipo: 'sync_finished',
+        titulo: exito ? 'Sincronización finalizada' : 'Error en sincronización',
+        mensaje: lastSyncResult.message,
+        detalles: {
+          procesados: lastSyncResult.procesados,
+          insertados_o_actualizados: lastSyncResult.insertados_o_actualizados,
+          exito,
+        },
+        urlDestino: '/contactos',
+        timestamp: new Date().toISOString(),
+      });
+    }
   }
 }
 

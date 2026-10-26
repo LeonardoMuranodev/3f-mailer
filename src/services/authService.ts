@@ -76,7 +76,7 @@ export async function forgotPassword(email: string): Promise<void> {
     [user.id, token, expiraEn]
   );
 
-  const baseUrl = process.env.VITE_APP_URL || 'http://localhost:5173';
+  const baseUrl = config.appUrl;
   const resetLink = `${baseUrl}/reset-password?token=${token}`;
   
   const cuerpo_html = `

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, RotateCcw, CalendarIcon, Trash2, AlertTriangle, Archive, Info, HelpCircle, X, Edit3, CheckCircle2, Play, Pause, RefreshCcw } from 'lucide-react';
 import { listarCampanas, eliminarCampana, archivarCampana, desarchivarCampana, eliminarCampanasMasivo, cambiarEstadoCampana } from '../services/api';
@@ -55,6 +56,17 @@ export default function ListaCampanas() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+
+  // Bloquear scroll del fondo cuando hay modal abierto
+  useEffect(() => {
+    const isAnyModalOpen = Boolean(deleteConfirmId || archiveConfirmId || showBulkDeleteConfirm || showHelp);
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [deleteConfirmId, archiveConfirmId, showBulkDeleteConfirm, showHelp]);
 
   const fetchCampanas = useCallback(async (currentPage = page) => {
     setLoading(true);
@@ -524,9 +536,9 @@ export default function ListaCampanas() {
       </div>
 
       {/* Modal de Confirmación de Eliminación */}
-      {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+      {deleteConfirmId && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-modal-pop border border-border">
             <div className="p-6">
               <div className="flex justify-center mb-4">
                 <div className="bg-red-100 p-3 rounded-full">
@@ -556,13 +568,14 @@ export default function ListaCampanas() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal de Confirmación de Archivar */}
-      {archiveConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+      {archiveConfirmId && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-modal-pop border border-border">
             <div className="p-6">
               <div className="flex justify-center mb-4">
                 <div className="bg-blue-100 p-3 rounded-full">
@@ -592,13 +605,14 @@ export default function ListaCampanas() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal de Confirmación de Eliminación Masiva */}
-      {showBulkDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+      {showBulkDeleteConfirm && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-modal-pop border border-border">
             <div className="p-6">
               <div className="flex justify-center mb-4">
                 <div className="bg-red-100 p-3 rounded-full">
@@ -628,13 +642,14 @@ export default function ListaCampanas() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Modal de Ayuda */}
-      {showHelp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+      {showHelp && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-modal-pop border border-border">
             <div className="p-6">
               <div className="flex justify-between items-center mb-5">
                 <h3 className="text-lg font-bold text-dark flex items-center gap-2">
@@ -684,7 +699,8 @@ export default function ListaCampanas() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

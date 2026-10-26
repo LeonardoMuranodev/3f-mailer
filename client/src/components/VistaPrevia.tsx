@@ -15,12 +15,24 @@ const MAIL_ICON = 'https://cdn-icons-png.flaticon.com/512/732/732200.png';
 
 export default function VistaPrevia() {
   const navigate = useNavigate();
-  const { form, flyerPreview, htmlPreview, adjuntoName } = useCampanaStore();
+  const { form, flyerPreview, htmlPreview, adjuntosNames, maxAdjuntos } = useCampanaStore();
 
   // Scroll al tope al montar
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // Lista unificada de nombres de adjuntos para mostrar
+  const attachmentNamesList: string[] =
+    adjuntosNames.length > 0
+      ? adjuntosNames
+      : form.adjuntos_extras?.length
+      ? form.adjuntos_extras.map((a) => a.nombre_original)
+      : form.adjunto_nombre_original
+      ? [form.adjunto_nombre_original]
+      : form.adjunto_url
+      ? [form.adjunto_url.split('/').pop() || 'Adjunto']
+      : [];
 
   // Resolver labels de rubros seleccionados
   const rubrosDisplay = form.para_todos_rubros
@@ -181,19 +193,24 @@ export default function VistaPrevia() {
           </div>
         </div>
         
-        {/* Archivo Adjunto */}
-        {(adjuntoName || form.adjunto_nombre_original || form.adjunto_url) && (
+        {/* Archivos Adjuntos */}
+        {attachmentNamesList.length > 0 && (
           <div className="bg-surface rounded-lg border border-border px-4 py-3 flex items-start gap-3 shadow-sm transition-colors sm:col-span-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary mt-0.5 shrink-0">
               <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
             </svg>
-            <div>
-              <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-0.5">
-                Archivo adjunto
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-1">
+                {attachmentNamesList.length === 1 ? 'Archivo adjunto' : `Archivos adjuntos (${attachmentNamesList.length}/${maxAdjuntos})`}
               </p>
-              <p className="text-sm text-dark font-medium">
-                Se enviará con el archivo <strong>{adjuntoName || form.adjunto_nombre_original || (form.adjunto_url && form.adjunto_url.split('/').pop())}</strong> adjunto.
-              </p>
+              <ul className="space-y-1">
+                {attachmentNamesList.map((name, i) => (
+                  <li key={i} className="text-sm text-dark font-medium truncate flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                    <span className="truncate">{name}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         )}

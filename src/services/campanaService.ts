@@ -26,6 +26,7 @@ export async function crearCampana(data: CrearCampanaInput): Promise<Campana> {
     flyer_url = null,
     adjunto_url = null,
     adjunto_nombre_original = null,
+    adjuntos_extras = [],
     fecha_limite_envio,
     prioridad = 'alta',
     para_todos_rubros = true,
@@ -34,9 +35,9 @@ export async function crearCampana(data: CrearCampanaInput): Promise<Campana> {
 
   const query = `
     INSERT INTO campanas
-      (asunto, cuerpo_html, link_inscripcion, link_nacion, link_provincia, flyer_url, adjunto_url, adjunto_nombre_original,
+      (asunto, cuerpo_html, link_inscripcion, link_nacion, link_provincia, flyer_url, adjunto_url, adjunto_nombre_original, adjuntos_extras,
        fecha_limite_envio, prioridad, para_todos_rubros, rubros_seleccionados)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
     RETURNING *;
   `;
 
@@ -61,6 +62,7 @@ export async function crearCampana(data: CrearCampanaInput): Promise<Campana> {
     flyer_url || null,
     adjunto_url || null,
     adjunto_nombre_original || null,
+    JSON.stringify(adjuntos_extras || []),
     fecha_limite_envio || null,
     prioridad,
     para_todos_rubros,
@@ -126,6 +128,12 @@ export async function actualizarCampana(id: string, data: Partial<CrearCampanaIn
     updates.push(`adjunto_nombre_original = $${paramIdx++}`);
     // @ts-ignore
     values.push(data.adjunto_nombre_original || null);
+  }
+  // @ts-ignore
+  if (data.adjuntos_extras !== undefined) {
+    updates.push(`adjuntos_extras = $${paramIdx++}`);
+    // @ts-ignore
+    values.push(JSON.stringify(data.adjuntos_extras || []));
   }
   if (data.fecha_limite_envio !== undefined) {
     updates.push(`fecha_limite_envio = $${paramIdx++}`);
