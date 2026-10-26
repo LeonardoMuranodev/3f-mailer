@@ -40,9 +40,8 @@ export function obtenerDemoraAleatoria(esForzado: boolean = false, correlativoLo
   }
 
   // Modo automático (Cron horario):
-  // Cada 5 a 8 envíos (aleatorio), simular una pausa natural de descanso/revisión
-  const intervaloPausa = randomInt(5, 8);
-  const debeHacerPausaLarga = correlativoLote > 1 && correlativoLote % intervaloPausa === 0;
+  // Cada 6 u 11 envíos (periódico pero no monótono), simular una pausa natural de descanso/revisión
+  const debeHacerPausaLarga = correlativoLote > 1 && (correlativoLote % 6 === 0 || correlativoLote % 11 === 0);
 
   if (debeHacerPausaLarga) {
     const ms = randomInt(40000, 75000); // 40 a 75 segundos

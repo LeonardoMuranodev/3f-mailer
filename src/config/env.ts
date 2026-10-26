@@ -70,5 +70,11 @@ export const config = {
       clientSecret: (process.env.CLIENT_SECRET_DPIM3F3 || '').replace(/"/g, '').trim(),
       refreshToken: (process.env.REFRESH_TOKEN_DPIM3F3 || '').replace(/"/g, '').trim(),
     },
+    dpim3f4: {
+      user: (process.env.USER_DPIM3F4 || 'dpim3f4@gmail.com').replace(/"/g, '').trim(),
+      clientId: (process.env.CLIENT_ID_TOKEN_DPIM3F4 || '').replace(/"/g, '').trim(),
+      clientSecret: (process.env.CLIENT_SECRET_DPIM3F4 || '').replace(/"/g, '').trim(),
+      refreshToken: (process.env.REFRESH_TOKEN_DPIM3F4 || '').replace(/"/g, '').trim(),
+    },
   },
 };

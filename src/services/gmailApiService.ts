@@ -2,18 +2,33 @@ import nodemailer from 'nodemailer';
 import { google } from 'googleapis';
 import { config } from '../config/env.js';
 
+interface OAuthConfig {
+  user: string;
+  clientId: string;
+  clientSecret: string;
+  refreshToken: string;
+}
+
 /**
- * Cliente OAuth2 reutilizable para Gmail API.
+ * Obtiene la configuración OAuth2 correspondiente a un email dado
  */
-function getOAuth2Client() {
-  const { clientId, clientSecret, refreshToken } = config.oauth.dpim3f3;
-  if (!clientId || !refreshToken) {
-    throw new Error('Credenciales OAuth2 de Gmail API no configuradas para dpim3f3');
+export function obtenerConfiguracionOAuth(email: string): OAuthConfig | null {
+  if (!email) return null;
+  const currentEmail = email.toLowerCase().trim();
+
+  for (const key of Object.keys(config.oauth)) {
+    const acc = (config.oauth as Record<string, OAuthConfig>)[key];
+    if (
+      acc &&
+      acc.user &&
+      acc.user.toLowerCase().trim() === currentEmail &&
+      Boolean(acc.clientId && acc.refreshToken)
+    ) {
+      return acc;
+    }
   }
 
-  const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
-  oauth2Client.setCredentials({ refresh_token: refreshToken });
-  return oauth2Client;
+  return null;
 }
 
 /**
@@ -21,12 +36,21 @@ function getOAuth2Client() {
  * a través de la API oficial de Gmail con OAuth 2.0.
  */
 export function esCuentaOAuth(email: string): boolean {
-  if (!email) return false;
-  const targetUser = config.oauth.dpim3f3.user.toLowerCase();
-  const currentEmail = email.toLowerCase().trim();
-  const tieneCredenciales = Boolean(config.oauth.dpim3f3.clientId && config.oauth.dpim3f3.refreshToken);
+  return Boolean(obtenerConfiguracionOAuth(email));
+}
 
-  return currentEmail === targetUser && tieneCredenciales;
+/**
+ * Cliente OAuth2 para Gmail API según la cuenta emisora.
+ */
+function getOAuth2Client(email: string) {
+  const oauthConfig = obtenerConfiguracionOAuth(email);
+  if (!oauthConfig) {
+    throw new Error(`Credenciales OAuth2 de Gmail API no configuradas para ${email}`);
+  }
+
+  const oauth2Client = new google.auth.OAuth2(oauthConfig.clientId, oauthConfig.clientSecret);
+  oauth2Client.setCredentials({ refresh_token: oauthConfig.refreshToken });
+  return oauth2Client;
 }
 
 /**
@@ -34,9 +58,17 @@ export function esCuentaOAuth(email: string): boolean {
  * y lo transmite de forma nativa a través de la API REST de Gmail (users.messages.send).
  */
 export async function enviarConGmailApi(
-  mailOptions: nodemailer.SendMailOptions
+  mailOptions: nodemailer.SendMailOptions,
+  emailEmisor?: string
 ): Promise<{ response: string; messageId: string }> {
-  const oauth2Client = getOAuth2Client();
+  let emisor = emailEmisor || '';
+  if (!emisor && mailOptions.from) {
+    const fromStr = typeof mailOptions.from === 'string' ? mailOptions.from : (mailOptions.from as any).address || '';
+    const match = fromStr.match(/<([^>]+)>/) || [null, fromStr];
+    emisor = match[1] || fromStr;
+  }
+
+  const oauth2Client = getOAuth2Client(emisor);
   const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
   // 1. Compilar el mensaje MIME completo en memoria usando Nodemailer
