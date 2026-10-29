@@ -329,6 +329,9 @@ async function enviarPrueba(req: Request, res: Response, next: NextFunction): Pr
       prioridad: 'media',
       para_todos_rubros: true,
       rubros_seleccionados: [],
+      tipo_audiencia: req.body.tipo_audiencia || 'rubros',
+      destinatarios_manuales: [],
+      cuenta_emisor_id: null,
       creado_en: '',
       actualizado_en: ''
     };

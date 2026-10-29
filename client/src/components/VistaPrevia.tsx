@@ -34,12 +34,14 @@ export default function VistaPrevia() {
       ? [form.adjunto_url.split('/').pop() || 'Adjunto']
       : [];
 
-  // Resolver labels de rubros seleccionados
-  const rubrosDisplay = form.para_todos_rubros
-    ? 'Todos los rubros'
-    : form.rubros_seleccionados
-        .map((r) => RUBROS_LABELS[r] || r)
-        .join(', ') || 'Ninguno seleccionado';
+  // Resolver labels de rubros o destinatarios seleccionados
+  const rubrosDisplay = form.tipo_audiencia === 'manual'
+    ? `Destinatarios específicos (${(form.destinatarios_manuales || []).length} correos - Emisor DPI 1)`
+    : form.para_todos_rubros
+      ? 'Todos los rubros'
+      : form.rubros_seleccionados
+          .map((r) => RUBROS_LABELS[r] || r)
+          .join(', ') || 'Ninguno seleccionado';
 
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6">

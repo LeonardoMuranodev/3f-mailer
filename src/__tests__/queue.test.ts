@@ -188,4 +188,52 @@ describe('Queue Service — poblarColaEnvios()', () => {
       'La campaña debe estar en estado "aprobada"',
     );
   });
+
+  it('debería poblar la cola para una campaña con destinatarios manuales', async () => {
+    const campanaId = 'camp-manual-1';
+
+    // 1. Query de campaña con tipo_audiencia = 'manual'
+    mockQuery.mockResolvedValueOnce({
+      rows: [{
+        id: campanaId,
+        asunto: 'Campaña Manual VIP',
+        cuerpo_html: '<p>Invitación</p>',
+        estado: 'aprobada',
+        tipo_audiencia: 'manual',
+        destinatarios_manuales: '["intendente@tresdefebrero.gob.ar", "vip@empresa.com"]',
+        para_todos_rubros: false,
+        rubros_seleccionados: '[]',
+        prioridad: 'alta',
+        fecha_limite_envio: '2024-12-31',
+        creado_en: '2024-01-01T00:00:00Z',
+        actualizado_en: '2024-01-01T00:00:00Z',
+      }],
+      rowCount: 1,
+    });
+
+    // 2. Query de INSERT en contactos ON CONFLICT DO UPDATE
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 2 });
+
+    // 3. Query de SELECT id FROM contactos WHERE email = ANY(...)
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 'contact-uuid-1' }, { id: 'contact-uuid-2' }],
+      rowCount: 2,
+    });
+
+    // 4. Query de INSERT INTO cola_envios
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 2 });
+
+    const result = await poblarColaEnvios(campanaId);
+
+    expect(result.campana_id).toBe(campanaId);
+    expect(result.total_insertados).toBe(2);
+
+    expect(mockQuery).toHaveBeenCalledTimes(4);
+    const insertContactosQuery = mockQuery.mock.calls[1][0] as string;
+    expect(insertContactosQuery).toContain('INSERT INTO contactos');
+    const selectContactosQuery = mockQuery.mock.calls[2][0] as string;
+    expect(selectContactosQuery).toContain('SELECT id FROM contactos WHERE email = ANY');
+    const insertColaQuery = mockQuery.mock.calls[3][0] as string;
+    expect(insertColaQuery).toContain('INSERT INTO cola_envios');
+  });
 });

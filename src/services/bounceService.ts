@@ -86,6 +86,18 @@ export async function procesarRebotes() {
 
     console.log(`BounceService: ${rebotadosUnicos.length} rebotes totales procesados y BBDD actualizada.`);
 
+    // 2.1 Sincronizar rebotes hacia Google Sheets (proceso inverso para evitar que se pisen en futuras importaciones)
+    try {
+      const { sincronizarEstadosHaciaSheets } = await import('./googleSheetsService.js');
+      const rebotesParaSheet = rebotadosUnicos.map((r) => ({
+        email: r.email_fallido,
+        estado: r.estado_nuevo,
+      }));
+      await sincronizarEstadosHaciaSheets(rebotesParaSheet);
+    } catch (sheetErr: any) {
+      console.error('BounceService: Error sincronizando rebotes con Google Sheets:', sheetErr?.message || sheetErr);
+    }
+
     // 2.5 Circuit Breaker: Detección de Cuenta Quemada
     // Buscamos cuentas que hayan tenido >= 15 rebotes recientes
     const maxBounces = parseInt(process.env.MAX_BOUNCES_PER_HOUR || '15', 10);
@@ -114,7 +126,7 @@ export async function procesarRebotes() {
           await dbPool.query(`UPDATE cuentas_smtp SET estado = 'bloqueado', actualizado_en = CURRENT_TIMESTAMP WHERE id = $1`, [row.cuenta_smtp_id]);
           await dbPool.query(`INSERT INTO smtp_logs (cuenta_smtp_id, tipo, mensaje) VALUES ($1, 'bloqueada', $2)`, [row.cuenta_smtp_id, msg]);
           
-          await notificarCuentaProblema(emailCuenta, 'bloqueada', msg);
+          await notificarCuentaProblema(emailCuenta, 'circuit_breaker', msg);
           console.log(`BounceService: Cuenta ${emailCuenta} bloqueada por superar ${maxBounces} rebotes.`);
         }
       }

@@ -310,13 +310,20 @@ export async function notificarCuotaGlobalAgotada() {
   }
 }
 
-export async function notificarCuentaProblema(email: string, tipo: 'agotada' | 'bloqueada', detalle: string) {
+export async function notificarCuentaProblema(
+  email: string, 
+  tipo: 'agotada' | 'bloqueada' | 'circuit_breaker', 
+  detalle: string
+) {
   const { telegramChatId, telegramToken } = config.notifier;
 
   const emoji = tipo === 'agotada' ? '⚠️' : '🚨';
-  const accion = tipo === 'agotada' 
-    ? 'alcanzó su cuota diaria' 
-    : 'fue DESACTIVADA (Bloqueo o requerimiento de verificación en Google)';
+  let accion = 'fue DESACTIVADA (Bloqueo o requerimiento de verificación en Google)';
+  if (tipo === 'agotada') {
+    accion = 'alcanzó su cuota diaria';
+  } else if (tipo === 'circuit_breaker') {
+    accion = 'fue DESACTIVADA preventivamente por el sistema (Circuit Breaker: Umbral de rebotes superado)';
+  }
 
   const msg = `${emoji} *Atención - Cuenta SMTP*\n\nLa cuenta \`${email}\` ${accion}.\n\n*Detalle:* ${detalle}`;
 

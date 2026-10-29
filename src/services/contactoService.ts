@@ -184,7 +184,16 @@ export async function actualizarContacto(id: string, data: ActualizarContactoInp
   values.push(id);
 
   const result = await dbPool.query<Contacto>(query, values);
-  return result.rows[0] ?? null;
+  const contacto = result.rows[0] ?? null;
+
+  if (contacto && data.estado) {
+    import('./googleSheetsService.js').then(({ sincronizarEstadosHaciaSheets }) => {
+      sincronizarEstadosHaciaSheets([{ email: contacto.email, estado: data.estado! }])
+        .catch(err => console.error('[Sheets Sync] Error al sincronizar actualización hacia Sheet:', err?.message));
+    }).catch(() => {});
+  }
+
+  return contacto;
 }
 
 export async function toggleEstadoContacto(id: string, nuevoEstado: string): Promise<Contacto | null> {
@@ -195,7 +204,16 @@ export async function toggleEstadoContacto(id: string, nuevoEstado: string): Pro
     RETURNING *
   `;
   const result = await dbPool.query<Contacto>(query, [nuevoEstado, id]);
-  return result.rows[0] ?? null;
+  const contacto = result.rows[0] ?? null;
+
+  if (contacto) {
+    import('./googleSheetsService.js').then(({ sincronizarEstadosHaciaSheets }) => {
+      sincronizarEstadosHaciaSheets([{ email: contacto.email, estado: nuevoEstado }])
+        .catch(err => console.error('[Sheets Sync] Error al sincronizar cambio manual hacia Sheet:', err?.message));
+    }).catch(() => {});
+  }
+
+  return contacto;
 }
 
 export async function eliminarContacto(id: string): Promise<Contacto | null> {
@@ -286,7 +304,12 @@ export async function importarContactosJson(
           cuit           = COALESCE(EXCLUDED.cuit, contactos.cuit),
           rubro_id       = COALESCE(EXCLUDED.rubro_id, contactos.rubro_id),
           tipo           = COALESCE(EXCLUDED.tipo, contactos.tipo),
-          estado         = COALESCE(EXCLUDED.estado, contactos.estado),
+          estado         = CASE
+            WHEN (contactos.estado LIKE 'rebotado%' OR contactos.estado IN ('inactivo', 'mal_escrito'))
+                 AND EXCLUDED.estado = 'funcional'
+            THEN contactos.estado
+            ELSE COALESCE(EXCLUDED.estado, contactos.estado)
+          END,
           empresa_id     = COALESCE(EXCLUDED.empresa_id, contactos.empresa_id),
           actualizado_en = CURRENT_TIMESTAMP
       `;
@@ -313,7 +336,12 @@ export async function importarContactosJson(
           cuit           = COALESCE(EXCLUDED.cuit, contactos.cuit),
           rubro_id       = COALESCE(EXCLUDED.rubro_id, contactos.rubro_id),
           tipo           = COALESCE(EXCLUDED.tipo, contactos.tipo),
-          estado         = COALESCE(EXCLUDED.estado, contactos.estado),
+          estado         = CASE
+            WHEN (contactos.estado LIKE 'rebotado%' OR contactos.estado IN ('inactivo', 'mal_escrito'))
+                 AND EXCLUDED.estado = 'funcional'
+            THEN contactos.estado
+            ELSE COALESCE(EXCLUDED.estado, contactos.estado)
+          END,
           actualizado_en = CURRENT_TIMESTAMP
       `;
       try {

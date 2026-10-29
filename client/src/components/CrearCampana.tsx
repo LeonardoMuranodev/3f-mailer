@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { Mail, CheckCircle2, Save, Eye, ArrowLeft, Plus, List, FileText, HelpCircle, X, Info, ArrowUp, AlertTriangle } from 'lucide-react';
+import { Mail, CheckCircle2, Save, Eye, ArrowLeft, Plus, List, FileText, HelpCircle, X, Info, ArrowUp, AlertTriangle, Users, UserCheck, ShieldCheck } from 'lucide-react';
 import { useCampanaStore, buildFormData } from '../stores/campanaStore';
 import TiptapEditor from './TiptapEditor';
 import FlyerUpload from './FlyerUpload';
@@ -9,6 +9,35 @@ import { RUBROS_LIST, RUBROS_LABELS } from '../data/rubros';
 import AlertMessage from './ui/AlertMessage';
 import { enviarMailPruebaCampana, obtenerCampanaPorId } from '../services/api';
 import { useNotificationStore } from '../stores/useNotificationStore';
+
+function parseRawEmails(text: string) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const tokens = text
+    .split(/[\r\n,;]+/)
+    .map((t) => t.trim().toLowerCase())
+    .filter(Boolean);
+
+  const validSet = new Set<string>();
+  let duplicatesCount = 0;
+  let invalidCount = 0;
+
+  for (const token of tokens) {
+    if (!emailRegex.test(token)) {
+      invalidCount++;
+    } else if (validSet.has(token)) {
+      duplicatesCount++;
+    } else {
+      validSet.add(token);
+    }
+  }
+
+  return {
+    validEmails: Array.from(validSet),
+    totalTokens: tokens.length,
+    duplicatesCount,
+    invalidCount,
+  };
+}
 
 export default function CrearCampana() {
   const navigate = useNavigate();
@@ -19,6 +48,18 @@ export default function CrearCampana() {
     () => !!(useCampanaStore.getState().adjuntosNames.length > 0) || !!useCampanaStore.getState().form.adjuntos_extras?.length
   );
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [rawManualEmails, setRawManualEmails] = useState(() => {
+    const current = useCampanaStore.getState().form.destinatarios_manuales;
+    return Array.isArray(current) ? current.join('\n') : '';
+  });
+
+  const handleManualEmailsChange = (text: string) => {
+    setRawManualEmails(text);
+    const { validEmails } = parseRawEmails(text);
+    setField('destinatarios_manuales', validEmails);
+  };
+
+  const manualStats = parseRawEmails(rawManualEmails);
 
   // Bloqueo de scroll en el body mientras cualquier modal esté abierto
   const submitSuccess = useCampanaStore((s) => s.submitResult?.success);
@@ -125,6 +166,16 @@ export default function CrearCampana() {
           setField('prioridad', campana.prioridad);
           setField('para_todos_rubros', campana.para_todos_rubros);
           setField('rubros_seleccionados', campana.rubros_seleccionados);
+          if (campana.tipo_audiencia) setField('tipo_audiencia', campana.tipo_audiencia);
+          if (campana.destinatarios_manuales) {
+            const dests = Array.isArray(campana.destinatarios_manuales)
+              ? campana.destinatarios_manuales
+              : (typeof campana.destinatarios_manuales === 'string'
+                  ? JSON.parse(campana.destinatarios_manuales)
+                  : []);
+            setField('destinatarios_manuales', dests);
+            setRawManualEmails(dests.join('\n'));
+          }
         }
       }).catch(err => console.error('Error loading campaign:', err));
     } else {
@@ -768,11 +819,11 @@ export default function CrearCampana() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-border">
-             {/* Prioridad */}
-             <div>
+          {/* Prioridad de Despacho */}
+          <div className="pt-4 border-t border-border">
+            <div className="max-w-xs">
               <label htmlFor="prioridad" className="block text-base font-semibold text-dark mb-1.5">
-                Prioridad
+                Prioridad de Despacho
               </label>
               <select
                 id="prioridad"
@@ -786,72 +837,193 @@ export default function CrearCampana() {
                 <option value="baja">Baja</option>
               </select>
             </div>
-
-            {/* Configuración de Destinatarios */}
-            <div>
-              <div className="mb-4">
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <div className="relative">
-                    <input
-                      type="checkbox"
-                      className="sr-only"
-                      checked={form.para_todos_rubros}
-                      onChange={(e) => setField('para_todos_rubros', e.target.checked)}
-                      disabled={isSubmittedSuccessfully}
-                    />
-                    <div className={`block w-14 h-8 rounded-full transition-colors ${form.para_todos_rubros ? 'bg-primary' : 'bg-border'}`}></div>
-                    <div className={`absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${form.para_todos_rubros ? 'transform translate-x-6' : ''}`}></div>
-                  </div>
-                  <div className="text-base font-semibold text-dark group-hover:text-primary transition-colors">
-                    Enviar a todos los rubros
-                  </div>
-                </label>
-                <p className="text-muted text-sm mt-1 ml-17">
-                  Si se desmarca, podrás seleccionar rubros específicos.
-                </p>
-              </div>
-            </div>
           </div>
 
-          {/* Selector de Rubros (Condicional) */}
-          {!form.para_todos_rubros && (
-            <div className="pt-4 border-t border-border animate-fade-in">
-              <label className="block text-base font-semibold text-dark mb-3">
-                Seleccionar Rubros Destinatarios
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[300px] overflow-y-auto p-4 bg-background rounded-lg border border-border">
-                {/* Opción especial: Sin rubro */}
-                <label key="__sin_rubro__" className="flex items-center gap-2.5 cursor-pointer hover:bg-surface p-2 rounded transition-colors border border-border bg-surface/50">
-                  <input
-                    type="checkbox"
-                    checked={form.rubros_seleccionados.includes('__sin_rubro__')}
-                    onChange={() => toggleRubro('__sin_rubro__')}
-                    disabled={isSubmittedSuccessfully}
-                    className="w-4 h-4 text-primary rounded border-border focus:ring-primary"
-                  />
-                  <span className="text-dark select-none font-semibold">
-                    Sin rubro asignado
-                  </span>
-                </label>
+          {/* Configuración de Audiencia y Destinatarios */}
+          <div className="pt-4 border-t border-border">
+            <label className="block text-base font-semibold text-dark mb-3">
+              Audiencia Destinataria
+            </label>
 
-                {RUBROS_LIST.map((rubro) => (
-                  <label key={rubro} className="flex items-center gap-2.5 cursor-pointer hover:bg-surface p-2 rounded transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={form.rubros_seleccionados.includes(rubro)}
-                      onChange={() => toggleRubro(rubro)}
-                      disabled={isSubmittedSuccessfully}
-                      className="w-4 h-4 text-primary rounded border-border focus:ring-primary"
-                    />
-                    <span className="text-dark select-none">
-                      {RUBROS_LABELS[rubro] || rubro}
-                    </span>
-                  </label>
-                ))}
-              </div>
-              {errors.rubros_seleccionados && <p className="text-danger text-sm mt-2">{errors.rubros_seleccionados}</p>}
+            {/* Selector de modo: Rubros vs Manual */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+              <button
+                type="button"
+                onClick={() => setField('tipo_audiencia', 'rubros')}
+                disabled={isSubmittedSuccessfully}
+                className={`flex items-start gap-3.5 p-4 rounded-xl border text-left transition-all ${
+                  form.tipo_audiencia !== 'manual'
+                    ? 'border-primary bg-primary/5 ring-2 ring-primary/20 shadow-sm'
+                    : 'border-border bg-surface hover:border-muted hover:bg-surface/80'
+                }`}
+              >
+                <div className={`p-2.5 rounded-lg ${form.tipo_audiencia !== 'manual' ? 'bg-primary text-white' : 'bg-background text-muted'}`}>
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="font-semibold text-dark text-sm flex items-center gap-1.5">
+                    Base General por Rubros
+                    {form.tipo_audiencia !== 'manual' && (
+                      <span className="text-[11px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-medium">Activo</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted mt-1 leading-relaxed">
+                    Campaña masiva. Rota automáticamente entre cuentas secundarias (DPI 2, DPI 3, DPI 4...).
+                  </p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setField('tipo_audiencia', 'manual')}
+                disabled={isSubmittedSuccessfully}
+                className={`flex items-start gap-3.5 p-4 rounded-xl border text-left transition-all ${
+                  form.tipo_audiencia === 'manual'
+                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 ring-2 ring-emerald-500/20 shadow-sm'
+                    : 'border-border bg-surface hover:border-muted hover:bg-surface/80'
+                }`}
+              >
+                <div className={`p-2.5 rounded-lg ${form.tipo_audiencia === 'manual' ? 'bg-emerald-600 text-white' : 'bg-background text-muted'}`}>
+                  <UserCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="font-semibold text-dark text-sm flex items-center gap-1.5">
+                    Destinatarios Específicos
+                    {form.tipo_audiencia === 'manual' && (
+                      <span className="text-[11px] bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-full font-medium">Exclusivo DPI 1</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted mt-1 leading-relaxed">
+                    Pegá una lista manual de correos. Despacha exclusivamente desde la cuenta oficial <strong className="font-semibold text-dark">dpim3f@gmail.com</strong>.
+                  </p>
+                </div>
+              </button>
             </div>
-          )}
+
+            {/* Contenido condicional: Audiencia Manual */}
+            {form.tipo_audiencia === 'manual' ? (
+              <div className="space-y-4 animate-fade-in bg-surface p-4 sm:p-5 rounded-xl border border-emerald-500/30">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <label className="block text-sm font-semibold text-dark">
+                    Pegá o escribí los correos destinatarios:
+                  </label>
+                  <span className="text-xs text-muted">
+                    Separados por comas, punto y coma o saltos de línea
+                  </span>
+                </div>
+
+                <textarea
+                  rows={4}
+                  value={rawManualEmails}
+                  onChange={(e) => handleManualEmailsChange(e.target.value)}
+                  disabled={isSubmittedSuccessfully}
+                  placeholder={"intendente@tresdefebrero.gob.ar\nsecretaria@empresa.com\ncontacto@asociacion.org.ar"}
+                  className="w-full px-4 py-3 bg-background border border-border rounded-lg text-sm text-dark font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed placeholder:text-muted/60"
+                />
+
+                {/* Chips de validación en tiempo real */}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    {manualStats.validEmails.length} correos válidos detectados
+                  </span>
+
+                  {manualStats.duplicatesCount > 0 && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                      <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                      {manualStats.duplicatesCount} duplicados omitidos
+                    </span>
+                  )}
+
+                  {manualStats.invalidCount > 0 && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30">
+                      <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                      {manualStats.invalidCount} inválidos descartados
+                    </span>
+                  )}
+                </div>
+
+                {errors.destinatarios_manuales && (
+                  <p className="text-danger text-sm font-medium">{errors.destinatarios_manuales}</p>
+                )}
+
+                {/* Aviso informativo de seguridad de cuenta institucional */}
+                <div className="flex items-start gap-3 p-3.5 bg-background rounded-lg border border-border text-xs text-dark/80">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="text-dark block mb-0.5">Cuenta emisora oficial blindada:</strong>
+                    Esta campaña se despachará exclusivamente a través de <strong className="font-semibold text-dark">dpim3f@gmail.com (DPI 1)</strong>.
+                    Las campañas masivas generales tienen restringido el uso de esta cuenta, por lo que ambas pueden funcionar simultáneamente sin riesgo de bloqueos.
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Contenido condicional: Segmentación por Rubros */
+              <div className="animate-fade-in space-y-4">
+                <div className="mb-4">
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        className="sr-only"
+                        checked={form.para_todos_rubros}
+                        onChange={(e) => setField('para_todos_rubros', e.target.checked)}
+                        disabled={isSubmittedSuccessfully}
+                      />
+                      <div className={`block w-14 h-8 rounded-full transition-colors ${form.para_todos_rubros ? 'bg-primary' : 'bg-border'}`}></div>
+                      <div className={`absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${form.para_todos_rubros ? 'transform translate-x-6' : ''}`}></div>
+                    </div>
+                    <div className="text-base font-semibold text-dark group-hover:text-primary transition-colors">
+                      Enviar a todos los rubros
+                    </div>
+                  </label>
+                  <p className="text-muted text-sm mt-1 ml-17">
+                    Si se desmarca, podrás seleccionar rubros específicos.
+                  </p>
+                </div>
+
+                {/* Selector de Rubros (Condicional) */}
+                {!form.para_todos_rubros && (
+                  <div className="pt-4 border-t border-border animate-fade-in">
+                    <label className="block text-base font-semibold text-dark mb-3">
+                      Seleccionar Rubros Destinatarios
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[300px] overflow-y-auto p-4 bg-background rounded-lg border border-border">
+                      {/* Opción especial: Sin rubro */}
+                      <label key="__sin_rubro__" className="flex items-center gap-2.5 cursor-pointer hover:bg-surface p-2 rounded transition-colors border border-border bg-surface/50">
+                        <input
+                          type="checkbox"
+                          checked={form.rubros_seleccionados.includes('__sin_rubro__')}
+                          onChange={() => toggleRubro('__sin_rubro__')}
+                          disabled={isSubmittedSuccessfully}
+                          className="w-4 h-4 text-primary rounded border-border focus:ring-primary"
+                        />
+                        <span className="text-dark select-none font-semibold">
+                          Sin rubro asignado
+                        </span>
+                      </label>
+
+                      {RUBROS_LIST.map((rubro) => (
+                        <label key={rubro} className="flex items-center gap-2.5 cursor-pointer hover:bg-surface p-2 rounded transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={form.rubros_seleccionados.includes(rubro)}
+                            onChange={() => toggleRubro(rubro)}
+                            disabled={isSubmittedSuccessfully}
+                            className="w-4 h-4 text-primary rounded border-border focus:ring-primary"
+                          />
+                          <span className="text-dark select-none">
+                            {RUBROS_LABELS[rubro] || rubro}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                    {errors.rubros_seleccionados && <p className="text-danger text-sm mt-2">{errors.rubros_seleccionados}</p>}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Footer Actions */}

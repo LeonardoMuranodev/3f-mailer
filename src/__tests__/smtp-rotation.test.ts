@@ -68,6 +68,7 @@ describe('SMTP Rotation — Round-Robin', () => {
       expect(queryText).toContain('ORDER BY ultimo_uso ASC NULLS FIRST');
       expect(queryText).toContain("estado = 'activo'");
       expect(queryText).toContain('enviados_hoy < limite_diario');
+      expect(queryText).toContain('es_exclusiva IS FALSE OR es_exclusiva IS NULL');
     });
 
     it('debería retornar null si no hay cuentas disponibles', async () => {
@@ -78,6 +79,63 @@ describe('SMTP Rotation — Round-Robin', () => {
 
       const result = await obtenerSiguienteSmtpDisponible();
       expect(result).toBeNull();
+    });
+  });
+
+  describe('obtenerSmtpExclusivo()', () => {
+    it('debería obtener la cuenta exclusiva por ID cuando se especifica cuentaId', async () => {
+      const { obtenerSmtpExclusivo } = await import('../services/queueService.js');
+      const cuentaDpi1 = {
+        id: 'dpi-1-uuid',
+        email: 'dpim3f@gmail.com',
+        host: 'smtp.gmail.com',
+        puerto: 465,
+        usuario: 'dpim3f@gmail.com',
+        password_encrypted: 'dummy_oauth',
+        estado: 'activo',
+        enviados_hoy: 10,
+        limite_diario: 400,
+        es_exclusiva: true,
+        ultimo_uso: '2024-01-01T10:00:00Z',
+        creado_en: '2024-01-01T00:00:00Z',
+        actualizado_en: '2024-01-01T00:00:00Z',
+      };
+
+      mockQuery.mockResolvedValueOnce({
+        rows: [cuentaDpi1],
+        rowCount: 1,
+      });
+
+      const result = await obtenerSmtpExclusivo('dpi-1-uuid');
+      expect(result).toEqual(cuentaDpi1);
+
+      const queryText = mockQuery.mock.calls[0][0] as string;
+      const params = mockQuery.mock.calls[0][1];
+      expect(queryText).toContain('WHERE id = $1');
+      expect(params).toEqual(['dpi-1-uuid']);
+    });
+
+    it('debería obtener la cuenta exclusiva fallback (DPI 1) cuando no se pasa cuentaId', async () => {
+      const { obtenerSmtpExclusivo } = await import('../services/queueService.js');
+      const cuentaDpi1 = {
+        id: 'dpi-1-uuid',
+        email: 'dpim3f@gmail.com',
+        estado: 'activo',
+        enviados_hoy: 0,
+        limite_diario: 400,
+        es_exclusiva: true,
+      };
+
+      mockQuery.mockResolvedValueOnce({
+        rows: [cuentaDpi1],
+        rowCount: 1,
+      });
+
+      const result = await obtenerSmtpExclusivo();
+      expect(result).toEqual(cuentaDpi1);
+
+      const queryText = mockQuery.mock.calls[0][0] as string;
+      expect(queryText).toContain('es_exclusiva = true OR email ILIKE');
     });
   });
 

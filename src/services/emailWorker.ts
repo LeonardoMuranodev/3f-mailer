@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer';
 import fs from 'node:fs';
 import path from 'node:path';
 import { dbPool } from '../config/db.js';
-import { obtenerSiguienteSmtpDisponible, incrementarCuotaSmtp } from './queueService.js';
+import { obtenerSiguienteSmtpDisponible, incrementarCuotaSmtp, obtenerSmtpExclusivo } from './queueService.js';
 import { notificarCampanaTerminada, notificarCuotaGlobalAgotada } from './notificationService.js';
 import { emitirAlertaRealtime } from './realtimeService.js';
 import { generarHtmlDesdeCampana } from './emailTemplate.js';
@@ -166,6 +166,7 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
     const queryPendientes = `
       SELECT ce.id, ce.contacto_id, ce.campana_id, co.email as contacto_email,
              c.asunto, c.cuerpo_html, c.link_inscripcion, c.link_nacion, c.link_provincia, c.flyer_url, c.adjunto_url, c.adjuntos_extras, c.estado as campana_estado,
+             c.tipo_audiencia, c.cuenta_emisor_id,
              ce.intentos
       FROM cola_envios ce
       JOIN contactos co ON ce.contacto_id = co.id
@@ -207,7 +208,11 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
         });
       }
 
-      // Intentar enviar con hasta `cantidadCuentas` cuentas distintas si fallan
+      // Si la campaña es de destinatarios manuales o tiene cuenta fijada, despachar SOLO por esa cuenta (DPI 1)
+      const esManualOExclusiva = item.tipo_audiencia === 'manual' || !!item.cuenta_emisor_id;
+      const maxIntentosCuentas = esManualOExclusiva ? 1 : Math.max(1, cantidadCuentas);
+
+      let cuentaExclusivaSinCuota = false;
       let enviadoExitoso = false;
       let estadoNuevo = 'fallido';
       let respuestaSmtp = '';
@@ -217,10 +222,18 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
       let huboFalloEmisor = false;
       let proveedorMessageId: string | null = null;
 
-      while (intentosCirculares < Math.max(1, cantidadCuentas) && !enviadoExitoso) {
-        const cuentaSmtp = await obtenerSiguienteSmtpDisponible();
+      while (intentosCirculares < maxIntentosCuentas && !enviadoExitoso) {
+        const cuentaSmtp = esManualOExclusiva
+          ? await obtenerSmtpExclusivo(item.cuenta_emisor_id)
+          : await obtenerSiguienteSmtpDisponible();
         
         if (!cuentaSmtp) {
+          if (esManualOExclusiva) {
+            console.warn(`Worker SMTP: La cuenta exclusiva asignada a la campaña "${item.asunto}" (${item.campana_id}) no tiene cuota disponible hoy.`);
+            cuentaExclusivaSinCuota = true;
+            break;
+          }
+
           console.warn('Worker SMTP: No hay cuentas SMTP con cuota disponible en absoluto.');
           cuotaAgotadaHoy = true;
           fechaAgotamiento = hoy;
@@ -472,6 +485,11 @@ export async function procesarCola(esForzado: boolean = false): Promise<void> {
 
         intentosCirculares++;
       } // fin while intentosCirculares
+
+      if (cuentaExclusivaSinCuota) {
+        // La cuenta exclusiva (DPI 1) no tiene cuota hoy. Preservamos este item en 'pendiente' sin alterar intentos.
+        continue;
+      }
 
       if (!enviadoExitoso) {
         if (cuotaAgotadaHoy || huboFalloEmisor) {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Send, AlertTriangle, CheckCircle2, Clock, Mail, Search, RefreshCw, BarChart2, Download, MousePointerClick, Pause, Play, Trash2, Edit3, ArrowUp, Zap, X } from 'lucide-react';
+import { ArrowLeft, Send, AlertTriangle, CheckCircle2, Clock, Mail, Search, RefreshCw, BarChart2, Download, MousePointerClick, Pause, Play, Trash2, Edit3, ArrowUp, Zap, X, UserCheck } from 'lucide-react';
 import { obtenerCampanaDetalle, obtenerColaCampana, cambiarEstadoCampana, eliminarCampana, actualizarProgramacionCampana } from '../services/api';
 import type { CampanaConStats, ColaEnvioItem } from '../types/campana';
 import { formatDate } from '../utils/formatDate';
@@ -226,9 +226,11 @@ export default function DetalleCampana() {
       item.respuesta_smtp || ''
     ]);
 
-    const rubrosStr = campana.para_todos_rubros
-      ? 'Todos los rubros'
-      : (campana.rubros_seleccionados || []).map((r: string) => r === '__sin_rubro__' ? 'Sin Rubro' : RUBROS_LABELS[r as keyof typeof RUBROS_LABELS] || r).join(' - ');
+    const rubrosStr = campana.tipo_audiencia === 'manual'
+      ? `Destinatarios Específicos (${(campana.destinatarios_manuales || []).length} manuales)`
+      : campana.para_todos_rubros
+        ? 'Todos los rubros'
+        : (campana.rubros_seleccionados || []).map((r: string) => r === '__sin_rubro__' ? 'Sin Rubro' : RUBROS_LABELS[r as keyof typeof RUBROS_LABELS] || r).join(' - ');
 
     const csvContent = [
       ['Asunto:', `"${campana.asunto}"`],
@@ -340,9 +342,17 @@ export default function DetalleCampana() {
               </span>
             </div>
 
-            <p className="text-xs sm:text-sm text-dark/90">
-              <strong className="text-muted">Rubros:</strong> {campana.para_todos_rubros ? 'Todos los rubros' : (campana.rubros_seleccionados || []).map((r: string) => r === '__sin_rubro__' ? 'Sin Rubro' : RUBROS_LABELS[r as keyof typeof RUBROS_LABELS] || r).join(', ')}
-            </p>
+            <div className="text-xs sm:text-sm text-dark/90 flex flex-wrap items-center gap-2">
+              <strong className="text-muted">Audiencia:</strong>
+              {campana.tipo_audiencia === 'manual' ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
+                  <UserCheck size={13} />
+                  Destinatarios Específicos (Emisor DPI 1 - {(campana.destinatarios_manuales || []).length} contactos)
+                </span>
+              ) : (
+                <span>{campana.para_todos_rubros ? 'Todos los rubros' : (campana.rubros_seleccionados || []).map((r: string) => r === '__sin_rubro__' ? 'Sin Rubro' : RUBROS_LABELS[r as keyof typeof RUBROS_LABELS] || r).join(', ')}</span>
+              )}
+            </div>
           </div>
 
           {/* Barra de Acciones Normalizada (Mobile: 2 columnas alineadas / Desktop: fila homogénea) */}

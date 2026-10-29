@@ -31,13 +31,27 @@ export async function crearCampana(data: CrearCampanaInput): Promise<Campana> {
     prioridad = 'alta',
     para_todos_rubros = true,
     rubros_seleccionados = [],
+    tipo_audiencia = 'rubros',
+    destinatarios_manuales = [],
+    cuenta_emisor_id = null,
   } = data;
+
+  // Si la campaña es de destinatarios manuales y no vino cuenta_emisor_id, asignar por defecto DPI 1 (exclusiva)
+  let finalCuentaEmisorId = cuenta_emisor_id || null;
+  if (tipo_audiencia === 'manual' && !finalCuentaEmisorId) {
+    const res = await dbPool.query<{ id: string }>(
+      `SELECT id FROM cuentas_smtp WHERE email ILIKE 'dpim3f@gmail.com' OR es_exclusiva = true ORDER BY es_exclusiva DESC LIMIT 1`
+    );
+    if (res.rows[0]) {
+      finalCuentaEmisorId = res.rows[0].id;
+    }
+  }
 
   const query = `
     INSERT INTO campanas
       (asunto, cuerpo_html, link_inscripcion, link_nacion, link_provincia, flyer_url, adjunto_url, adjunto_nombre_original, adjuntos_extras,
-       fecha_limite_envio, prioridad, para_todos_rubros, rubros_seleccionados)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+       fecha_limite_envio, prioridad, para_todos_rubros, rubros_seleccionados, tipo_audiencia, destinatarios_manuales, cuenta_emisor_id)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
     RETURNING *;
   `;
 
@@ -67,6 +81,9 @@ export async function crearCampana(data: CrearCampanaInput): Promise<Campana> {
     prioridad,
     para_todos_rubros,
     JSON.stringify(rubros_seleccionados),
+    tipo_audiencia,
+    JSON.stringify(destinatarios_manuales || []),
+    finalCuentaEmisorId,
   ];
 
   const result = await dbPool.query<Campana>(query, values);
@@ -151,6 +168,27 @@ export async function actualizarCampana(id: string, data: Partial<CrearCampanaIn
     updates.push(`rubros_seleccionados = $${paramIdx++}`);
     values.push(JSON.stringify(data.rubros_seleccionados));
   }
+  if (data.tipo_audiencia !== undefined) {
+    updates.push(`tipo_audiencia = $${paramIdx++}`);
+    values.push(data.tipo_audiencia);
+  }
+  if (data.destinatarios_manuales !== undefined) {
+    updates.push(`destinatarios_manuales = $${paramIdx++}`);
+    values.push(JSON.stringify(data.destinatarios_manuales || []));
+  }
+  if (data.cuenta_emisor_id !== undefined) {
+    updates.push(`cuenta_emisor_id = $${paramIdx++}`);
+    values.push(data.cuenta_emisor_id || null);
+  } else if (data.tipo_audiencia === 'manual') {
+    // Si cambia a manual y no vino cuenta_emisor_id, asignar DPI 1
+    const res = await dbPool.query<{ id: string }>(
+      `SELECT id FROM cuentas_smtp WHERE email ILIKE 'dpim3f@gmail.com' OR es_exclusiva = true ORDER BY es_exclusiva DESC LIMIT 1`
+    );
+    if (res.rows[0]) {
+      updates.push(`cuenta_emisor_id = $${paramIdx++}`);
+      values.push(res.rows[0].id);
+    }
+  }
 
   if (updates.length === 0) {
     return obtenerCampanaPorId(id);
@@ -186,6 +224,16 @@ export async function cambiarEstadoCampana(
     }
     if (!campanaActual.fecha_limite_envio) {
       throw new Error('No se puede aprobar una campaña sin fecha límite de envío.');
+    }
+    if (campanaActual.tipo_audiencia === 'manual') {
+      const dests = Array.isArray(campanaActual.destinatarios_manuales)
+        ? campanaActual.destinatarios_manuales
+        : (typeof campanaActual.destinatarios_manuales === 'string'
+            ? JSON.parse(campanaActual.destinatarios_manuales)
+            : []);
+      if (!dests || dests.length === 0) {
+        throw new Error('No se puede aprobar una campaña manual sin destinatarios.');
+      }
     }
   }
 

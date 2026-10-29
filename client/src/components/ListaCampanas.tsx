@@ -359,11 +359,13 @@ export default function ListaCampanas() {
                 </tr>
               ) : (
                 campanas.map((campana) => {
-                  const rubrosDisplay = campana.para_todos_rubros
-                    ? 'Todos los rubros'
-                    : Array.isArray(campana.rubros_seleccionados)
-                      ? (campana.rubros_seleccionados || []).map((r) => r === '__sin_rubro__' ? 'Sin Rubro' : RUBROS_LABELS[r] || r).join(', ')
-                      : 'Ninguno';
+                  const rubrosDisplay = campana.tipo_audiencia === 'manual'
+                    ? `Destinatarios específicos (${(campana.destinatarios_manuales || []).length})`
+                    : campana.para_todos_rubros
+                      ? 'Todos los rubros'
+                      : Array.isArray(campana.rubros_seleccionados)
+                        ? (campana.rubros_seleccionados || []).map((r) => r === '__sin_rubro__' ? 'Sin Rubro' : RUBROS_LABELS[r] || r).join(', ')
+                        : 'Ninguno';
 
                   return (
                     <tr

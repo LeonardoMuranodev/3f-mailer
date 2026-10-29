@@ -16,6 +16,7 @@ export interface CuentaSmtp {
   maximo_por_ejecucion: number;
   ultimo_uso: string | null;          // TIMESTAMPTZ serializado como ISO string
   es_oauth?: boolean;
+  es_exclusiva?: boolean;
   creado_en: string;
   actualizado_en: string;
 }
@@ -30,6 +31,7 @@ export interface CrearCuentaSmtpInput {
   limite_diario?: number;
   minimo_por_ejecucion?: number;
   maximo_por_ejecucion?: number;
+  es_exclusiva?: boolean;
 }
 
 /** Payload parcial para actualizar una cuenta SMTP */
@@ -43,4 +45,5 @@ export interface ActualizarCuentaSmtpInput {
   limite_diario?: number;
   minimo_por_ejecucion?: number;
   maximo_por_ejecucion?: number;
+  es_exclusiva?: boolean;
 }
